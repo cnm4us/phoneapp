@@ -1,0 +1,40 @@
+# Dependencies and build output
+node_modules/
+.expo/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.p8
+*.mobileprovision
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+
+# Private captures, database dumps, and local reports
+artifacts/private/
+*.sql.gz
+*.dump
+*.ipa
+*.apk
+*.aab
+playwright-report/
+test-results/
+*.log
+
+# Editor and OS state
+.DS_Store
+Thumbs.db
+.idea/

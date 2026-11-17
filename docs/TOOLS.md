@@ -123,3 +123,7 @@ EAS native builds: [Android 2cf8e5a8](https://expo.dev/accounts/mbcollins2/proje
 - [Expo development builds](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Expo WebRTC config plugin](https://github.com/expo/config-plugins/blob/main/packages/react-native-webrtc/README.md)
 - [Playwright documentation](https://playwright.dev/docs/intro)
+
+## Installation QR artifact
+
+Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the public APK for build 879fa37b. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.

@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { ClientMessage, IceServer, ServerMessage } from '../shared/protocol';
 import { loadWebAssets, webHeaders } from './web-assets';
@@ -18,7 +18,7 @@ export interface Options {
   relayVideoMaxBitrate?: number;
   ultraEnabled?: boolean;
 }
-type Peer = { socket: WebSocket; alive: boolean; roomId?: string; initiator?: boolean; count: number; window: number; version?: 2; revision?: number; controlCount?: number };
+type Peer = { socket: WebSocket; alive: boolean; missedPongs: number; closeCause?: string; roomId?: string; initiator?: boolean; count: number; window: number; version?: 2; revision?: number; controlCount?: number };
 type Room = { token: string; sessionId: string; expiresAt: number; peers: Set<Peer>; phase: 'waiting' | 'ready' | 'offered' | 'answered'; negotiationId?: number; queued?: boolean; negotiatingAt?: number; warned?: boolean };
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -48,20 +48,26 @@ export function createSignaling(options: Options) {
   if (Boolean(options.turnUrls?.length) !== Boolean(options.turnSecret)) throw new Error('Configure TURN_URLS and TURN_SECRET together');
   const relayVideoMaxBitrate = options.relayVideoMaxBitrate ?? 6_000_000;
   if (!Number.isFinite(relayVideoMaxBitrate) || relayVideoMaxBitrate < 150_000 || relayVideoMaxBitrate > 30_000_000) throw new Error('Invalid relay video ceiling');
-  const ttl = options.roomTtlMs ?? 30 * 60_000;
-  if (ttl < 1 || ttl > 60 * 60_000) throw new Error('Room lifetime must be at most one hour');
+  const ttl = options.roomTtlMs ?? 4 * 60 * 60_000;
+  if (!Number.isFinite(ttl) || ttl < 1 || ttl > 8 * 60 * 60_000) throw new Error('Room lifetime must be positive and at most eight hours');
   const now = options.now ?? Date.now;
   const rooms = new Map<string, Room>();
+  // Keep closed-code tombstones until expiry so stale invites cannot be reused
+  // for a different room within their original lifetime. Bounded by creation rate/TTL.
+  const codes = new Map<string, { roomId: string; expiresAt: number }>();
   const peers = new Set<Peer>();
   const log = options.log ?? (() => {});
   const turnConfigured = Boolean(options.turnUrls?.length && options.turnSecret);
   const assets = options.webRoot ? loadWebAssets(options.webRoot) : undefined;
   let createWindow = now();
   let creates = 0;
+  let resolveWindow = now(), resolveAttempts = 0, failedResolves = 0;
+  let codeSweepAt = now();
   const send = (p: Peer, message: ServerMessage) => {
     if (p.socket.readyState === WebSocket.OPEN) p.socket.send(JSON.stringify(message));
   };
   const reject = (p: Peer, code: string, message: string) => {
+    p.closeCause = code;
     send(p, { type: 'error', code, message });
     p.socket.close(1008, code);
   };
@@ -77,6 +83,10 @@ export function createSignaling(options: Options) {
     send(offerer, { type: 'negotiate', negotiationId: room.negotiationId });
   };
   const expire = () => {
+    if (now() - codeSweepAt >= 15_000) {
+      for (const [code, entry] of codes) if (entry.expiresAt <= now()) codes.delete(code);
+      codeSweepAt = now();
+    }
     for (const [id, room] of rooms) {
       if (room.negotiatingAt !== undefined && !room.warned && now() - room.negotiatingAt > 15_000) {
         room.warned = true;
@@ -103,6 +113,24 @@ export function createSignaling(options: Options) {
     res.end(JSON.stringify(value));
   };
   const authorized = (req: IncomingMessage) => equal(req.headers.authorization ?? '', `Bearer ${options.accessKey}`);
+  const resolveCode = async (req: IncomingMessage, res: ServerResponse) => {
+    if (now() - resolveWindow >= 60_000) { resolveWindow = now(); resolveAttempts = 0; failedResolves = 0; }
+    if (++resolveAttempts > 120 || failedResolves >= 30) { req.resume(); json(res, 429, { error: 'Too many room-code attempts. Try again in a minute.' }); return; }
+    try {
+      let body = '';
+      for await (const chunk of req) {
+        body += chunk.toString();
+        if (Buffer.byteLength(body) > 256) { failedResolves++; json(res, 413, { error: 'Room-code request is too large' }); return; }
+      }
+      const value: unknown = JSON.parse(body);
+      if (!object(value) || !keys(value, ['code']) || typeof value.code !== 'string' || !/^\d{8}$/.test(value.code)) {
+        failedResolves++; json(res, 400, { error: 'An eight-digit room code is required' }); return;
+      }
+      const entry = codes.get(value.code), room = entry && rooms.get(entry.roomId);
+      if (!entry || !room || room.expiresAt <= now()) { failedResolves++; json(res, 404, { error: 'Room code is invalid or expired' }); return; }
+      json(res, 200, { roomId: entry.roomId, token: room.token, expiresAt: room.expiresAt });
+    } catch { failedResolves++; if (!res.headersSent && !res.destroyed) json(res, 400, { error: 'Invalid room-code request' }); }
+  };
   const http = createServer((req, res) => {
     expire();
     const asset = assets?.get((req.url ?? '').split('?')[0]);
@@ -112,6 +140,7 @@ export function createSignaling(options: Options) {
       return;
     }
     if (req.method === 'GET' && req.url === '/health') return json(res, 200, { ok: true, service: 'phoneapp-signaling', turnConfigured });
+    if (req.method === 'POST' && req.url === '/rooms/resolve') { void resolveCode(req, res); return; }
     if (req.method !== 'POST' || req.url !== '/rooms') return json(res, 404, { error: 'Not found' });
     if (!authorized(req)) return json(res, 401, { error: 'Test access key required' });
     if (now() - createWindow >= 60_000) { createWindow = now(); creates = 0; }
@@ -119,8 +148,11 @@ export function createSignaling(options: Options) {
     const roomId = randomBytes(9).toString('base64url');
     const room = { token: randomBytes(24).toString('base64url'), sessionId: randomUUID(), expiresAt: now() + ttl, peers: new Set<Peer>(), phase: 'waiting' as const };
     rooms.set(roomId, room);
+    let code: string;
+    do { code = String(randomInt(0, 100_000_000)).padStart(8, '0'); } while (codes.has(code));
+    codes.set(code, { roomId, expiresAt: room.expiresAt });
     log({ event: 'room-created', sessionId: room.sessionId, expiresAt: room.expiresAt });
-    return json(res, 201, { roomId, token: room.token, expiresAt: room.expiresAt });
+    return json(res, 201, { roomId, token: room.token, expiresAt: room.expiresAt, code });
   });
   http.headersTimeout = 10_000;
   http.requestTimeout = 10_000;
@@ -130,13 +162,13 @@ export function createSignaling(options: Options) {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws));
   });
   wss.on('connection', (socket: WebSocket) => {
-    const p: Peer = { socket, alive: true, count: 0, window: now() };
+    const p: Peer = { socket, alive: true, missedPongs: 0, count: 0, window: now() };
     peers.add(p);
     const joinDeadline = setTimeout(() => reject(p, 'join-timeout', 'Join a room first.'), 10_000);
     joinDeadline.unref();
-    socket.on('pong', () => { p.alive = true; });
+    socket.on('pong', () => { p.alive = true; p.missedPongs = 0; });
     socket.on('error', () => { /* Close performs cleanup; payloads/credentials are never logged. */ });
-    socket.on('close', () => {
+    socket.on('close', (code) => {
       clearTimeout(joinDeadline);
       peers.delete(p);
       if (!p.roomId) return;
@@ -149,7 +181,7 @@ export function createSignaling(options: Options) {
         send(other, { type: 'peer-left' });
         other.socket.close(1000, 'peer-left');
       }
-      log({ event: 'room-ended', sessionId: room.sessionId });
+      log({ event: 'room-ended', sessionId: room.sessionId, cause: p.closeCause ?? 'connection-closed', closeCode: code, initiatorLeft: p.initiator });
     });
     socket.on('message', (raw, binary) => {
       expire();
@@ -177,7 +209,7 @@ export function createSignaling(options: Options) {
       }
       const room = p.roomId ? rooms.get(p.roomId) : undefined;
       if (!room) return reject(p, 'not-joined', 'Join a valid room first.');
-      if (m.type === 'leave') { socket.close(1000, 'left'); return; }
+      if (m.type === 'leave') { p.closeCause = 'participant-left'; socket.close(1000, 'left'); return; }
       if (m.type === 'capabilities') {
         if (p.version === 2) return;
         p.version = 2;
@@ -213,8 +245,9 @@ export function createSignaling(options: Options) {
   const sweep = setInterval(() => {
     expire();
     for (const p of peers) {
-      if (!p.alive) p.socket.terminate();
-      else { p.alive = false; p.socket.ping(); }
+      if (!p.alive) p.missedPongs++;
+      if (p.missedPongs >= 2) { p.closeCause = 'heartbeat-timeout'; p.socket.terminate(); }
+      else { p.alive = false; if (p.socket.readyState === WebSocket.OPEN) p.socket.ping(); }
     }
   }, 15_000);
   sweep.unref();

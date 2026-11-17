@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Button, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { AppState, BackHandler, Button, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { RTCView } from 'react-native-webrtc';
 import { CallSession } from './src/call/session';
-import { endpoint } from './src/call/core';
+import { endpoint, displayInvitation, roomTimeLeft } from './src/call/core';
 import type { Invitation } from './shared/protocol';
 import { QualityControls } from './src/call/QualityControls';
+import { CallVideoStage } from './src/call/CallVideoStage';
 
 const labels = { idle: 'Ready to test', permissions: 'Requesting microphone / camera', joining: 'Joining room…', waiting: 'Waiting for the other phone…', connecting: 'Connecting media…', connected: 'Connected', reconnecting: 'Connection interrupted…', ended: 'Call ended', error: 'Unable to continue' };
 
@@ -34,6 +34,12 @@ function CallScreen() {
     });
     return () => { unsubscribe(); listener.remove(); session.end(); };
   }, [session]);
+  useEffect(() => { if (!active) setFullScreen(false); }, [active]);
+  useEffect(() => {
+    if (!fullScreen) return;
+    const back = BackHandler.addEventListener('hardwareBackPress', () => { setFullScreen(false); return true; });
+    return () => back.remove();
+  }, [fullScreen]);
   async function createRoom() {
     setCreating(true); setFormError('');
     const controller = new AbortController();
@@ -44,7 +50,7 @@ function CallScreen() {
       const body = await response.json() as Invitation & { error?: string };
       if (!response.ok) throw new Error(body.error || 'Could not create a room');
       if (AppState.currentState !== 'active') throw new Error('Return to the app before joining the call.');
-      setCode(`${body.roomId}.${body.token}`);
+      setCode(displayInvitation(body));
       // Share the invite first, then both testers tap Join. Share sheets may background the app.
     } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not reach the server'); }
     finally { clearTimeout(timeout); setCreating(false); }
@@ -53,7 +59,18 @@ function CallScreen() {
   return <SafeAreaView style={styles.page}>
     <StatusBar style="light" />
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {active && <CallVideoStage
+        remoteURL={call.remote?.toURL()}
+        localURL={call.cameraEnabled && call.hasCamera ? call.local?.toURL() : undefined}
+        expanded={fullScreen} muted={call.muted} cameraIntent={call.quality.cameraIntent}
+        cameraDisabled={call.quality.audioOnly || call.quality.peerAudioOnly || call.quality.busy}
+        audioOnly={call.quality.audioOnly || call.quality.peerAudioOnly}
+        status={call.quality.status} roomTime={roomTimeLeft(call.expiresAt)}
+        toggleExpanded={() => setFullScreen(value => !value)} mute={() => session.mute()}
+        camera={() => session.toggleCamera()} switchCamera={() => session.switchCamera()} audio={() => session.toggleAudioOnly()}
+        hangup={() => { setFullScreen(false); session.end(); }}
+      />}
+      <ScrollView style={fullScreen ? styles.hidden : undefined} pointerEvents={fullScreen ? 'none' : 'auto'} accessibilityElementsHidden={fullScreen} importantForAccessibility={fullScreen ? 'no-hide-descendants' : 'auto'} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.eyebrow}>PHONEAPP · EXPERIMENT 01</Text>
         <Text style={styles.title}>A call between{ '\n' }your two phones.</Text>
         <Text style={styles.muted}>Foreground audio and video. Test conversations only. No recording.</Text>
@@ -74,22 +91,12 @@ function CallScreen() {
           <Button title={creating ? 'Creating…' : 'Create invitation'} disabled={creating || key.trim().length < 24} onPress={() => void createRoom()} color="#5ce1c2" />
           <Text style={styles.label}>2. Share, then join on both phones</Text>
           <Text style={styles.muted}>Share before joining. Keep both apps open during the call.</Text>
-          <TextInput accessibilityLabel="Room invitation" style={[styles.input, styles.invite]} value={code} onChangeText={setCode} autoCapitalize="none" autoCorrect={false} placeholder="Paste invitation" placeholderTextColor="#81929d" multiline editable={!creating} />
-          <Button title="Share invitation" disabled={!code || creating} onPress={() => void Share.share({ message: code })} />
+          <TextInput accessibilityLabel="Room code" style={[styles.input, styles.invite]} value={code} onChangeText={setCode} autoCapitalize="none" autoCorrect={false} placeholder="1234 5678" keyboardType="number-pad" placeholderTextColor="#81929d" multiline editable={!creating} />
+          <Button title="Share room code" disabled={!code || creating} onPress={() => void Share.share({ message: code })} />
           <View style={styles.row}><Text style={styles.text}>Send video</Text><Switch value={video} onValueChange={setVideo} disabled={creating} /></View>
           <View style={styles.row}><Text style={styles.text}>Force TURN relay for testing</Text><Switch value={relay} onValueChange={setRelay} disabled={creating} /></View>
           {formError ? <Text style={styles.error} accessibilityRole="alert">{formError}</Text> : null}
           <Button title="Join call" disabled={!code || creating} onPress={() => { setFormError(''); void session.join(base, code, video, relay); }} color="#5ce1c2" />
-        </View>}
-        {active && <View style={styles.card}>
-          {call.remote && <RTCView accessibilityLabel="Remote video" streamURL={call.remote.toURL()} style={styles.remote} objectFit="contain" />}
-          {!call.remote && <Text style={styles.muted}>The other participant will appear here.</Text>}
-          {call.local && call.hasCamera && call.cameraEnabled && <RTCView accessibilityLabel="Your camera preview" streamURL={call.local.toURL()} style={styles.local} mirror objectFit="cover" />}
-          <Button title={call.muted ? 'Unmute microphone' : 'Mute microphone'} onPress={() => session.mute()} />
-          <Button title={call.quality.cameraIntent ? 'Turn camera off' : 'Turn camera on'} disabled={call.quality.audioOnly || call.quality.peerAudioOnly || call.quality.busy} onPress={() => session.toggleCamera()} />
-          {call.hasCamera && <Button title="Switch camera" onPress={() => session.switchCamera()} />}
-          {!!call.remote && <Button title="Full screen" onPress={() => setFullScreen(true)} />}
-          <Button title="Hang up / leave room" color="#ff8791" onPress={() => session.end()} />
         </View>}
         <View style={styles.card}><QualityControls state={call.quality} active={active} select={p => session.setQuality(p)} limits={(send, receive) => session.setLimits(send, receive)} audioOnly={() => session.toggleAudioOnly()} /></View>
         {call.sessionId && <View style={styles.card}>
@@ -99,27 +106,18 @@ function CallScreen() {
           {active && <Button title="Refresh connection details" onPress={() => session.refreshDiagnostics()} />}
         </View>}
       </ScrollView>
-      <Modal visible={fullScreen && active} onRequestClose={() => setFullScreen(false)} animationType="fade">
-        <SafeAreaView style={styles.page}>
-          {call.remote && <RTCView accessibilityLabel="Full screen remote video" streamURL={call.remote.toURL()} style={{ flex: 1 }} objectFit="contain" />}
-          <Text style={styles.muted}>{call.quality.status}</Text>
-          <Button title="Exit full screen" onPress={() => setFullScreen(false)} />
-          <Button title={call.muted ? 'Unmute' : 'Mute'} onPress={() => session.mute()} />
-          <Button title="Hang up" onPress={() => { setFullScreen(false); session.end(); }} />
-        </SafeAreaView>
-      </Modal>
+
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#0b1620' }, content: { padding: 22, gap: 18, paddingBottom: 50 },
+  page: { flex: 1, backgroundColor: '#0b1620' }, hidden: { height: 0, flex: 0, opacity: 0 }, content: { padding: 22, gap: 18, paddingBottom: 50 },
   eyebrow: { color: '#5ce1c2', fontSize: 12, letterSpacing: 2, fontWeight: '700' }, title: { color: '#f0f6f7', fontSize: 34, lineHeight: 39, fontWeight: '700' },
   muted: { color: '#a4b5c2', lineHeight: 21 }, text: { color: '#f0f6f7', flexShrink: 1 },
   card: { backgroundColor: '#142532', borderRadius: 18, padding: 18, gap: 12 }, label: { color: '#edf5f7', fontSize: 17, fontWeight: '600' },
   clock: { color: '#5ce1c2', fontSize: 48, fontVariant: ['tabular-nums'] }, fieldLabel: { color: '#c7d5de', fontSize: 13 },
   input: { backgroundColor: '#0b1923', borderColor: '#354c5b', borderWidth: 1, color: '#fff', borderRadius: 10, padding: 12, minHeight: 46 },
   invite: { minHeight: 72, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }, row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  error: { color: '#ffabb2', lineHeight: 21 }, remote: { width: '100%', height: 300, backgroundColor: '#070e14', borderRadius: 12 },
-  local: { width: 100, height: 140, alignSelf: 'flex-end', backgroundColor: '#070e14' }, mono: { color: '#a4b5c2', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  error: { color: '#ffabb2', lineHeight: 21 }, mono: { color: '#a4b5c2', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
 });

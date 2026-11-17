@@ -1,4 +1,4 @@
-import { ConnectedClock, invitation, PendingIce } from '../src/call/core';
+import { ConnectedClock, resolveInvitation, PendingIce } from '../src/call/core';
 import { MediaQuality, initialQuality, type QualityState } from '../src/call/media-quality';
 import { StatsReader, type Reports } from '../src/call/stats';
 import { constraints, VideoDriver, type MediaPeer, type Stream } from '../src/call/video';
@@ -29,6 +29,7 @@ export type State = {
   sessionId: string;
   path: string;
   receivedBytes: number;
+  expiresAt?: number;
   quality: QualityState;
 };
 const empty = (): State => ({
@@ -113,14 +114,15 @@ export class BrowserCall {
     this.statsReader = new StatsReader();
     this.state = empty();
     this.quality = this.makeQuality({ ...preferences, cameraIntent: video && !preferences.audioOnly });
-    this.update({ quality: this.quality.state });
-    let invite: ReturnType<typeof invitation>;
+    this.update({ quality: this.quality.state, phase: 'joining' });
+    let invite: Awaited<ReturnType<typeof resolveInvitation>>;
     try {
-      invite = invitation(code);
+      invite = await resolveInvitation(location.origin, code);
     } catch (error) {
-      this.update({ phase: 'error', error: (error as Error).message });
+      if (epoch === this.epoch) this.update({ phase: 'error', error: (error as Error).message });
       return;
     }
+    if (epoch !== this.epoch) return;
     if (
       !window.isSecureContext ||
       !navigator.mediaDevices?.getUserMedia ||
@@ -310,6 +312,7 @@ export class BrowserCall {
       this.update({
         phase: 'waiting',
         sessionId: message.sessionId,
+        expiresAt: message.expiresAt,
         path: relay
           ? 'Relay requested · waiting for media'
           : 'Waiting for media',

@@ -21,6 +21,8 @@ The browser companion tests use Chromium's synthetic media devices while perform
 
 ## Implementation checks
 
+Latest [testing usability evidence](testing/2026-11-17-call-usability.md): 38 unit/server cases and 13 public browser scenarios pass. Fake-clock tests cover four-hour boundaries/TURN expiry and heartbeat grace; HTTP tests cover short-code resolution/limits/tombstones. The browser suite uses short codes and checks share links and lifetime display. Native fullscreen is a stable renderer-layout change checked by TypeScript/bundle export; physical rendering/stability remains owner-operated.
+
 The quality increment extends browser acceptance to 12 scenarios: directional incoming limits, cameras added after camera-less joins, simultaneous changes, two-way video-RTP suppression with audio continuity on direct/relay routes, consent-aware restoration, negotiation-failure survival, and full-screen layout. Unit/server coverage includes shared policy/stats/controller and native API fallbacks (31 tests). The Linux impairment harness uses real UDP through isolated TURN and netem on a disposable veth pair; automation uses a private Unix socket outside the shaped path. See [quality evidence](testing/2026-11-17-adaptive-quality.md). HTTP throttling or packet counters do not establish perceptual speech quality/end-to-end delay.
 
 Add only tests that verify meaningful behavior. Keep actual commands and limits in [tools/access](TOOLS.md).

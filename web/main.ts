@@ -1,5 +1,5 @@
 import { BrowserCall, type State } from './call';
-import { invitation } from '../src/call/core';
+import { invitation, displayInvitation, roomTimeLeft } from '../src/call/core';
 import type { Invitation } from '../shared/protocol';
 import { PRESETS, type Preset, type VideoLimit } from '../src/call/quality';
 import { describeAudio } from '../src/call/stats';
@@ -74,6 +74,7 @@ function render(state: State) {
   element('status').textContent = labels[state.phase];
   element('elapsed').textContent =
     `${String(Math.floor(state.seconds / 60)).padStart(2, '0')}:${String(state.seconds % 60).padStart(2, '0')}`;
+  element('room-time-left').textContent = roomTimeLeft(state.expiresAt);
   const inCall = active();
   document.body.classList.toggle('in-call', inCall);
   element<HTMLFieldSetElement>('setup-fields').disabled = inCall || creating;
@@ -198,9 +199,9 @@ button('create').onclick = async () => {
     const value = (await response.json()) as Invitation & { error?: string };
     if (!response.ok)
       throw new Error(value.error || 'Could not create an invitation.');
-    code.value = `${value.roomId}.${value.token}`;
+    code.value = displayInvitation(value);
     notice.textContent =
-      'Invitation ready. Copy it into the iPhone app, then join on both devices.';
+      `Invitation ready. Enter this room code on the iPhone. ${roomTimeLeft(value.expiresAt)}.`;
   } catch (err) {
     formError =
       err instanceof DOMException && err.name === 'AbortError'
@@ -286,13 +287,16 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Invitation capabilities stay out of HTTP logs/referrers and are removed from the address bar.
-if (location.hash) {
+function loadInvitationLink() {
+  if (!location.hash) return;
   const value = new URLSearchParams(location.hash.slice(1)).get('invite');
   history.replaceState(null, '', location.pathname);
+  if (active()) { notice.textContent = 'Leave the current call before opening another invitation.'; return; }
   if (value) {
     try {
       invitation(value);
       code.value = value;
+      formError = '';
       mode(false);
       notice.textContent =
         'Invitation loaded. Choose audio or video, then tap Join call.';
@@ -301,5 +305,8 @@ if (location.hash) {
         'This invitation link is incomplete. Ask for a fresh invitation.';
     }
   }
+  render(call.state);
 }
+window.addEventListener('hashchange', loadInvitationLink);
+loadInvitationLink();
 render(call.state);

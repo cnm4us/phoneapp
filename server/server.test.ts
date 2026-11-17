@@ -7,6 +7,7 @@ import { WebSocket } from 'ws';
 import { createSignaling, type Options } from './server';
 import type { Invitation, ServerMessage } from '../shared/protocol';
 import { limitOnly, PRESETS } from '../src/call/quality';
+import { resolveInvitation } from '../src/call/core';
 
 const key = 'unit-test-only-key-not-for-real-use';
 class Client {
@@ -43,8 +44,8 @@ async function fixture(t: TestContext, options: Partial<Options> = {}) {
     assert.equal(res.status, 201);
     return await res.json() as Invitation;
   };
-  const connect = async (invite?: Invitation) => {
-    const socket = new WebSocket(`${base.replace('http', 'ws')}/signal`);
+  const connect = async (invite?: Invitation, autoPong = true) => {
+    const socket = new WebSocket(`${base.replace('http', 'ws')}/signal`, { autoPong });
     const client = new Client(socket);
     await once(socket, 'open');
     if (invite) client.send({ type: 'join', roomId: invite.roomId, token: invite.token });
@@ -60,6 +61,74 @@ test('health is public; room creation requires a private access key and does not
   assert.equal((await fetch(`${f.base}/rooms`, { method: 'POST' })).status, 401);
   assert.equal((await fetch(`${f.base}/rooms`, { method: 'POST', headers: { Authorization: 'Bearer wrong' } })).status, 401);
   assert.equal((await fetch(`${f.base}/unknown`)).status, 404);
+});
+
+test('short code resolution returns the same legacy capability, preserves two-peer limits, and expires on departure', async t => {
+  const f = await fixture(t), invite = await f.create();
+  assert.match(invite.code!, /^\d{8}$/);
+  const resolved = await resolveInvitation(f.base, `${invite.code!.slice(0, 4)} ${invite.code!.slice(4)}`);
+  assert.deepEqual(resolved, { roomId: invite.roomId, token: invite.token });
+  const a = await f.connect({ ...resolved, expiresAt: invite.expiresAt }); await a.next('joined');
+  const b = await f.connect(invite); await b.next('joined');
+  const third = await f.connect(invite); assert.equal((await third.next('error')).code, 'room-full');
+  a.send({ type: 'leave' }); await b.next('peer-left');
+  const response = await fetch(`${f.base}/rooms/resolve`, { method: 'POST', body: JSON.stringify({ code: invite.code }) });
+  assert.equal(response.status, 404);
+});
+
+test('code lookup bounds input and guesses, never returns credentials for an unknown code, and resets after a minute', async t => {
+  let time = Date.now();
+  const f = await fixture(t, { now: () => time }), invite = await f.create();
+  const lookup = (body: unknown) => fetch(`${f.base}/rooms/resolve`, { method: 'POST', body: JSON.stringify(body) });
+  const invalid = invite.code === '00000000' ? '11111111' : '00000000';
+  const unknown = await lookup({ code: invalid }); assert.equal(unknown.status, 404); assert(!(await unknown.text()).includes(invite.token));
+  assert.equal((await lookup({ code: invite.code, to: 'another-room' })).status, 400);
+  assert.equal((await lookup({ code: '1'.repeat(300) })).status, 413);
+  for (let i = 0; i < 27; i++) assert.equal((await lookup({ code: invalid })).status, 404);
+  assert.equal((await lookup({ code: invite.code })).status, 429);
+  time += 60_001;
+  assert.equal((await lookup({ code: invite.code })).status, 200);
+});
+
+test('default four-hour room survives a 6:50 call and expires exactly at its deadline; TURN matches that deadline', async t => {
+  let time = Date.now();
+  const f = await fixture(t, { now: () => time, turnUrls: ['turn:relay.invalid:3478'], turnSecret: 'synthetic-secret' });
+  const invite = await f.create();
+  assert.equal(invite.expiresAt - time, 4 * 60 * 60_000);
+  const client = await f.connect(invite), joined = await client.next('joined');
+  assert.equal(Number(joined.iceServers[0].username!.split(':')[0]), Math.ceil(invite.expiresAt / 1000) + 60);
+  time += 410_000; await fetch(`${f.base}/health`); assert.equal(client.socket.readyState, WebSocket.OPEN);
+  time = invite.expiresAt - 1; await fetch(`${f.base}/health`); assert.equal(client.socket.readyState, WebSocket.OPEN);
+  time++; await fetch(`${f.base}/health`); assert.equal((await client.next('error')).code, 'expired');
+  assert.equal((await fetch(`${f.base}/rooms/resolve`, { method: 'POST', body: JSON.stringify({ code: invite.code }) })).status, 404);
+  assert.throws(() => createSignaling({ accessKey: key, roomTtlMs: NaN }), /eight hours/);
+  assert.throws(() => createSignaling({ accessKey: key, roomTtlMs: 9 * 60 * 60_000 }), /eight hours/);
+});
+
+test('disconnect logs distinguish explicit leave and transport closure without copying client reason text', async t => {
+  const logs: Record<string, unknown>[] = [], f = await fixture(t, { log: e => logs.push(e) });
+  for (const explicit of [true, false]) {
+    const invite = await f.create(), a = await f.connect(invite); await a.next('joined');
+    const b = await f.connect(invite); await b.next('joined');
+    if (explicit) a.send({ type: 'leave' }); else a.socket.close(1001, 'private-client-reason-never-log');
+    await b.next('peer-left');
+    const ended = logs.filter(e => e.event === 'room-ended').at(-1)!;
+    assert.equal(ended.cause, explicit ? 'participant-left' : 'connection-closed');
+    assert.equal(ended.closeCode, explicit ? 1000 : 1001);
+  }
+  assert(!JSON.stringify(logs).includes('private-client-reason-never-log'));
+});
+
+test('one missed heartbeat is tolerated; two consecutive misses end a stale connection with a clear cause', async t => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const logs: Record<string, unknown>[] = [], f = await fixture(t, { log: e => logs.push(e) });
+  const client = await f.connect(await f.create(), false); await client.next('joined');
+  for (let i = 0; i < 2; i++) {
+    const ping = once(client.socket, 'ping'); t.mock.timers.tick(15_000); await ping;
+    assert.equal(client.socket.readyState, WebSocket.OPEN);
+  }
+  const closed = once(client.socket, 'close'); t.mock.timers.tick(15_000); await closed;
+  assert.equal(logs.filter(e => e.event === 'room-ended').at(-1)!.cause, 'heartbeat-timeout');
 });
 
 test('two peers exchange offer, answer, and early ICE; third peer cannot join', async (t) => {

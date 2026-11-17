@@ -53,3 +53,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports iPhone app ↔ browser audio without video. Follow-up status is “Audio only confirmed both directions,” explaining video suppression through the selected manual mode. Instructed leaving audio-only on both participants, then enabling cameras locally. Owner subsequently confirmed “Yes, video works now.” This establishes owner-reported iPhone/browser restoration; detailed hardware/network and the full physical matrix remain open.
 - No runtime/configuration changes. Initial native-bridge investigation did not establish the cause of this report; a tentative test was discarded after the mode was identified. Keep physical acceptance open.
+
+## 2026-11-17 Testing usability and full-screen repair
+
+- Owner reported black iPhone full screen, requested simpler invites/longer calls, and described an end at 6:50 while both screens stayed visible. Server evidence matches a closure 411 seconds after joining, room age 500 seconds, before its 1800-second expiry. Original close cause remains unknown.
+- Replaced native Modal/duplicate remote renderer with one video stage resized in place; kept exit/mute/camera/switch/hangup and Android back. Added eight-digit random codes with bounded POST resolution, legacy support, and closed-code tombstones; new rooms default to four hours with separate lifetime display and aligned TURN credentials.
+- Added two-miss heartbeat grace and sanitized close cause/code diagnostics. Verified TypeScript, 38 unit/server cases, 13 local/public browser media scenarios, both native JS exports, and nginx syntax. Deployed project-only route plus signaling/browser; no other project, live TURN, DB, dependency, or EAS build changes.
+- Physical iPhone fullscreen/sustained-call retest requested and pending. Updated plan 0004, verification, tools, runbook, and next-thread state; four-hour expiry is simulated/validated, not a claimed four-hour physical call.

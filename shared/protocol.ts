@@ -26,4 +26,4 @@ export type ServerMessage = QualityMessage
   | { type: 'ice'; candidate: Candidate }
   | { type: 'peer-left' }
   | { type: 'error'; code: string; message: string };
-export type Invitation = { roomId: string; token: string; expiresAt: number };
+export type Invitation = { roomId: string; token: string; expiresAt: number; code?: string };

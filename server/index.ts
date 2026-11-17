@@ -6,6 +6,7 @@ const turnUrls = urls(process.env.TURN_URLS);
 if (turnUrls.some((url) => !/^turns?:[^\s]+$/.test(url))) throw new Error('TURN_URLS must contain turn: or turns: URLs');
 const server = createSignaling({
   accessKey: process.env.POC_ACCESS_KEY ?? '',
+  roomTtlMs: Number(process.env.ROOM_TTL_MINUTES ?? 240) * 60_000,
   stunUrls: urls(process.env.STUN_URLS ?? 'stun:stun.l.google.com:19302'),
   turnUrls,
   turnSecret: process.env.TURN_SECRET,

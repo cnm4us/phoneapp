@@ -34,7 +34,9 @@ async function create(a: Page) {
   await a.locator('#access-key').fill(testKey);
   await a.locator('#create').click();
   await expect(a.locator('#notice')).toContainText('Invitation ready');
-  return await a.locator('#invitation').inputValue();
+  const code = await a.locator('#invitation').inputValue();
+  expect(code).toMatch(/^\d{4} \d{4}$/);
+  return code;
 }
 async function connect(a: Page, b: Page, relay = false, audioFirst = false) {
   const code = await create(a);
@@ -273,6 +275,27 @@ test('a failed camera renegotiation reports the limitation while retaining the w
     const before = await counter(p.a, 'audio-received-bytes');
     await expect.poll(() => counter(p.a, 'audio-received-bytes')).toBeGreaterThan(before + 100);
     for (const page of [p.a, p.b]) await expect(page.locator('body')).toHaveAttribute('data-state', 'connected');
+    await p.a.locator('#hangup').click();
+  } finally { await p.close(); }
+});
+
+test('short room-code links load without leaking the fragment and show the extended room lifetime', async ({ browser, baseURL }) => {
+  const p = await peers(browser, baseURL!);
+  try {
+    const code = await create(p.a);
+    await p.b.goto(`${baseURL}/#invite=${encodeURIComponent(code.replace(' ', '-'))}`);
+    await expect(p.b).toHaveURL(/\/$/);
+    await expect(p.b.locator('#invitation')).toHaveValue(code.replace(' ', '-'));
+    await expect(p.b.locator('#creator-pane')).toBeHidden();
+    await p.b.locator('#invitation').fill('1234567'); await expect(p.b.locator('#join')).toBeDisabled();
+    await p.b.locator('#invitation').fill(code.replace(' ', ''));
+    await p.a.locator('#join').click(); await expect(p.a.locator('body')).toHaveAttribute('data-state', 'waiting');
+    await p.b.locator('#join').click();
+    for (const page of [p.a, p.b]) {
+      await expect(page.locator('body')).toHaveAttribute('data-state', 'connected');
+      await expect(page.locator('#room-time-left')).toHaveText(/(?:4h 0m|3h 59m) remaining/);
+      await expect.poll(() => counter(page, 'audio-received-bytes')).toBeGreaterThan(100);
+    }
     await p.a.locator('#hangup').click();
   } finally { await p.close(); }
 });

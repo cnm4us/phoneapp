@@ -7,10 +7,47 @@ export function endpoint(input: string): string {
   return url.origin;
 }
 
-export function invitation(input: string): { roomId: string; token: string } {
+type LongInvitation = { roomId: string; token: string };
+export function invitation(input: string): LongInvitation | { code: string } {
+  const short = /^(\d{4})[ -]?(\d{4})$/.exec(input.trim());
+  if (short) return { code: short[1] + short[2] };
   const match = /^([A-Za-z0-9_-]{12})\.([A-Za-z0-9_-]{32})$/.exec(input.trim());
-  if (!match) throw new Error('Paste the complete invitation shared by the other phone.');
+  if (!match) throw new Error('Enter the eight-digit room code or paste a shared invitation.');
   return { roomId: match[1], token: match[2] };
+}
+
+export function displayInvitation(value: { code?: string; roomId: string; token: string }) {
+  return value.code && /^\d{8}$/.test(value.code) ? `${value.code.slice(0, 4)} ${value.code.slice(4)}` : `${value.roomId}.${value.token}`;
+}
+
+export async function resolveInvitation(base: string, input: string): Promise<LongInvitation> {
+  const parsed = invitation(input);
+  if (!('code' in parsed)) return parsed;
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), 10_000);
+  let response: Response;
+  try {
+    response = await fetch(`${base}/rooms/resolve`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsed), signal: controller.signal,
+    });
+  } finally { clearTimeout(deadline); }
+  if (!response.ok) {
+    if (response.status === 429) throw new Error('Too many room-code attempts. Wait a minute and try again.');
+    throw new Error('Room code is invalid, expired, or the call has ended. Create a new room.');
+  }
+  const value = await response.json() as { roomId?: unknown; token?: unknown };
+  if (typeof value.roomId !== 'string' || typeof value.token !== 'string') throw new Error('Invalid invitation response');
+  const result = invitation(`${value.roomId}.${value.token}`);
+  if ('code' in result) throw new Error('Invalid invitation response');
+  return result;
+}
+
+export function roomTimeLeft(expiresAt: number | undefined, now = Date.now()) {
+  if (!expiresAt) return 'Not joined';
+  const minutes = Math.max(0, Math.ceil((expiresAt - now) / 60_000));
+  if (!minutes) return 'Expired';
+  return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m remaining` : `${minutes}m remaining`;
 }
 
 // Monotonic connected time: pause on disconnection, never count setup time.

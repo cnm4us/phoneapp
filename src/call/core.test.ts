@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ConnectedClock, endpoint, invitation, PendingIce } from './core';
+import { ConnectedClock, endpoint, invitation, PendingIce, displayInvitation, roomTimeLeft } from './core';
 
 test('connected time excludes setup, pauses on network loss, and resumes without double counting', () => {
   let time = 0;
@@ -47,4 +47,20 @@ test('invitation parser requires the complete capability and accepts surrounding
   const roomId = 'a'.repeat(12), token = 'b'.repeat(32);
   assert.deepEqual(invitation(` ${roomId}.${token}\n`), { roomId, token });
   for (const invalid of [roomId, token, `${roomId}.${token}.extra`, '']) assert.throws(() => invitation(invalid));
+});
+
+test('test room codes accept eight digits with a readable separator and preserve leading zeroes', () => {
+  for (const value of ['01234567', '0123 4567', '0123-4567', ' 0123 4567\n']) assert.deepEqual(invitation(value), { code: '01234567' });
+  for (const value of ['123456', '123456789', 'abcd 1234', '1234.5678', '1234  5678']) assert.throws(() => invitation(value));
+  const legacy = { roomId: 'a'.repeat(12), token: 'b'.repeat(32) };
+  assert.equal(displayInvitation({ ...legacy, code: '01234567' }), '0123 4567');
+  assert.equal(displayInvitation(legacy), `${legacy.roomId}.${legacy.token}`);
+});
+
+test('room lifetime is separate from connected time and clearly reaches expiry', () => {
+  const now = 1_000_000;
+  assert.equal(roomTimeLeft(now + 4 * 60 * 60_000, now), '4h 0m remaining');
+  assert.equal(roomTimeLeft(now + 61_000, now), '2m remaining');
+  assert.equal(roomTimeLeft(now, now), 'Expired');
+  assert.equal(roomTimeLeft(undefined, now), 'Not joined');
 });

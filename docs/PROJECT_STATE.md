@@ -19,6 +19,8 @@ No patient database, recording, transcription, SMS, or billing implementation. H
 
 ## Active plan and next action
 
+Current testing-usability iteration: [0004](plans/0004-call-testing-usability.md), implemented/deployed. Native full screen now resizes one stable video renderer; physical confirmation pending. New invitations are eight-digit codes, with rate-limited POST resolution and legacy compatibility. Rooms default to four hours from creation; clients show remaining room lifetime separately from connected time. Two missed heartbeats are tolerated and close cause/code are logged without client payloads. [Verification](testing/2026-11-17-call-usability.md): 38 unit/server cases, 13 public browser scenarios, both native JS exports, nginx config all pass. Only the project hostname gained `/rooms/resolve`; no TURN/DB/dependency/build change.
+
 Active plan: [0001 WebRTC proof of concept](plans/0001-webrtc-poc.md). Keep it open until both physical phones pass its matrix.
 
 Supporting plan: [0002 browser companion](plans/0002-browser-companion.md), implemented/deployed with automated acceptance. Next action: capture the device/network details of the owner's reported successful use and complete the remaining native/Safari and original iPhone/Android matrix when devices are available. Both native builds succeeded. Public signaling, TURN, and browser media tests pass.
@@ -29,7 +31,7 @@ Current quality plan: [0003](plans/0003-adaptive-call-quality.md), implemented w
 
 Latest device report: owner confirmed video works between the iPhone app and browser after leaving coordinated audio-only mode and enabling cameras locally. The initial missing-video report showed “Audio only confirmed both directions”; changing the selected mode resolved it without runtime changes. This is owner-reported restoration evidence, not a completed device/network/quality matrix; phone model/OS and browser/network details remain unrecorded.
 
-Exact next action: reload the existing Expo development app from Metro, record both phone models/OS, and run native/browser quality, audio-only/consent, camera restoration, and the original M1 matrix. Keep Ultra disabled and relayed video at the 6 Mbps default until high-ceiling capacity/device gates pass. Physical phones are owner-operated; no remote-control tool is available.
+Exact next action: owner reloads the Expo app and browser, creates a fresh eight-digit room, and verifies iPhone full-screen entry/exit with continuing video/audio. The reported 6:50 call ended from a participant connection closure before its original 30-minute room expiry; both screens reportedly stayed visible, and the original transport/client cause is unresolved. Use new close diagnostics if it recurs. Record device/browser/network details and sustained-call outcome; keep full M1 and Ultra gates open.
 
 ## Decisions and constraints
 
@@ -52,7 +54,7 @@ Development services follow this checkout; stop or account for them before chang
 
 - Server inspection: 2 vCPUs, 7.6 GiB RAM, approximately 38 GB free disk at project initialization.
 - Git, GitHub CLI authentication, Node 22.21.1, npm 10.9.4, and Python 3 were observed. Docker and `psql` were not found on PATH. Recheck capabilities before depending on them.
-- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 31/31 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
+- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 38/38 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
 - Native configuration generated for both platforms; permissions and iOS scene manifest inspected. iOS/Android JS bundles exported successfully; native compilation is separate.
 - Public HTTPS/WSS room/offer/answer/hangup smoke: passed, with no media exchanged.
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
@@ -63,4 +65,4 @@ Development services follow this checkout; stop or account for them before chang
 
 ## Resume prompt
 
-“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, docs/SETUP.md, plan 0003, and its verification report. Quality controls are implemented and the browser/server are deployed. Keep experimental Ultra off. Next record actual iPhone/Android quality/audio-only/consent tests and complete original M1 acceptance; do not infer those results from browser tests or bundles.”
+“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, plan 0004 and its verification. Eight-digit test codes and four-hour rooms are deployed; native full screen uses one stable renderer. Owner physical retest and sustained-call confirmation remain pending. The earlier 6:50 ending was not expiry. Keep M1/Ultra gates open and inspect new close diagnostics if calls end early.”

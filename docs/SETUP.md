@@ -21,7 +21,7 @@ These ports and paths are specific to this EC2 deployment. Templates under `depl
 
 Private `.env.server` contains `POC_ACCESS_KEY` and `TURN_SECRET`. It is ignored by Git and EAS uploads and has mode 600. Use VS Code Remote SSH to open that file locally when you need the creator key; do not paste it into public documents or chat. The test key is entered on the phone creating an invitation and is kept in memory. The second phone only needs the invitation.
 
-`TURN_SECRET` must match the rendered coturn config under `/etc/phoneapp/`. It is never embedded in the app. Authenticated room members receive HMAC credentials valid for the bounded room lifetime. Invitations and active rooms expire after 30 minutes; leaving ends the room, so create a fresh invitation for another call.
+`TURN_SECRET` must match the rendered coturn config under `/etc/phoneapp/`. It is never embedded in the app. Authenticated room members receive HMAC credentials valid for the bounded room lifetime. Invitations and active rooms now default to four hours (`ROOM_TTL_MINUTES=240`, maximum 480); leaving ends the room, so create a fresh invitation for another call.
 
 On a fresh checkout, `npm ci` installs pinned app/test dependencies. `npm run init:local` generates a new ignored `.env.server` only if absent; creating that file does not deploy TURN, obtain a certificate, or change firewall rules. Do not run it expecting to rotate an existing deployment's secret. Template configuration files are `.env.example` and `.env.server.example` at the repository root.
 
@@ -75,6 +75,10 @@ For an authorized Android rebuild, use `npm run build:android`. The `development
 
 ## Call your iPhone from a browser
 
+Create an invitation to receive an eight-digit testing room code, displayed as `1234 5678`. Enter the same digits on both devices; spaces or a hyphen between groups are accepted. Pasted older invitations still work. Only the creator needs the private test access key. The short code grants access to the synthetic test room; keep it private.
+
+New rooms last up to four hours from creation. `ROOM_TTL_MINUTES` defaults to 240 and is bounded at 480. **Room lifetime** is separate from connected time. Departure, connection loss, foreground restrictions, or restart can end a call earlier. Departure ends the room; refresh both clients and create a new code after deployment.
+
 1. Open `https://phoneapp.bawebtech.com` in Chrome/Edge on your computer or Safari on the iPad. The browser companion does not need Expo, Metro, EAS installation, or iPad device registration.
 2. Create an invitation on either the native app or browser. The creator needs `POC_ACCESS_KEY` from the private `.env.server` file; the other participant only needs the invitation.
 3. Use **Copy code** in the browser and paste that exact code in the native app's invitation field. Alternatively, paste a native-created invitation into the browser's **I have an invitation** tab. A **Copy browser link** option creates a link for another browser, not a native-app deep link. Its fragment is removed when the page loads, and you still tap Join yourself.
@@ -85,6 +89,8 @@ For an authorized Android rebuild, use `npm run build:android`. The `development
 The quality iteration negotiates additive capabilities after the original join, preserving existing-client compatibility. Its JavaScript controls use the installed native module. Reload the browser and the Expo development app from the running Metro session to try them; no new native build was submitted. Automated browser-to-browser results remain separate from physical native/Safari evidence.
 
 ## Adjust call quality
+
+Native full screen expands the existing video stage in place, with exit/mute/camera/switch/hangup controls. It does not open a second renderer or change media/session. Physical iPhone confirmation remains in [the usability report](testing/2026-11-17-call-usability.md); reload the Expo development app for this layout.
 
 Use **Call quality** before or during a call. Auto begins conservatively below a 1080p/30 ceiling; High allows up to 1080p/60 where devices, receiver limits, and network permit. Standard/Data saver/Minimum reduce video resolution and bitrate. Presets set send/receive preferences together; **Advanced** separates them. Requested ceilings and actual output intentionally differ. **Full screen** changes display size independently of quality.
 

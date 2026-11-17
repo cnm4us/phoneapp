@@ -92,7 +92,7 @@
                 </details>
                 <div class="separator"></div>
               </div>
-              <label for="invitation">Invitation code</label>
+              <label for="invitation">Room code</label>
               <textarea
                 id="invitation"
                 rows="2"
@@ -100,11 +100,12 @@
                 autocomplete="off"
                 autocapitalize="none"
                 maxlength="256"
-                placeholder="Create one above, or paste a shared code"
+                inputmode="numeric"
+                placeholder="1234 5678"
                 aria-describedby="invite-help"
               ></textarea>
               <p class="field-help" id="invite-help">
-                Paste this same code into the iPhone app.
+                Enter the same eight digits on both devices. Pasted older invitations also work.
               </p>
               <div class="preference">
                 <div>
@@ -264,6 +265,10 @@
                 Set before joining to test the relay path.
               </p>
               <dl>
+                <div>
+                  <dt>Room lifetime</dt>
+                  <dd id="room-time-left">Not joined</dd>
+                </div>
                 <div>
                   <dt>Session</dt>
                   <dd id="session">Not joined</dd>

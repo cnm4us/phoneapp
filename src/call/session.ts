@@ -1,6 +1,6 @@
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCIceCandidate, RTCSessionDescription } from 'react-native-webrtc';
 import type { Candidate, ClientMessage, ServerMessage } from '../../shared/protocol';
-import { ConnectedClock, endpoint, invitation, PendingIce } from './core';
+import { ConnectedClock, endpoint, resolveInvitation, PendingIce } from './core';
 import { MediaQuality, initialQuality, type QualityState } from './media-quality';
 import { StatsReader, type Reports } from './stats';
 import { constraints, VideoDriver, type MediaPeer, type Stream } from './video';
@@ -16,6 +16,7 @@ export type CallState = {
   hasCamera: boolean;
   error?: string;
   sessionId?: string;
+  expiresAt?: number;
   diagnostics: string[];
   quality: QualityState;
 };
@@ -92,7 +93,10 @@ export class CallSession {
     this.update({ phase: 'permissions', quality: this.quality.state });
     try {
       const origin = endpoint(base);
-      const invite = invitation(code);
+      let invite: Awaited<ReturnType<typeof resolveInvitation>>;
+      try { invite = await resolveInvitation(origin, code); }
+      catch (error) { if (epoch === this.epoch) this.end(error instanceof Error ? error.message : 'Could not resolve room code'); return; }
+      if (epoch !== this.epoch) return;
       const stream = await mediaDevices.getUserMedia({ audio: true, video: video && !preferences.audioOnly ? { facingMode: 'user', ...constraints(intersect(START_LIMIT, preferences.send)) } : false });
       if (epoch !== this.epoch) { stream.getTracks().forEach((track) => track.stop()); return; }
       this.update({ local: stream, hasCamera: Boolean(stream.getVideoTracks().length), cameraEnabled: Boolean(stream.getVideoTracks().length), phase: 'joining' });
@@ -168,7 +172,7 @@ export class CallSession {
           this.connectionDeadline = setTimeout(() => { if (epoch === this.epoch) this.end('Network connection was lost. Reconnect and start a new room.'); }, 15_000);
         } else if (pc.connectionState === 'failed') this.end('Media connection failed. Check TURN configuration or try another network.');
       });
-      this.update({ phase: 'waiting', sessionId: message.sessionId });
+      this.update({ phase: 'waiting', sessionId: message.sessionId, expiresAt: message.expiresAt });
       this.diagnostic(`joined; ${message.turnConfigured ? 'TURN configured' : 'STUN only'}${relay ? '; relay forced' : ''}`);
       return;
     }

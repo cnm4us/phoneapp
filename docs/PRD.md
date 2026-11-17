@@ -1,12 +1,14 @@
 # Phoneapp product requirements
 
-Version: 0.4 draft. Updated: 2026-11-17 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.5 draft. Updated: 2026-11-17 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
 Capture the small increments of care-team work that are easily missed during chronic care management (CCM) and complex CCM. Combine patient communications with an auditable activity ledger so staff can review time and export supporting information. The app supports documentation and billing review; captured time alone does not establish reimbursement eligibility.
 
 The immediate deliverable is a WebRTC experiment using the owner's iPhone and his wife's Android phone. The full care-management product will be developed through separate, testable implementation plans.
+
+Implementation checkpoint: [plan 0008](plans/0008-database-foundation.md) now provides isolated MariaDB dev/test schemas, versioned migrations and synthetic Patient A/B/C data for the next provider/patient slice. This satisfies the initial persistence/tooling portion of OPS-01; patient screens/authentication, durable app call integration, push, consent enforcement, recording/playback and transcription remain to implement under [0007](plans/0007-provider-patient-calls-transcripts.md). Future schema changes use additional migrations. Existing foreground WebRTC continues independently.
 
 ## Users and context
 
@@ -138,7 +140,7 @@ Proposed next app-only slice: provider sees Patient A/B/C, selects a patient and
 - Preferred browser video provider and whether a managed media service should replace the M1 direct WebRTC path.
 - Practice timezone, billing review permissions, and export destination/EHR requirements.
 - Default idle rules for reading/composition and handling unsent drafts; validate with staff rather than infer a billing rule.
-- Hosting/database provider, authentication, retention, and production agreements.
+- Production hosting/database provider, authentication, retention, and production agreements. Local MariaDB is selected for synthetic development; this does not select production services.
 - Exact payer rules, staff eligibility, and MDM/time treatment; validate before implementing a billing engine.
 
 ## References

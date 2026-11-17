@@ -6,3 +6,7 @@ Create a numbered record for consequential choices. Include context, decision/st
 - [0002 WebRTC implementation](0002-webrtc-implementation.md): selected dependencies, signaling, development hosting, and verification boundaries.
 
 Avoid freezing speculative details. Versions, service setup, and commands belong in the relevant implementation plan and tool inventory.
+
+- [0003 Adaptive call quality](0003-adaptive-quality.md): shared presets, directional ceilings and adaptation.
+- [0004 Native audio output](0004-native-audio-output.md): private earpiece and speaker routing.
+- [0005 Database foundation](0005-database-foundation.md): local MariaDB, isolated identities and explicit SQL migrations; replaces tentative PostgreSQL for development.

@@ -1,6 +1,6 @@
 # 0007 Provider/patient app calls, history, and post-call transcripts
 
-Status: proposed; discussion and requirements only, implementation not started. Updated: 2026-11-17.
+Status: staged; persistence prerequisite implemented through 0008, product/auth/calling/transcription runtime pending. Updated: 2026-11-17.
 
 Requirements: PAT-01–04, TEAM-01–02, COM-01, COM-05–06, COM-10, TX-01–06, REP-03, OPS-01–03 in [PRD](../PRD.md).
 
@@ -18,7 +18,7 @@ Use synthetic accounts/patients/test conversations. Real clinical deployment, HI
 
 ## Current evidence
 
-The repository has native/browser foreground two-person WebRTC, signaling/TURN, shared quality, native audio routing, and successful EAS builds. No auth, patient DB, durable call history, push registrations, native incoming-call integration, media recording, object storage, worker queue, or transcription provider exists. Existing native AppState handling deliberately ends a call on backgrounding; foreground success does not demonstrate locked-phone ringing or background audio.
+The repository has native/browser foreground two-person WebRTC, signaling/TURN, shared quality, native audio routing, and successful EAS builds. The [0008 database foundation](0008-database-foundation.md) now provides isolated MariaDB dev/test schemas, migrations, disabled synthetic A/B/C directory and tooling. No authenticated directory API, DB-integrated durable call history, push registrations, native incoming-call integration, media recording, object storage, worker queue, or transcription provider exists. Existing native AppState handling deliberately ends a call on backgrounding; foreground success does not demonstrate locked-phone ringing or background audio.
 
 Unique identity and push are feasible building blocks. Patient record IDs identify clinical subjects; authenticated account IDs identify app users; device tokens address a specific app installation/platform and can rotate. These must be modeled separately. Provider-to-patient authorization is checked on the server for dialing, answer/join, call history, transcript viewing, and export. Possessing/guessing a patient ID or choosing a UI role is insufficient authorization.
 
@@ -42,9 +42,9 @@ Separate provider/patient navigation and permissions now while sharing calling, 
 ## Implementation steps
 
 - [ ] Confirm packaging preference (one binary with roles versus separate app variants), audio retention/deletion expectations, consent UX, and exact first-call matrix.
-- [ ] Select auth/persistence/migration, native incoming-call, media capture/storage, and batch transcription components; document tradeoffs, pricing/access dependencies, and decisions. Do not treat this proposal as provider/spending approval.
-- [ ] Establish a dedicated project dev/test DB with versioned migrations, synthetic seeds, connectivity/schema/test commands, and clean-install/upgrade recovery evidence per [database workflow](../DATABASE.md).
-- [ ] Implement authenticated provider/patient experiences, assigned patient directory, enrollment/device registration, and shared call history with private audio playback. Verify server-side patient isolation and token logout/rotation/reassignment.
+- [ ] Select auth, native incoming-call, media capture/storage, and batch transcription components (persistence/migrations selected and implemented in 0008); document tradeoffs, pricing/access dependencies, and decisions. Do not treat this proposal as provider/spending approval.
+- [x] Establish a dedicated project dev/test DB with versioned migrations, synthetic seeds, connectivity/schema/test commands, and clean-install/upgrade recovery evidence per [database workflow](../DATABASE.md); completed in [0008](0008-database-foundation.md).
+- [ ] Implement authenticated provider/patient experiences, assigned patient directory, enrollment/device registration, and shared call history. Add private audio playback after the consent/media capture stage. Verify server-side patient isolation and token logout/rotation/reassignment.
 - [ ] Implement authenticated foreground patient-addressed calls without room-code entry; use real durable call IDs/outcomes before adding push.
 - [ ] Integrate native incoming-call lifecycle and device delivery; verify locked/background/cold-start, cancellation, duplicate/late delivery, multiple devices, and audio-session/output controls. This is a substantial separate implementation gate and requires new native builds.
 - [ ] Implement consent-aware media capture, processing worker, post-call labeled transcripts, and both authorized views. Exercise Off, partial recording, retry/failure, retention/deletion, and multiple-speaker uncertainty.
@@ -53,14 +53,15 @@ Separate provider/patient navigation and permissions now while sharing calling, 
 
 ## Data and configuration
 
-Proposed entities, not an implemented schema: authenticated users/roles, patients/contact ownership, provider-patient permissions, device registrations, calls/participants/lifecycle events, recording consent intervals, media references, transcription jobs/segments/versions. Use stable IDs, UTC timestamps, integer-second duration, event idempotency, and access-controlled storage. Existing local MariaDB 10.6.22 and administrator read access were verified during discussion; there is no Phoneapp DB/account/configuration yet. MariaDB is an available alternative to the previously proposed PostgreSQL, not a selected engine for this slice. Save audio in private file/object storage and DB metadata/references, with per-call access checks; object storage choice is unresolved. No actual project DB/provider/ORM/auth/storage/queue/transcription selection or credentials yet. Follow [database workflow](../DATABASE.md) before migrations; never reuse another EC2 project's DB.
+Implemented foundation: users/primary roles, patients/contact ownership, patient-account and staff-patient bindings, device metadata, calls/participants/events, consent decisions, private media references, transcription jobs/versions/segments, and separate activity observations/reviews. Dedicated MariaDB dev/test schemas, connector 3.5.5 and two SQL migrations are verified under [0008](0008-database-foundation.md) and [decision 0005](../decisions/0005-database-foundation.md). Stable IDs, UTC timestamps, integer-second activity durations, millisecond transcript offsets, idempotency and composite foreign keys are in place. No authenticated endpoints, device delivery, recording/storage objects, job execution or transcript playback exists. Capture consent/retention and identity/storage/STT vendors remain unresolved; future services must enforce patient/role access and capture policy. Follow [database workflow](../DATABASE.md) for additional migrations.
 
-Future APNs/FCM/auth/STT/storage credentials belong on scoped backend/native build configuration as appropriate; provider secrets never become EXPO_PUBLIC variables. Minimal push payloads and server-authorized media access are required even during synthetic testing. No services, keys, migrations, uploads, recording, or builds are created by this plan.
+Future APNs/FCM/auth/STT/storage credentials belong on scoped backend/native build configuration as appropriate; provider secrets never become EXPO_PUBLIC variables. Minimal push payloads and server-authorized media access are required even during synthetic testing. Only the explicitly authorized local database foundation and private DB credentials have been created through 0008. No push/auth/media provider, upload, recording or new build is enabled.
 
 ## Acceptance and verification
 
 | Scenario | Expected evidence | Status |
 | --- | --- | --- |
+| DB prerequisite | Isolated schemas, migration history, A/B/C seed, clean/upgrade/recovery/permission evidence | Passed in 0008; not app integration |
 | Provider/patient views | Authorized list A/B/C; only App Audio/Video functional; patient sees own history | Not implemented |
 | Identity and access | Patient A cannot view/join B's call/transcript; unassigned provider denied; client role/ID spoof rejected | Not implemented |
 | Device routing | Registration/rotation/logout; delayed/duplicate push; first answer wins on multiple devices | Not implemented |
@@ -71,14 +72,14 @@ Future APNs/FCM/auth/STT/storage credentials belong on scoped backend/native bui
 | Post-call transcript/audio | Separate endpoint labels/timestamps, common text/version, private authorized audio playback, processing errors/retries/corrections/retention, role uncertainty visible | Not implemented |
 | Continuity | No ordinary banner or mocked ringing reported as native hardware acceptance; DB/build/service steps recorded | Proposed tests only |
 
-Use [testing strategy](../TESTING.md) and device reports. Existing compilation/POC tests do not prove any acceptance row above. No tests for this proposed slice have run.
+Use [testing strategy](../TESTING.md) and device reports. Existing compilation/POC tests do not prove any acceptance row above. Only database prerequisite tests have run for this slice; see 0008.
 
 ## Risks and recovery
 
-Background phone behavior is the largest native expansion beyond current POC. Delivery is conditional on OS/device/network state, and push acceptance is not a ringing or answered call. Preserve missed-call/no-answer behavior and observable statuses. Existing AppState cleanup and audio-routing ownership need deliberate refactoring rather than bypassing safeguards. Separate patient access and recording consent from authentication/notifications. Retention/access/job failures must not leak records or invalidate the call log. Reversible dev migrations and feature-gated rollout are required once chosen; no runtime rollback is needed for this documentation-only proposal.
+Background phone behavior is the largest native expansion beyond current POC. Delivery is conditional on OS/device/network state, and push acceptance is not a ringing or answered call. Preserve missed-call/no-answer behavior and observable statuses. Existing AppState cleanup and audio-routing ownership need deliberate refactoring rather than bypassing safeguards. Separate patient access and recording consent from authentication/notifications. Retention/access/job failures must not leak records or invalidate the call log. Reversible dev migrations and feature-gated rollout are required once chosen; database recovery is documented in 0008; app/runtime rollout remains pending.
 
 ## Handoff
 
-User selected post-call transcripts and shared call logs; live captions and summaries are deferred. Architecture/packaging and audio retention/deletion are open; audio playback is now requested. Next action is discussion/review of this proposed slice, then a bounded implementation plan with actual stack/access decisions. No implementation or new cloud spend initiated. Existing native speaker/earpiece physical acceptance remains independently open.
+User selected post-call transcripts and shared call logs; live captions and summaries are deferred. Architecture/packaging and audio retention/deletion are open; audio playback is now requested. Persistence prerequisite 0008 is complete. Next: a bounded identity/enrollment + directory + durable foreground call/history implementation plan with an actual identity flow; resolve dependent consent/media/native/STT choices before their stages. No new cloud spend initiated. Existing native speaker/earpiece physical acceptance remains independently open.
 
 References: [Apple PushKit/CallKit](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit), [Android Telecom](https://developer.android.com/develop/connectivity/telecom), [FCM priority](https://firebase.google.com/docs/cloud-messaging/android-message-priority), [Android call notifications](https://developer.android.com/develop/ui/compose/notifications/call-style), [Expo app variants](https://docs.expo.dev/build-reference/variants/).

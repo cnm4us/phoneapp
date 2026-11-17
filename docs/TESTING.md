@@ -5,6 +5,8 @@
 ```sh
 python3 scripts/check_project.py
 npm run typecheck
+npm run test:db
+npm run test:db:permissions
 npm test
 npm run test:browser
 npm run test:browser:live
@@ -34,7 +36,7 @@ Add only tests that verify meaningful behavior. Keep actual commands and limits 
 | App logic tests | State transitions, timer boundaries, permission errors, cleanup | Mocked WebRTC cannot validate hardware or native routing. |
 | Browser companion | Playwright synthetic-media calls, forced TURN, controls/cleanup, permission/playback errors, responsive widths | Chromium at iPad viewport dimensions is not Safari or native hardware verification. |
 | Physical devices | Native media capture/playback, camera switching, cross-network connection, teardown | Requires owner-operated devices until remote tooling is explicitly configured. |
-| Database | Clean install, upgrade, constraints, event idempotency, time/export reconciliation | Use isolated test data/targets; no DB currently exists. |
+| Database | Clean install, upgrade, constraints, event idempotency, time/export reconciliation | Live isolated MariaDB tests implemented; test:db resets only phoneapp_test. |
 
 ## M1 physical acceptance
 
@@ -53,3 +55,9 @@ Use [the device report template](testing/DEVICE_REPORT_TEMPLATE.md). Never fill 
 - Commit sanitized reports; keep private recordings, traces, dumps, and screenshots in an agreed private location and link only an appropriate reference.
 - Record command, date, scope, and outcome. Distinguish automated, browser, build, and physical-device results.
 - Failures should describe observable behavior and the next diagnostic step. Do not broaden testing after checks pass unless changes or unresolved concerns justify it.
+
+## Database verification
+
+[Foundation report](testing/2026-11-17-database-foundation.md): eight live MariaDB scenarios verify clean install, v1-to-v2 upgrade with data preservation, no-op replay/seed, shared contacts/FKs, duplicate events/requests, device ownership, consent/transcript call scope, raw/reviewed seconds, migration locks/checksum/future history refusal and dirty-DDL recovery. A separate permission case checks the actual development runtime grants. These do not establish authenticated API isolation, native delivery, recording consent enforcement or a transcription service.
+
+`npm run test:db` is destructive to the exact disposable `phoneapp_test` schema; it verifies target/account and a suite lock before resetting tables, then leaves synthetic directory rows only. It never accepts a development reset target. `npm run test:db:permissions` uses development reads, denied statements, and rolled-back no-op updates. Run both for schema/grant changes; ordinary `npm test` remains independent of DB/sudo availability. See [database](DATABASE.md) for recovery and credential handling.

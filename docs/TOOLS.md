@@ -12,7 +12,7 @@ Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals.
 | Python | Python 3 installed | Runs documentation check without third-party dependencies. |
 | Docker | Not found on PATH | Disposable container DB testing is unavailable until configured. |
 | PostgreSQL client | `psql`/postgres/pg_isready not found on PATH | No project PostgreSQL connection established. |
-| Existing MariaDB | MariaDB 10.6.22 service active; mysql/mariadb clients installed; loopback 3306 | Read-only administrator query via `sudo -n mariadb --protocol=socket` verified. No Phoneapp-named schemas/project DB configuration found. Do not reuse other applications' databases; runtime must use a dedicated account, not root. |
+| Existing MariaDB | MariaDB 10.6.22 service active; mysql/mariadb clients installed; loopback 3306 | Dedicated `phoneapp`/`phoneapp_test` schemas and restricted accounts provisioned; connector/migration/seed/integrity/permission checks pass. Sudo/socket admin is used only for scoped provisioning/grants. See [database](DATABASE.md). |
 | SQLite client | sqlite3 available | No Phoneapp SQLite database selected or created. |
 | EAS | CLI 27.10.0; authenticated as `mbcollins2`; project linked | Android and iOS native builds finished successfully. Owner approved iPhone pay-as-you-go; no new build needed for browser companion. |
 | Apple Developer | Owner reports an account | Access credentials remain with the owner; use EAS-supported signing flow. |
@@ -27,7 +27,7 @@ Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals.
 - Shell/filesystem tools can edit source, run available checks, and manage Git in the checkout.
 - A connected GitHub tool verified repository metadata, but workflow/PR writes were denied in this session. Authenticated Git/`gh` successfully pushed the feature branch and opened [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Rediscover availability in a new session; ordinary CLI repository writes work, while workflow-write scope is still missing.
 - Playwright 1.65.1 / Chromium and browser developer tools have now been exercised for the companion. Tests use synthetic camera/microphone input and real WebRTC media. They do not control native apps on the physical phones.
-- No dedicated database connector or native-device test connection has been verified. Add exact capabilities only after an actual connectivity/test run.
+- MariaDB Connector/Node.js 3.5.5 and dedicated runtime/migration/test connections are verified. No native-device control connection is configured.
 
 ## Commands available now
 
@@ -60,8 +60,8 @@ The [GitHub Actions template](templates/docs-workflow.yml) can run the same chec
 | Signaling/backend | Node tests via `tsx`; local HTTP/WSS tests, static allowlist/headers, public smoke | 31 unit/server/adapter tests pass; no media in signaling smoke. |
 | Browser companion | Buildless UI source in `web/`, TypeScript bundled by esbuild 0.28.2, Playwright 1.65.1 | 12 deployed-site checks pass in Chromium with synthetic media. Physical/native/Safari results remain separate. |
 | Native acceptance | Both physical phones, EAS artifacts, sanitized session diagnostics | Owners install builds and execute the matrix in the active plan. |
-| DB access | Dedicated dev/test database and CLI or driver; migration runner selected with persistence stack | Connectivity verified to the recorded target without printing secrets. |
-| DB tests | Disposable or isolated DB, clean install + upgrade checks | Bootstrap and migration commands work and outcomes are recorded. |
+| DB access | MariaDB Connector/Node.js 3.5.5; dedicated dev/test identities; versioned SQL runner | Runtime connectivity and UTC verified; existing call service not yet integrated. |
+| DB tests | `test:db` disposable reset/replay/upgrade/integrity tests; `test:db:permissions` scoped runtime checks | Eight DB scenarios plus permission case pass; see [report](testing/2026-11-17-database-foundation.md). |
 
 See `package.json` for actual scripts. Install Chromium once using `npx playwright install chromium`. Local browser tests start an isolated server on loopback 8790 with a synthetic creator key; if `.env.server` exists, only the configured TURN connection is reused. Without TURN the relay scenario is explicitly skipped. `test:browser:live` uses `.env.server` to exercise the public site; it creates temporary rooms and transfers synthetic media. Neither controls the physical phones. Linux relay diagnostics remain available with `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`).
 
@@ -95,7 +95,7 @@ Populate this table as each service is configured. Use aliases and secret refere
 | Signaling | Development | `https://phoneapp.bawebtech.com`, WSS `/signal`, private listener 8787 | `.env.server` (600), creator key entered in app | Public health/WSS smoke passed |
 | Browser companion | Development | `https://phoneapp.bawebtech.com/`, `/app.js`, `/styles.css` | Creator key entered only when creating; guest uses invitation | Public Chromium media tests passed |
 | TURN | Development | Host `phoneapp.bawebtech.com`; 3478 UDP/TCP, 5349 TLS, UDP relay 49160-49200 | `.env.server` master secret + `/etc/phoneapp/turnserver.conf`; client HMAC credentials expire | Local/public probes pass; real phones pending |
-| Database | Dev / test | Not provisioned | Future ignored env/secret store | No |
+| Database | Dev: `phoneapp` / disposable: `phoneapp_test` | Local Unix socket `/run/mysqld/mysqld.sock` | `.env.database` (600); runtime/migration/test password keys in example | Yes: schema/current, seed, UTC, migration/integrity/permission checks |
 | Twilio | Future development | Not linked | Backend-only secret store | No |
 
 Before using DB tooling, verify target host/database/environment and intended migration scope using [the database workflow](DATABASE.md). Do not inspect or copy credentials from unrelated projects.
@@ -129,3 +129,24 @@ EAS native builds: [Android 2cf8e5a8](https://expo.dev/accounts/mbcollins2/proje
 ## Installation QR artifact
 
 Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the public APK for build 879fa37b. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.
+
+## Database commands
+
+Run from the repository root; actual credentials are generated locally and never printed. No public listener/security-group change is needed.
+
+```sh
+npm run db:provision
+npm run test:db
+npm run db:migrate
+npm run db:grants
+npm run db:seed
+npm run db:status
+npm run db:check
+npm run test:db:permissions
+npm run db:status -- test
+npm run db:check -- test
+```
+
+Provisioning/grants require existing `sudo -n mariadb` access. Migration/check/seed/test use separate password-authenticated project accounts. `db:seed` inserts only disabled synthetic Provider/Patient A/B/C records and bindings, preserves existing values/revocations, and can be repeated. All CLI commands accept only `dev` or `test`, never an arbitrary target name. `db:status` checks checksums and pending history; `db:check` requires current schema. `db:migrate -- test` applies only to disposable test. Re-run `db:grants` after adding reviewed tables to its explicit allowlist.
+
+**`test:db` destroys/recreates tables in `phoneapp_test`**, never development. It verifies the exact DB/account and suite lock first, leaves only synthetic seed rows, and rehearses partial-DDL recovery. `test:db:permissions` reads development and uses denied statements/rolled-back no-op updates. No development reset/backup/repair command is implemented; follow [recovery workflow](DATABASE.md) before any data-bearing destructive change. `.env.database` and `database/` are excluded from mobile source archives; no Expo public variable contains a DB credential.

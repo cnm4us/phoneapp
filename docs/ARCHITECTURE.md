@@ -47,7 +47,7 @@ Native staff apps / patient browser
 - The backend owns patient/contact associations, authorized access, provider credentials, event normalization, activity review, and exports.
 - Twilio Voice's native React Native SDK is the proposed telephone integration. Its signaling, tokens, call legs, and native incoming-call lifecycle differ from the direct M1 experiment. Use the SDK's own setup rather than assuming a raw WebRTC room can dial a phone number.
 - Twilio Messaging provides service-number SMS; device-local personal SMS access is not part of the design.
-- Persistent PostgreSQL is proposed. Database provider, migration/ORM tool, authentication, video provider, and job system remain undecided until their implementation plans.
+- Local MariaDB 10.6.22 now has isolated Phoneapp dev/test schemas, official connector 3.5.5, SQL/checksum migration tooling and disabled synthetic seeds; see [decision 0005](decisions/0005-database-foundation.md). `database/` is backend-only and excluded from EAS archives. The existing call service is not yet integrated; authentication, production hosting, media capture/storage and job services remain unselected.
 - Store raw provider event identifiers separately from a normalized logical encounter so transfers/retries/multiple call legs do not inflate time. Enforce idempotency at persistent boundaries.
 - Keep original observations, corrections, and review decisions distinguishable. Apply billing rules through a separately validated/versioned policy.
 
@@ -64,7 +64,7 @@ Native staff apps / patient browser
 | Consent / transcript / revision | Recording permission and attributed, correctable draft text. |
 | Export run | Reproducible reporting parameters and generation metadata. |
 
-This is a conceptual model, not an applied schema. Detailed migrations belong to M2 or the first persistence plan.
+This table remains a broader conceptual model. Identity/patients/devices/calls/consent/media/transcript and raw activity/review structures are now applied in [database migrations](../database/migrations/); messaging, allocations, exports and their runtime flows remain future work. See [database schema boundaries](DATABASE.md).
 
 ## Time and data boundaries
 

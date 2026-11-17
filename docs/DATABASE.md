@@ -1,8 +1,30 @@
 # Database and migration workflow
 
-Status: no database, schema, application DB account, migration runner, or DB connection configuration exists for Phoneapp. Existing EC2 MariaDB 10.6.22 is active on loopback port 3306; local Unix-socket administrator access was verified read-only on 2026-11-17 via sudo. No Phoneapp-named schema was found. PostgreSQL was previously proposed; the existing MariaDB is another available option. Project engine/provider/driver/migration choices remain open. M1 still uses temporary in-memory signaling state.
+Status: **development/test persistence foundation implemented and verified, 2026-11-17**. Existing MariaDB 10.6.22 hosts isolated `phoneapp` (development) and `phoneapp_test` (disposable tests). MariaDB Connector/Node.js 3.5.5 and the versioned SQL runner are selected in [decision 0005](decisions/0005-database-foundation.md); [plan 0008](plans/0008-database-foundation.md) executes the persistence prerequisite of [0007](plans/0007-provider-patient-calls-transcripts.md).
 
-Inspection used only server version/current administrative identity and a count of schema names containing phoneapp; no other application tables or records were read or changed. This administrator connection is for scoped provisioning/migrations, not the future runtime identity. Establish a dedicated Phoneapp dev/test database and least-privilege application/migration accounts before implementation. Audio playback is now requested; private file/object storage should hold recordings while the DB stores authorized call metadata, transcript text/segments, and media references. Storage/retention choices remain open.
+Both targets have 16 domain tables plus `schema_migrations`; development contains three synthetic patients and four disabled synthetic users, with patient-account/care-team bindings. There are no seeded calls, tokens, recordings, transcripts or authentication subjects. Existing signaling remains in memory and does not connect to these tables yet. No other application's schema or data was changed; no MariaDB service/configuration change was needed.
+
+## Implemented schema
+
+| Tables | Purpose / boundaries |
+| --- | --- |
+| `users`, `patients` | App actor and primary role separate from stable patient record. Future external issuer/subject; disabled accounts can be unenrolled. |
+| `patient_accounts`, `patient_assignments` | Patient/caregiver bindings and staff care relationships, with revocation. Future server checks must enforce role and relationship access. |
+| `patient_phone_numbers` | Multiple E.164 contacts, owner/relationship/preference/SMS/contact permission; shared numbers allowed. |
+| `devices` | Installation/platform/app identity, owner, revocation and future encrypted token/hash slots; no encryption/key/push service implemented. |
+| `calls`, `call_participants`, `call_events` | Logical call, retry identity, outcomes, role snapshots, endpoint relationships and immutable events. Observed connection seconds are not approved/billable time. |
+| `consent_events` | Per-participant recording/transcription decisions, policy version and offsets. Capture service/all-party policy still to implement. |
+| `recording_assets` | Private object references, status/offsets/hash/retention metadata; no audio files, buckets or playback URLs created. |
+| `transcription_jobs`, `transcript_versions`, `transcript_segments` | Retry/job metadata, attributed timestamped draft versions and append-only corrections; no worker/STT provider implemented. |
+| `activity_observations`, `activity_reviews` | Original integer seconds plus separate append-only review decisions; no billing allocation/eligibility calculation. |
+
+Composite foreign keys keep event/consent/media/transcript participants within the same call, and call-derived activity within the proper patient. Default recording is off. DB constraints do not enforce authenticated patient access, transition ordering, staff eligibility, all-party consent, native push lifecycle, or media retention policy; those require subsequent services and tests. Retention duration, storage vendor and identity provider remain open. Null retention expiry is not an approved real-data retention policy. Deletion defaults to restricted foreign keys, revocation and explicit status; no blanket cascade deletion.
+
+## Commands and secrets
+
+See [tools](TOOLS.md) for exact commands. Secrets live only in ignored `.env.database` (600), with a tracked names-only [.env.database.example](../.env.database.example). The socket is `/run/mysqld/mysqld.sock`; database/identity names are fixed by code rather than an arbitrary connection URL. Use runtime credentials for application work, migration credentials for DDL. `db:provision` creates only the two project databases/local identities; `db:grants` gives explicit runtime writes after reviewed tables exist. Neither rotates existing passwords.
+
+`phoneapp_app` has project SELECT and reviewed table INSERT/UPDATE grants; immutable histories receive INSERT only, with no DELETE, DDL or migration-ledger writes. `phoneapp_migrate` can migrate only development; `phoneapp_test` can operate only the disposable test schema. No global privileges or GRANT OPTION. Provisioning needs local sudo/socket administration; normal migration/check/seed tools use the dedicated accounts.
 
 ## Ownership and access
 
@@ -12,9 +34,9 @@ Use dedicated project dev/test environments. Never reuse another application's d
 
 Keep connection values in ignored environment configuration or a designated secret store. Record only environment aliases, credential locations, and verified connection status in `TOOLS.md`. Prefer least-privilege runtime credentials with separate migration credentials when appropriate.
 
-## Establishing persistence
+## Established persistence contract
 
-The first plan requiring a DB must:
+The foundation implements the following contract; preserve it for future environments:
 
 1. Select the engine/provider, driver/ORM if any, and one migration system; record the tradeoffs in a decision record.
 2. Add a reproducible local/dev/test bootstrap, committed migration files, and a synthetic seed/reset procedure scoped to an explicitly disposable target.
@@ -43,10 +65,19 @@ Never rewrite a migration already applied to a shared environment. Add a forward
 - Unique provider event/message identifiers for idempotency; logical encounters distinct from individual call legs.
 - Referential integrity and explicit retention/deletion behavior when recording/transcription is added.
 
-## Migration ledger
+## Execution and recovery
 
-No migrations have been created or applied. When persistence begins, record entries below or link to generated migration history without copying sensitive endpoints.
+The runner in [database/migrate.ts](../database/migrate.ts) checks contiguous numbered files and SHA-256 history, obtains a per-target advisory lock, records running/applied/failed state, and refuses drift, future history, gaps, or unfinished migrations. SQL files use explicit `-- migrate:split` lines; one statement per block, no stored-program delimiter syntax. Status is read-only. Check pending migrations before feature use; application startup has no automatic DDL. Existing calling service is intentionally not coupled to this schema yet.
+
+MariaDB DDL implicitly commits. A failed/running ledger row means partial objects may exist; do not clear it or retry blindly. Stop writes to the affected feature, inspect committed statements and preserve data. Prepare/rehearse an explicit repair or restore before reconciling the ledger against the committed schema. There is no generic development reset/down/repair command. Future destructive/data-bearing changes need backup/recovery evidence before application.
+
+`npm run test:db` is explicitly destructive **only** to `phoneapp_test`: it verifies both exact database and authenticated test identity, holds a suite lock, drops only schema-qualified test tables, replays migrations, and leaves a clean synthetic directory. This is the rehearsed disposable recovery, not a backup restoration test for populated development/production. Do not use the test database for anything valuable. Runtime permission checks use development reads/denied statements and a rolled-back no-op update.
+
+## Migration ledger
 
 | Date | Environment alias | Migration IDs | Outcome | Evidence / recovery |
 | --- | --- | --- | --- | --- |
-| 2026-11-16 | None | None | Documentation only | M1 does not require persistence. |
+| 2026-11-17 | Test: `phoneapp_test` | `0001_identity_calls.sql`, `0002_transcripts_activity.sql` | Applied; clean install and upgrade preservation passed | [Database report](testing/2026-11-17-database-foundation.md); partial-DDL failure blocked and disposable reset/replay verified. |
+| 2026-11-17 | Development: `phoneapp` | Same two migrations | Applied after test success; no pending migrations; A/B/C seeded | Runtime connectivity/UTC/permission suite passed; no existing development data required recovery. |
+
+Use `npm run db:status` (or `npm run db:status -- test`) to validate applied checksums/states and list pending migrations. Never edit an applied migration; append the next numbered SQL file and update the plan/ledger.

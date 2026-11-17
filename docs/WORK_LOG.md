@@ -66,3 +66,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Owner confirms full-screen calling now renders video, but it occupies only the top third in portrait. Found the hidden settings ScrollView still inherited explicit flexGrow, competing with the video stage. Removed it from layout with display:none while preserving the renderer.
 - Added optional Fill screen / Show whole video; fill crops edges, inline stays contain. Verified allocation using the installed Yoga C++ engine at phone portrait/landscape and tablet sizes, plus TypeScript and both native JS exports. No media/backend changes or paid build.
 - Owner retest of full-height/Fill requested; model/OS and sustained-call matrix remain open. Recorded Fast Refresh's effect-cleanup caveat for sustained development tests without attributing the earlier disconnect to it.
+
+## 2026-11-17 Owner Full/Fill and HD/High comparison
+
+- Owner confirms Full screen and Fill screen work. HD 720p/30 selected on phone/desktop works well on both. High 1080p/60 looks good on phone but the desktop's large iPhone video is choppy; desktop self-camera preview remains smooth. Selected ceilings do not prove actual encoded output.
+- Recorded affected iPhone → desktop direction without attributing encoding/network/receiving cause. Requested lowering only phone outgoing FPS to 30 while retaining 1080p, plus available Actual sent/received measurements. Result pending.
+- Documentation/evidence checkpoint only; no source, configuration, service restart, EAS build, or active-call interruption. Full M1/sustained/Ultra gates remain open.

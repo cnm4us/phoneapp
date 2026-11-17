@@ -25,7 +25,7 @@ The reported call ending around 6:50 matches a server connection closure approxi
 | `npm run bundle:check` | iOS/Android export pass; exit 0 | Native JS compilation; no new native binary or physical renderer proof. |
 | nginx configuration | Pass | Only this hostname gains exact `/rooms/resolve` proxy route. |
 | `npm run test:browser:live` | 13/13 pass | Tests deployed HTTPS resolver/nginx route, four-hour room lifetime, and actual media/quality behavior. |
-| Phone full screen / sustained call | Owner confirms rendering; revised height/fill retest pending | Four-hour boundaries simulated; no claim of a four-hour physical call. |
+| Phone full screen / sustained call | Owner confirms Full screen and Fill screen work; sustained-call check open | Four-hour boundaries simulated; no claim of a four-hour physical call. |
 
 ## Deployment and remaining work
 
@@ -39,6 +39,20 @@ Owner confirmed the black-screen problem no longer occurs and described video fi
 
 A one-off C++ check compiled the installed React Native Yoga sources and reproduced the old layout, then applied the new hidden style. With a sample 150-pixel control area, video height changed 230 → 610 for a 390×760 viewport, 45 → 240 for 760×390, and 330 → 810 for 768×960. Hidden settings consumed zero height after the change. These are layout-engine checks, not measurements from the owner's phone. The temporary check lives in ignored `artifacts/private/fullscreen-yoga-check.cpp`.
 
-Added a full-screen Fill screen toggle using cover (crops edges), with Show whole video returning to contain. Inline view retains contain. The video frame clips overflow so cropped content does not cover controls. Display fit changes no capture, bitrate, signaling, or consent. TypeScript and both native JS exports pass; user confirmation of revised height/fill is pending. No media/backend changes, paid build, or service restart.
+Added a full-screen Fill screen toggle using cover (crops edges), with Show whole video returning to contain. Inline view retains contain. The video frame clips overflow so cropped content does not cover controls. Display fit changes no capture, bitrate, signaling, or consent. TypeScript and both native JS exports pass; owner subsequently confirmed Full screen and Fill screen both work. No media/backend changes, paid build, or service restart.
 
 For sustained tests, avoid native source edits during the call: React Native [Fast Refresh](https://reactnative.dev/docs/0.86/fast-refresh) reruns effects, and this app's screen cleanup ends its call. Reload before a fresh verification call. This is a development-lifecycle consideration, not an established explanation for the earlier 6:50 disconnect.
+
+## Owner quality comparison
+
+On 2026-11-17 the owner reported:
+
+| Selected ceilings | Observation |
+| --- | --- |
+| Full screen / Fill screen | Both work on the iPhone. |
+| HD 720p/30 on desktop and phone | Works well on both. |
+| High 1080p/60 on desktop and phone | Looks good on the phone; desktop large remote video from the iPhone is choppy. Desktop self-camera preview remains smooth. |
+
+These are owner observations, not measured resolution/fps/bitrate. Device models, OS/browser versions, codec, network, route, audio quality at High, and test duration were not supplied. The affected direction is iPhone → desktop; source encoding/upload, network delivery, receiving decode/render workload, and competing browser work remain possible. The self-preview observation alone does not distinguish them.
+
+Requested comparison: keep High selected and lower only the iPhone outgoing frame-rate ceiling to 30 fps while retaining 1080p. Result pending. Obtain phone Actual sent / desktop Actual received measurements to compare the two ends. No code, defaults, service, or build changes were made in response to this report, preserving the active test session. HD is the currently observed smooth selection; sustained-call and original M1/Ultra acceptance remain open.

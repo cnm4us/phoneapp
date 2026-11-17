@@ -153,3 +153,9 @@ Quality controls, compatible signaling, audio-first adaptation, coordinated audi
 - [RFC 8836](https://www.rfc-editor.org/rfc/rfc8836.html): congestion-control requirements for interactive real-time media.
 - [coturn configuration reference](https://github.com/coturn/coturn/blob/master/examples/etc/turnserver.conf): byte-per-second relay limits and allocation controls; verify behavior against the installed version.
 - [react-native-webrtc source](https://github.com/react-native-webrtc/react-native-webrtc): inspect the installed 155.0.1 source as the runtime-specific API reference rather than assuming current upstream behavior.
+
+## Owner quality feedback: 2026-11-17
+
+Full screen / Fill screen work. HD 720p/30 selected on phone and desktop works well on both. High 1080p/60 selected on both looks good on the phone, but the iPhone video received in the desktop's large view is choppy while desktop self-preview stays smooth. Actual output and device/network/codec details remain unknown; this is a directional symptom, not proof of a specific bottleneck. See [owner evidence](../testing/2026-11-17-call-usability.md).
+
+Next comparison requested: retain High and 1080p, lower only the iPhone outgoing frame-rate ceiling to 30 fps, and check the desktop remote stream. Compare phone Actual sent and desktop Actual received measurements. If receive-side video smoothness remains poor with healthy audio, investigate decode/render drops as well as sender encode limitation and transport loss; current guards primarily protect audio and observe sender CPU limitation, rather than directly measuring decoder load. No runtime changes made for this feedback; keep HD as the confirmed smooth choice and high-ceiling acceptance open.

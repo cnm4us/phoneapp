@@ -1,6 +1,6 @@
 # 0004 Call testing usability and full-screen repair
 
-Status: implemented/deployed; revised full-height/Fill presentation and sustained-call confirmation pending. Updated: 2026-11-17. Requirements: POC-01, COM-01, COM-07; follows [plan 0003](0003-adaptive-call-quality.md).
+Status: implemented/deployed; Full/Fill owner-confirmed; sustained-call confirmation pending. Updated: 2026-11-17. Requirements: POC-01, COM-01, COM-07; follows [plan 0003](0003-adaptive-call-quality.md).
 
 ## Outcome and evidence
 
@@ -20,7 +20,7 @@ The earlier full-screen path created a second remote RTCView inside a Modal whil
 
 | Scenario | Expected | Actual |
 | --- | --- | --- |
-| Phone full-screen toggle | Same renderer/stream, full-height layout and optional fill/crop, usable exit | Owner confirms rendering; revised height/fill retest pending |
+| Phone full-screen toggle | Same renderer/stream, full-height layout and optional fill/crop, usable exit | Owner confirms Full screen and Fill screen work |
 | Short invitation | Same eight-digit code on both clients joins the private two-person room | Public short-code browser media tests pass |
 | Legacy invitation | Existing long codes and old clients still work | Existing protocol/parser/server compatibility tests pass |
 | Invalid/guessed codes | Bounded body/attempts, generic rejection, expired/closed rooms inaccessible | HTTP/security tests pass |
@@ -31,8 +31,10 @@ Restore the prior UI if renderer resizing fails; keep server support for legacy 
 
 ## Handoff
 
-TypeScript, 38 unit/server tests, 13 public browser scenarios, both native JS exports, and nginx validation pass. See [evidence](../testing/2026-11-17-call-usability.md). The owner was asked to reload both clients, create a new short-code room, and check phone full-screen entry/exit without ending the call. That physical confirmation and sustained native call stability remain open. No new EAS build, DB, or TURN quota change.
+TypeScript, 38 unit/server tests, 13 public browser scenarios, both native JS exports, and nginx validation pass. See [evidence](../testing/2026-11-17-call-usability.md). The owner was asked to reload both clients, create a new short-code room, and check phone full-screen entry/exit without ending the call. Owner now confirms Full screen and Fill screen work. Sustained native call stability remains open. No new EAS build, DB, or TURN quota change.
 
 ## Portrait-height follow-up
 
-Owner confirmed full-screen calling works but the video occupied only the top third. The settings ScrollView still inherited `flexGrow: 1`; making it invisible with height/flex zero did not remove that explicit growth. Changed the hidden style to `display: none` and retained the same video renderer. Added optional Fill screen (cover/crop) and Show whole video (contain); inline viewing always contains the whole image. A one-off check using the installed Yoga C++ engine verified the height allocation for phone portrait/landscape and tablet dimensions; TypeScript and both native JS exports pass. Native height/fill retest requested; no backend change/restart or new EAS build.
+Owner confirmed full-screen calling works but the video occupied only the top third. The settings ScrollView still inherited `flexGrow: 1`; making it invisible with height/flex zero did not remove that explicit growth. Changed the hidden style to `display: none` and retained the same video renderer. Added optional Fill screen (cover/crop) and Show whole video (contain); inline viewing always contains the whole image. A one-off check using the installed Yoga C++ engine verified the height allocation for phone portrait/landscape and tablet dimensions; TypeScript and both native JS exports pass. Owner subsequently confirmed Full screen and Fill screen work; no backend change/restart or new EAS build.
+
+Owner also reports HD 720p/30 selections work well on both phone and desktop; High 1080p/60 is good on the phone but choppy in the desktop remote video, with smooth desktop self-preview. Continue quality diagnosis in [plan 0003](0003-adaptive-call-quality.md); selected settings are not measured output.

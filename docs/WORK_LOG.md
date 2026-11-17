@@ -89,3 +89,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner now reports phone Actual sent sometimes below 5 fps. Checked native stats mapping against source and W3C definitions: it measures outgoing encoded frames, not the desktop decoder. This supports an outgoing-stream slowdown; it does not establish device load versus congestion feedback or a control/statistics issue.
 - Recorded the finding and next comparison: collect browser diagnostics with the phone's low Actual sent line, then vary only phone outgoing resolution from 1080p/30 to 720p/30. Paired evidence and comparison outcome remain pending. No runtime edit, active-call interruption, service restart, or new EAS build. Documentation and whitespace checks pass; app tests were not repeated for documentation-only updates.
+
+## 2026-11-17 Phone Wi-Fi throughput finding
+
+- Owner reports only 6–10 Mbps upload/download on the Wi-Fi-connected phone, despite the earlier much faster speed test. Asked whether this ran during the call; answer pending, so do not assume idle-link capacity. This strengthens a phone-side network hypothesis without proving it.
+- Verified configured High video ceiling 8 Mbps (6 Mbps relay) and HD 3 Mbps; FPS-only reduction leaves bitrate cap unchanged. Revised next comparison to idle phone Wi-Fi/access-point proximity and HD on both participants, which lowers bitrate as well as resolution/FPS. No runtime changes or call interruption. Documentation/whitespace checks pass; application tests not repeated for evidence-only updates.

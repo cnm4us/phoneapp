@@ -54,7 +54,9 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 | PAT-01 | A stable patient identifier with an optional display name/external practice identifier. | Updates to a name do not change the patient ID; exports can use identifiers without names. |
 | PAT-02 | Multiple contact numbers per patient, with owner, relationship, preferred number, SMS capability, and contact permission/status. | Patient, spouse, caregiver, and facility numbers can be represented; a shared number may link to several patients. |
 | PAT-03 | Candidate matching for incoming calls/messages. | Unique matches are suggested; ambiguous/unknown matches require staff resolution and preserve the original sender/number. Caller ID is not treated as verified identity. |
+| PAT-04 | Route app calls to enrolled patient accounts and devices. | Stable patient record IDs link to authenticated patient accounts and active device registrations. Provider authorization is checked before dialing. Push tokens can rotate; logout/reassignment revokes old bindings. A patient ID is an identifier, not an access credential. |
 | TEAM-01 | Individual staff accounts and roles. | Each activity identifies its actor; RN, MA, NP, and admin permissions are configurable. Later role changes do not rewrite historical attribution. |
+| TEAM-02 | Separate provider and patient experiences. | Provider sees authorized patients and their call options/history; patient sees their own incoming calls/history/transcripts. Backend enforces access independently of UI or app variant. Shared calling code serves both experiences; separate installable variants remain a packaging choice. |
 
 ### Communications
 
@@ -69,6 +71,7 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 | COM-07 | Adaptive video with user-selectable quality ceilings. | Auto, High (1080p/30 fps), HD (720p/30 fps), and lower/data-saver presets work before and during calls, with an opt-in experimental ceiling up to 4K/60 fps on verified devices/routes. Advanced controls bound resolution, frame rate, and bitrate; automatic adaptation can go below the chosen ceiling. A constrained participant can request less incoming video as well as limit outgoing video. Full-screen viewing remains available at every quality; expose actual measured quality separately from requested limits and explain device/peer/network limits. |
 | COM-08 | Audio-first behavior in every quality mode. | Reduce or pause video to protect intelligible, low-latency speech; use supported media priority controls where available. Coordinate both directions and show when video is paused to protect audio. Recover video gradually after sustained improvement. No guarantee of uninterrupted audio on an inadequate or disconnected network. |
 | COM-09 | Explicit two-way audio-only mode. | A clear in-call action stops sending and requests stopping receipt of video while audio continues. Show the active mode on both clients. Requesting video again never enables another person's camera without that person's permission. Distinguish this from the existing local camera toggle. |
+| COM-10 | Initiate an app call directly from the provider patient list. | Provider selects Patient A/B/C, then App Audio/Video; the enrolled patient receives a native incoming call with answer/decline. No manual room-code exchange in this flow. Validate foreground, background, locked, unavailable/expired, cancellation, and duplicate/multi-device notifications on actual phones. Initially only App Audio/Video is actionable; App Audio and Phone #1–3 remain future options. |
 
 Ordinary telephone calls are audio; browser/app video is a separate channel. Calls outside this service, including unrelated personal cellular calls, are not automatically captured. Routing and missed-call handling must set expectations for nonemergency use before production.
 
@@ -95,6 +98,7 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 | TX-02 | Transcribe with timestamps and speaker/role labels. | Attribute the authenticated team endpoint to staff identity/role, and use patient/caregiver/unknown labels for the other endpoint pending confirmation. Separate channels/tracks are preferred when supported. |
 | TX-03 | Correct transcription and attribution errors. | Users can correct text and roles while preserving original/version history. Multiple speakers on one phone remain explicitly uncertain. Transcripts are drafts until reviewed. |
 | TX-04 | Controlled lifecycle and failure handling. | Report processing/failure states; make retention, deletion, storage permissions, and provider coverage explicit before enabling real data. Calls and time entries survive a transcription failure. |
+| TX-05 | Shared post-call transcript linked to call history. | Both authorized participants see the same durable call record and speaker/role-labeled transcript after processing. Show Off, Processing, Ready, Failed, or partial status. Consent/toggle Off prevents recording/upload/transcription for the affected interval; the call and its log still work. Audio playback/retention is a separate unresolved choice. LLM summaries are deferred. |
 
 ### Reporting and product operation
 
@@ -102,11 +106,14 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 | --- | --- | --- |
 | REP-01 | Export encounter/activity records and patient/month summaries. | CSV includes patient identifier, date, timestamps/timezone, staff ID/role, activity type, duration in seconds, review status, clinical-purpose note where selected, and source encounter ID. Display names are optional. |
 | REP-02 | Reproducible exports. | Record report range, timezone, included statuses, generation time, and applicable rule version. Corrections remain traceable. Handle CSV formula injection in user-supplied fields. |
+| REP-03 | Provider and patient call history. | Call entries retain participants, patient association, direction, timestamps, connected duration, outcome, and transcript status. Provider access is limited to authorized patients; patient access to their own records. Missed/declined/canceled calls and transcription failures remain visible. A call ID connects both views and prevents duplicate records. |
 | OPS-01 | Agent-managed schema changes and reproducible setup. | Every persistent schema change has a committed migration, an identified target environment, verification, and recovery instructions. |
 | OPS-02 | Maintainable iterative delivery. | Each substantial feature has a plan, acceptance evidence, updated project state, relevant tests, and recorded decisions. |
 | OPS-03 | Future privacy/security and production readiness. | Before real patient use, complete applicable vendor/BAA review, access controls, auditability, encryption, retention, backups/recovery, logging/notification policy, messaging consent, and recording-law review. No POC compliance claim. |
 
 ## Intended workflows
+
+Proposed next app-only slice: provider sees Patient A/B/C, selects a patient and App Audio/Video, and the enrolled patient receives an incoming app call without entering a room code. Both authorized users see its call-log entry and, if enabled/consented, a speaker-labeled transcript after processing. Initially only App Audio/Video is actionable. Post-call text is the requested result; live captions and LLM summaries are deferred. See [proposed plan 0007](plans/0007-provider-patient-calls-transcripts.md); native ringing and recording infrastructure are not implemented yet.
 
 1. Staff select a patient and contact, call or open a message conversation, and perform care work.
 2. The app creates draft activity with measured duration and source evidence. A quick after-work prompt captures clinical purpose and corrections.
@@ -122,6 +129,9 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 - No real patient data, recordings, or billing decisions are required to validate the experiment.
 
 ## Open product decisions
+
+- Provider/patient packaging: one authenticated app with role-specific screens for the next prototype, or distinct installable variants sharing core code. Backend permission boundaries are required for either choice.
+- Whether post-call audio itself remains playable/stored, or only the resulting written transcript is retained; consent, retention/deletion, and review behavior must be defined before recording implementation.
 
 - Practice/team/individual phone-number ownership and call distribution; no-answer/after-hours handling.
 - Preferred browser video provider and whether a managed media service should replace the M1 direct WebRTC path.

@@ -12,6 +12,8 @@
 
 The M1 duration display is experimental; durable call-derived time arrives with the ledger/integration milestones. Reorder later milestones when evidence or user priorities justify it. Record scope changes in the PRD and the relevant plan.
 
+Owner's proposed next product slice is [0007 provider/patient app calls and post-call transcripts](plans/0007-provider-patient-calls-transcripts.md): role-specific patient directory and patient account experience, patient-addressed App Audio/Video calls with native incoming ringing, shared durable history, and opt-in transcripts after processing. This brings a narrow part of M2/M3/M5 forward; telephone numbers, SMS, live captions, LLM summaries, full billing/time review, and production use remain outside it. PAT-04, TEAM-02, COM-10, TX-05, and REP-03 capture the new requirements. Packaging (one binary with roles or separate shared-source variants), retention, and service choices remain proposed/unselected. No implementation, infrastructure, migration, or spend is started by this roadmap update; original M1 physical acceptance stays open.
+
 M1 plan: [0001](plans/0001-webrtc-poc.md). Create later plans when their scope is concrete using [the template](plans/TEMPLATE.md). Do not preapprove providers, spending, or billable behavior through this roadmap.
 
 Supporting [plan 0002](plans/0002-browser-companion.md) adds an initial COM-01 browser participant for solo M1 testing. The browser page is deployed and passes automated media checks; this does not complete the later patient-facing browser/access workflow or replace the original physical-device matrix.

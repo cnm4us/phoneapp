@@ -149,3 +149,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner could not open the Android update link from chat and requested a printed URL/QR. Rechecked current APK with redirects: HTTP 200. Generated 600px QR PNG in ignored artifacts/public/android-install-qr.png using isolated npx qrcode@1.5.4 and visually inspected it. Payload is only the public APK URL for build 879fa37b; no credential/room data.
 - No dependency, app, server, build, or migration change. Documentation/whitespace checks pass. Printed direct URL and clickable QR provided; actual Android update installation/routing outcome remains owner-operated and pending.
+
+## 2026-11-17 Shared labeled transcription discussion
+
+- Owner reports Android QR handoff is working and requests discussion of sending both call directions to transcription and sharing a Speaker 1/Speaker 2 copy with both callers. Explained proposed separate-track/channel attribution, timestamps, common transcript distribution/export, and uncertainty when multiple people share one endpoint. Existing PRD TX-01–04 covers consent, labels, corrections, and lifecycle.
+- Reviewed current call architecture and primary Deepgram/LiveKit documentation: streaming multichannel transcription and participant-tagged transcript delivery are supported building blocks. No provider/architecture chosen, plan implementation started, audio recorded/uploaded, service provisioned, DB migration, native change, or build. Live versus post-call preference remains a discussion question. Documentation/whitespace checks pass.

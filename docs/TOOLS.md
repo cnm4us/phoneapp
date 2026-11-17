@@ -20,6 +20,8 @@ Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals.
 
 ## Agent tool capabilities
 
+- Native call UI iteration: [plan 0005](plans/0005-native-call-settings.md) uses in-window settings and a stable full-height renderer. The pinned Expo 57 iOS optional module `DevMenuPreferences.setPreferencesAsync` can set `showFloatingActionButton:false` without changing shake/touch preferences. The guarded bridge is based on installed Swift source and has not been physically verified; it is not the newer SDK's public JS hide-button API. No dependency/native upgrade or paid build is needed to try it. Manual fallback: Expo developer menu → Tools button off. Android in this pinned version does not expose that bridge; app settings layout is shared, automatic Expo-button suppression is iOS-only. Native device control/UI testing remains unavailable; TypeScript/bundle exports do not establish acceptance.
+
 - Shell/filesystem tools can edit source, run available checks, and manage Git in the checkout.
 - A connected GitHub tool verified repository metadata, but workflow/PR writes were denied in this session. Authenticated Git/`gh` successfully pushed the feature branch and opened [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Rediscover availability in a new session; ordinary CLI repository writes work, while workflow-write scope is still missing.
 - Playwright 1.65.1 / Chromium and browser developer tools have now been exercised for the companion. Tests use synthetic camera/microphone input and real WebRTC media. They do not control native apps on the physical phones.

@@ -110,3 +110,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports the 1080p/30 selection is very sharp, including Fill screen. Recorded visual acceptance without equating preset labels with measured RTP output or completing the sustained/M1 matrix.
 - No runtime, configuration, deployment, or build changes. Documentation and whitespace checks pass; app tests not repeated for evidence-only updates.
+
+## 2026-11-17 Native call settings and available-screen video
+
+- Implemented [plan 0005](plans/0005-native-call-settings.md): full-height native call video with overlaid mute/camera/hangup and an upper-right Phoneapp settings button. Quality/advanced caps, Fill/self preview/camera, clock/lifetime, and diagnostics move into an in-window panel; idle setup options live there while create/share/join stays on the home screen. Remote RTCView/parent remains mounted while settings opens; self preview is visually hidden beneath the panel without stopping capture.
+- Inspected pinned Expo 57 native source and versioned official docs. Added a guarded iOS-only optional `DevMenuPreferences` call to hide Expo's floating Tools button; shake/three-finger preferences remain unchanged. Unsupported bridges fail without blocking the app; manual Expo Tools button toggle remains available. No dependency/configuration/paid-build change.
+- Prepared in an isolated checkout while the owner could continue testing. Corrected removed RN StyleSheet API usage found by TypeScript; final TypeScript and both native JS exports pass. After sanitized logs showed no active rooms, applied the reviewed patch. Metro status is running. No backend/browser/TURN restart or media-policy change. Documentation/whitespace checks pass; prior unit/browser suites were not repeated as native UI proof.
+- Next physical acceptance: reload app, verify gear/panel/Done/back, invitation/key flow, full-height/Fill, continued audio/video/clock through panel changes, and Expo button suppression/gesture access. No physical pass is claimed. Messaging, full M1, sustained-call and Ultra acceptance remain open.

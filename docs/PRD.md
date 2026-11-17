@@ -60,7 +60,7 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 
 | ID | Requirement | Acceptance |
 | --- | --- | --- |
-| COM-01 | App-to-app and browser-to-app audio/video. | Patients/caregivers can use a time-limited browser invitation; voice-only participation is available. Mobile app UI uses native components. |
+| COM-01 | App-to-app and browser-to-app audio/video. | Patients/caregivers can use a time-limited browser invitation; voice-only participation is available. Mobile app UI uses native components. Native call video uses the available screen with essential controls overlaid; a separate app settings button opens quality/configuration without ending the call. Developer tooling is separate from app configuration. |
 | COM-02 | Outgoing audio calls to normal telephone numbers through a Twilio number. | Staff select patient/contact, place the call, and the recipient sees the configured service number; the patient needs no app. |
 | COM-03 | Incoming calls to an assigned service number delivered to authorized app users. | Document routing ownership (practice/team/individual), answer/decline/missed behavior, locked/background behavior, and no-answer fallback; preserve a single logical encounter across provider legs. |
 | COM-04 | Two-way SMS through service-owned numbers, displayed in the app. | Outgoing status and incoming messages appear in a patient-linked conversation, with failures and unresolved matches visible. No dependence on reading the staff phone's personal SMS inbox. |

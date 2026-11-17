@@ -1,53 +1,48 @@
-import { useState } from 'react';
-import { Button, Keyboard, StyleSheet, Text, View } from 'react-native';
+import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
 
 type Props = {
-  remoteURL?: string; localURL?: string; expanded: boolean; muted: boolean;
+  remoteURL?: string; localURL?: string; muted: boolean;
   cameraIntent: boolean; cameraDisabled: boolean; audioOnly: boolean;
-  status: string; roomTime: string;
-  toggleExpanded(): void; mute(): void; camera(): void; switchCamera(): void; audio(): void; hangup(): void;
+  fill: boolean; previewVisible: boolean; settingsOpen: boolean;
+  status: string; duration: string; phase: string;
+  settings(): void; mute(): void; camera(): void; hangup(): void;
 };
 
-// Keep the same native renderer, stream and parent hierarchy while resizing.
-// The owner reported black video on the two-renderer native Modal path.
-// This presentation keeps one renderer in the existing native window.
+// Keep the renderer and its native parent mounted when settings opens. Overlay
+// controls use no layout height, so video owns the available safe-area screen.
 export function CallVideoStage(props: Props) {
-  const [fill, setFill] = useState(false);
-  return <View style={[styles.stage, props.expanded && styles.expanded]} accessibilityViewIsModal={props.expanded}>
-    <View style={props.expanded ? styles.expandedFrame : styles.compactFrame}>
-      <RTCView accessibilityLabel="Remote video" streamURL={props.remoteURL} style={styles.video} objectFit={props.expanded && fill ? 'cover' : 'contain'} zOrder={0} />
-      {(!props.remoteURL || props.audioOnly) && <View style={styles.placeholder} pointerEvents="none">
-        <Text style={styles.text}>{props.audioOnly ? 'Audio-only call' : 'Waiting for the other participant…'}</Text>
-      </View>}
-      {props.localURL && <RTCView accessibilityLabel="Your camera preview" streamURL={props.localURL} style={styles.preview} objectFit="cover" mirror zOrder={1} />}
+  return <View style={styles.stage}>
+    <RTCView accessibilityLabel="Remote video" streamURL={props.remoteURL} style={styles.video} objectFit={props.fill ? 'cover' : 'contain'} zOrder={0} />
+    {(!props.remoteURL || props.audioOnly) && <View style={styles.placeholder} pointerEvents="none">
+      <Text style={styles.text}>{props.audioOnly ? 'Audio-only call' : 'Waiting for the other participant…'}</Text>
+    </View>}
+    {props.localURL && <RTCView accessibilityLabel="Your camera preview" streamURL={props.localURL} style={[styles.preview, (!props.previewVisible || props.settingsOpen) && styles.hidden]} objectFit="cover" mirror zOrder={1} />}
+    <View style={styles.header}>
+      <View style={styles.callInfo}>
+        <Text style={styles.text}>{props.phase} · {props.duration}</Text>
+        <Text style={styles.detail} numberOfLines={2}>{props.status}</Text>
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open Phoneapp settings" accessibilityState={{ expanded: props.settingsOpen }} onPress={props.settings} style={styles.settings}>
+        <Text style={styles.gear}>⚙</Text>
+        <Text style={styles.detail}>Settings</Text>
+      </Pressable>
     </View>
     <View style={styles.controls}>
-      <Text style={styles.text} numberOfLines={2}>{props.status}</Text>
-      <Text style={styles.time}>Room: {props.roomTime}</Text>
-      <View style={styles.row}>
-        <Button title={props.expanded ? 'Exit full screen' : 'Full screen'} onPress={() => { Keyboard.dismiss(); props.toggleExpanded(); }} />
-        <Button title={props.muted ? 'Unmute' : 'Mute'} onPress={props.mute} />
-        <Button title={props.cameraIntent ? 'Camera off' : 'Camera on'} disabled={props.cameraDisabled} onPress={props.camera} />
-        <Button title="Switch camera" disabled={!props.localURL} onPress={props.switchCamera} />
-        <Button title="Hang up" color="#ff8791" onPress={props.hangup} />
-      </View>
-      {props.expanded && <>
-        <View style={styles.row}>
-          <Button title={fill ? 'Show whole video' : 'Fill screen'} onPress={() => setFill(value => !value)} />
-          <Button title={props.audioOnly ? 'Audio-only mode is active' : 'Audio only'} disabled={props.audioOnly} onPress={props.audio} />
-        </View>
-        {fill && <Text style={styles.time}>Fills the display by cropping the edges.</Text>}
-      </>}
+      <Button title={props.muted ? 'Unmute' : 'Mute'} onPress={props.mute} />
+      <Button title={props.cameraIntent ? 'Camera off' : 'Camera on'} disabled={props.cameraDisabled} onPress={props.camera} />
+      <Button title="Hang up" color="#ff8791" onPress={props.hangup} />
     </View>
   </View>;
 }
 const styles = StyleSheet.create({
-  stage: { backgroundColor: '#070e14', flexShrink: 0 }, expanded: { flex: 1, flexShrink: 1 },
-  compactFrame: { height: 230, width: '100%', overflow: 'hidden' }, expandedFrame: { flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' },
-  video: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  preview: { position: 'absolute', right: 12, bottom: 12, width: 75, height: 100, backgroundColor: '#070e14' },
+  stage: { flex: 1, backgroundColor: '#070e14', overflow: 'hidden' },
+  video: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }, hidden: { display: 'none' },
+  preview: { position: 'absolute', right: 14, top: 100, width: 75, height: 100, backgroundColor: '#070e14', borderRadius: 8 },
   placeholder: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#070e14' },
-  controls: { padding: 10, gap: 5 }, text: { color: '#c7d5de', lineHeight: 19 }, time: { color: '#a4b5c2', fontSize: 11 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around' },
+  header: { position: 'absolute', top: 10, right: 10, left: 10, flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  callInfo: { flex: 1, backgroundColor: '#0b1620cc', padding: 10, borderRadius: 12 },
+  settings: { minWidth: 64, minHeight: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0b1620e6', borderRadius: 12 },
+  gear: { color: '#edf5f7', fontSize: 24 }, text: { color: '#edf5f7', lineHeight: 21 }, detail: { color: '#c7d5de', fontSize: 11, lineHeight: 16 },
+  controls: { position: 'absolute', bottom: 12, left: 12, right: 12, backgroundColor: '#0b1620e6', borderRadius: 16, padding: 8, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around' },
 });

@@ -1,12 +1,14 @@
 import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
+import { audioOutputLabel, type AudioOutputState } from './audio-routing';
 
 type Props = {
   remoteURL?: string; localURL?: string; muted: boolean;
   cameraIntent: boolean; cameraDisabled: boolean; audioOnly: boolean;
   fill: boolean; previewVisible: boolean; settingsOpen: boolean;
   status: string; duration: string; phase: string;
-  settings(): void; mute(): void; camera(): void; hangup(): void;
+  audioOutput: AudioOutputState;
+  settings(): void; mute(): void; camera(): void; hangup(): void; speaker(): void;
 };
 
 // Keep the renderer and its native parent mounted when settings opens. Overlay
@@ -22,6 +24,7 @@ export function CallVideoStage(props: Props) {
       <View style={styles.callInfo}>
         <Text style={styles.text}>{props.phase} · {props.duration}</Text>
         <Text style={styles.detail} numberOfLines={2}>{props.status}</Text>
+        {props.audioOutput.active && <Text style={styles.detail}>Audio: {audioOutputLabel(props.audioOutput.route)}</Text>}
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Open Phoneapp settings" accessibilityState={{ expanded: props.settingsOpen }} onPress={props.settings} style={styles.settings}>
         <Text style={styles.gear}>⚙</Text>
@@ -30,6 +33,7 @@ export function CallVideoStage(props: Props) {
     </View>
     <View style={styles.controls}>
       <Button title={props.muted ? 'Unmute' : 'Mute'} onPress={props.mute} />
+      <Button title={props.audioOutput.route === 'speaker' ? 'Speaker on' : 'Speaker'} accessibilityLabel="Toggle speakerphone" accessibilityState={{ selected: props.audioOutput.route === 'speaker' }} disabled={!props.audioOutput.active || props.audioOutput.busy || (props.audioOutput.route !== 'speaker' && !props.audioOutput.choices.includes('speaker'))} onPress={props.speaker} />
       <Button title={props.cameraIntent ? 'Camera off' : 'Camera on'} disabled={props.cameraDisabled} onPress={props.camera} />
       <Button title="Hang up" color="#ff8791" onPress={props.hangup} />
     </View>

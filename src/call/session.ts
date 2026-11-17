@@ -5,6 +5,8 @@ import { MediaQuality, initialQuality, type QualityState } from './media-quality
 import { StatsReader, type Reports } from './stats';
 import { constraints, VideoDriver, type MediaPeer, type Stream } from './video';
 import { intersect, START_LIMIT, type Preset, type VideoLimit } from './quality';
+import { AudioRouting, initialAudioOutput, type AudioOutputState, type AudioPreference } from './audio-routing';
+import { nativeAudioDriver } from './native-audio';
 
 export type CallState = {
   phase: 'idle' | 'permissions' | 'joining' | 'waiting' | 'connecting' | 'connected' | 'reconnecting' | 'ended' | 'error';
@@ -19,8 +21,9 @@ export type CallState = {
   expiresAt?: number;
   diagnostics: string[];
   quality: QualityState;
+  audioOutput: AudioOutputState;
 };
-const initial = (): CallState => ({ phase: 'idle', local: null, remote: null, seconds: 0, muted: false, cameraEnabled: false, hasCamera: false, diagnostics: [], quality: initialQuality() });
+const initial = (): CallState => ({ phase: 'idle', local: null, remote: null, seconds: 0, muted: false, cameraEnabled: false, hasCamera: false, diagnostics: [], quality: initialQuality(), audioOutput: initialAudioOutput() });
 
 export class CallSession {
   state = initial();
@@ -37,6 +40,7 @@ export class CallSession {
   private statsReader = new StatsReader();
   private statsPending = false;
   private quality = this.makeQuality();
+  private audio = new AudioRouting(nativeAudioDriver(), audioOutput => this.update({ audioOutput }));
   private makeQuality(initial = initialQuality()) {
     return new MediaQuality(quality => this.update({ quality, cameraEnabled: quality.applied?.camera ?? this.state.cameraEnabled, hasCamera: quality.applied?.hasCamera ?? this.state.hasCamera }), m => this.send(m, this.epoch), initial);
   }
@@ -67,6 +71,7 @@ export class CallSession {
     pc?.close();
     this.state.local?.getTracks().forEach((track) => track.stop());
     this.state.remote?.getTracks().forEach((track) => track.stop());
+    this.audio.stop();
     this.update({ local: null, remote: null, seconds: this.clock.seconds(), hasCamera: false });
   }
   end(message?: string) {
@@ -163,6 +168,7 @@ export class CallSession {
         this.diagnostic(`connection: ${pc.connectionState}`);
         this.clock.connected(pc.connectionState === 'connected');
         if (pc.connectionState === 'connected') {
+          this.audio.start();
           clearTimeout(this.connectionDeadline);
           this.update({ phase: 'connected' });
           void this.candidateSummary(pc, epoch);
@@ -238,6 +244,8 @@ export class CallSession {
   setQuality(preset: Preset) { this.quality.setPreset(preset); }
   setLimits(send: VideoLimit, receive: VideoLimit) { this.quality.setLimits(send, receive); }
   toggleAudioOnly() { this.quality.setAudioOnly(!this.state.quality.audioOnly); }
+  setAudioOutput(preference: AudioPreference) { this.audio.select(preference); }
+  toggleSpeaker() { this.audio.toggleSpeaker(); }
   private async mediaStats(epoch: number) {
     if (!this.pc || this.statsPending) return;
     this.statsPending = true;

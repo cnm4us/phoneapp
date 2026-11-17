@@ -9,6 +9,7 @@ import type { Invitation } from './shared/protocol';
 import { QualityControls } from './src/call/QualityControls';
 import { CallVideoStage } from './src/call/CallVideoStage';
 import { SettingsPanel } from './src/call/SettingsPanel';
+import { AudioOutputControls } from './src/call/AudioOutputControls';
 
 const labels = { idle: 'Ready to test', permissions: 'Requesting microphone / camera', joining: 'Joining room…', waiting: 'Waiting for the other phone…', connecting: 'Connecting media…', connected: 'Connected', reconnecting: 'Connection interrupted…', ended: 'Call ended', error: 'Unable to continue' };
 
@@ -84,6 +85,7 @@ function CallScreen() {
           audioOnly={call.quality.audioOnly || call.quality.peerAudioOnly}
           fill={fill} previewVisible={previewVisible} settingsOpen={settingsOpen}
           status={call.quality.status} duration={duration} phase={labels[call.phase]}
+          audioOutput={call.audioOutput} speaker={() => session.toggleSpeaker()}
           settings={() => { Keyboard.dismiss(); setSettingsOpen(true); }}
           mute={() => session.mute()} camera={() => session.toggleCamera()} hangup={() => session.end()}
         /> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -132,6 +134,7 @@ function CallScreen() {
           <View style={styles.row}><Text style={styles.text}>Show self preview</Text><Switch accessibilityLabel="Show self preview" value={previewVisible} onValueChange={setPreviewVisible} /></View>
           {active && <Button title="Switch camera" disabled={!call.hasCamera || !call.cameraEnabled} onPress={() => session.switchCamera()} />}
         </View>
+        <View style={styles.card}><AudioOutputControls state={call.audioOutput} active={active} select={p => session.setAudioOutput(p)} /></View>
         <View style={styles.card}><QualityControls state={call.quality} active={active} select={p => session.setQuality(p)} limits={(send, receive) => session.setLimits(send, receive)} audioOnly={() => session.toggleAudioOnly()} /></View>
         {!!call.sessionId && <View style={styles.card}>
           <Text style={styles.label}>Connection details</Text>

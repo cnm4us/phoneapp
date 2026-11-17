@@ -90,6 +90,14 @@ The quality iteration negotiates additive capabilities after the original join, 
 
 ## Adjust call quality
 
+### Native audio output
+
+Speaker controls are prepared in [plan 0006](plans/0006-native-audio-output.md) and **require new native development builds**. The original Android/iPhone APK/IPA links above do not contain PhoneappAudio. Reloading JavaScript alone keeps those builds callable but cannot enable output routing; its controls are disabled with an updated-app message. No new build has been submitted for this increment yet.
+
+In a rebuilt app, connect a call and tap **Speaker** on the video overlay. Tapping it while on speaker returns to **Phone earpiece** when available, otherwise **Automatic**. For explicit choices open **Settings → Audio output**: Automatic lets the OS route to connected accessories; Speaker plays the remote participant aloud; Phone earpiece is enabled only when native support offers it. **Current output** is the OS-reported route, which may differ from the requested preference. Use the phone's volume buttons for loudness; microphone mute is separate. Wired/Bluetooth hotplug, OS overrides, repeat calls, and actual sound remain physical acceptance checks.
+
+### Video display and quality
+
 Native calls now use the available safe-area screen by default, with mute/camera/hangup overlaid. Tap the upper-right **⚙ Settings** button for quality, display/camera controls, room lifetime, and diagnostics. **Done** closes the panel; Android back also dismisses it. **Fill screen** on crops edges; off shows the whole video with possible black bars. **Show self preview** changes only local display, not outgoing camera capture. The remote renderer stays mounted while the in-window settings panel opens. This replaces the old native Full screen/Exit full screen buttons; browser full-screen controls are unchanged. See [plan 0005](plans/0005-native-call-settings.md) for the device acceptance still needed.
 
 Before joining, Settings also contains the server address, creator access key, Send video when joining, and Force TURN testing option. Create/share/join remains on the home screen. The Expo developer floating cogwheel is separate: the pinned iOS development build is asked to hide it through its existing optional preference bridge. Shake/three-finger access remains available. If it is still visible, open Expo tools and switch **Tools button** off manually. Android/release builds do not use this iOS-only bridge. No new EAS build is submitted for this layout; reload the existing development app between test calls.

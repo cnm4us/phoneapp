@@ -99,3 +99,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner identifies weak upstairs office Wi-Fi versus strong downstairs reception. With phone Wi-Fi disabled, cellular speed test is approximately 500 Mbps down / 30 Mbps up; owner then reports sharper, smoother, more stable video and FPS in both directions.
 - Recorded stronger evidence implicating the Wi-Fi path without declaring a specific RF/router/transport cause or full device acceptance. Exact settings, codec/route/RTP metrics, device versions, and duration remain unrecorded. No runtime change, restart, new build, or additional application testing. Documentation/whitespace checks pass. Retain successful cellular observation; use HD on weak Wi-Fi and collect diagnostics for recurrence on a strong connection.
+
+## 2026-11-17 Direct High 1080p/30 selection
+
+- Changed shared High from 1080p/60 to 1080p/30 at the owner's request; HD stays 720p/30. Both directional preferences update together. Kept bitrate ceilings, advanced bounds, and gated Ultra separate from preset simplification.
+- Prepared/checked an isolated checkout while the live call remained active. TypeScript, 43 unit/server/diagnostic tests, 13 local browser scenarios, and iOS/Android JS exports pass. After sanitized logs showed no active rooms, applied the reviewed patch, built browser assets, and restarted only project signaling. All 13 public browser scenarios also pass after deployment.
+- Updated PRD, current plan, runbook, tools, evidence, and continuation state. No dependency/DB/TURN quota changes or paid build. Physical phone selection/behavior remains owner-operated; next action is reload both clients and select High.

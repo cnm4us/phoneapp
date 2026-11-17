@@ -26,7 +26,7 @@ These are the implemented initial engineering ceilings, subject to further devic
 | --- | --- | --- | --- | --- |
 | Auto — default | 1920x1080 | 30 fps | 6 Mbps | Start around 720p/24; adapt upward only with measured headroom. |
 | Ultra — opt-in, experimental | 3840x2160 | 60 fps | 30 Mbps | Highest ceiling, subject to capture, codec, thermal, receiver, and relay support. |
-| High | 1920x1080 | 60 fps | 8 Mbps | Favor smooth motion on capable devices/networks. |
+| High | 1920x1080 | 30 fps | 8 Mbps | Sharper video with a 30 fps ceiling on capable devices/networks. |
 | HD | 1280x720 | 30 fps | 3 Mbps | Moderate bandwidth with clear video. |
 | Standard | 854x480 | 30 fps | 1.2 Mbps | Reduce pixels while preserving motion. |
 | Data saver | 640x360 | 24 fps | 0.45 Mbps | Smaller, smoother video on constrained links. |
@@ -161,5 +161,7 @@ Full screen / Fill screen work. HD 720p/30 selected on phone and desktop works w
 Comparison completed by the owner: with High and 1080p selected, lowering only iPhone outgoing FPS to 30 makes the desktop remote picture seem better. Compare phone Actual sent and desktop Actual received measurements. If receive-side video smoothness remains poor with healthy audio, investigate decode/render drops as well as sender encode limitation and transport loss; current guards primarily protect audio and observe sender CPU limitation, rather than directly measuring decoder load. Native controls subsequently gained highlighted/checked resolution/FPS selections and explicit selected-value labels; the owner confirms 30 fps is checked. Keep HD as the smooth baseline and custom outgoing 1080p/30 as an observed improvement; high-ceiling hardware acceptance remains open.
 
 The selection UI repair passes TypeScript, both native JS exports, and 39 unit/server/adapter tests including independent outgoing 60→30 FPS application after guard warm-up. No media-policy/default/backend change or service restart. Do not infer a measured framerate or a specific bottleneck from the subjective comparison.
+
+Owner subsequently requested a direct 1080p/30 option and considers 60 fps unnecessary for ordinary calls. High now selects **1080p/30** for both send/receive, alongside unchanged **HD 720p/30**. Historical High/60 comparisons below and in earlier evidence describe the old preset. High retains its 8 Mbps payload ceiling (6 Mbps relay cap); this is a frame-rate/preset simplification, not a bitrate reduction. Advanced control bounds remain independent of the preset, preserving explicit 60 fps choices; actual adaptation and device limits still apply. See the latest verification entry for rollout status.
 
 Further owner evidence links desktop choppiness/softness with decoded receive FPS dropping to 0–5 or around 16, despite a reported 700/80 Mbps speed test. Added browser-only, read-only connection diagnostics and a bounded local copyable history to separate complete frames received, decoded/dropped frames, packet loss, codec, and encode/decode time. No automatic tuning or root-cause claim from correlation. TypeScript, 43 unit/server/diagnostic cases, and 13 local browser cases pass; live deployment and measurements are tracked in [verification](../testing/2026-11-17-adaptive-quality.md). Keep steps 6–7 open until real device evidence establishes the limitation and any eventual correction.

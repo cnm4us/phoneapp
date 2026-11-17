@@ -207,6 +207,9 @@ test('incoming limits reduce the remote sender without reducing the unrelated se
   try {
     await connect(p.a, p.b);
     await expect(p.a.locator('#quality-status')).toHaveAttribute('data-peer-supported', 'true');
+    await p.a.locator('#quality').selectOption({ label: 'High · 1080p/30' });
+    await expect(p.a.locator('#send-limit')).toContainText('1080p / 30 fps');
+    await expect(p.a.locator('#receive-limit')).toContainText('1080p / 30 fps');
     await p.a.locator('#advanced-quality > summary').click();
     await p.a.locator('#receive-resolution').selectOption('saver');
     await p.a.locator('#receive-fps').selectOption('24');

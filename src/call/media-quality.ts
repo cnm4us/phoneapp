@@ -1,5 +1,5 @@
 import type { ClientMessage, QualityMessage } from '../../shared/protocol';
-import { AudioGuard, describeLimit, intersect, limitOnly, PRESETS, validLimit, type Preset, type VideoLimit } from './quality';
+import { AudioGuard, describeLimit, intersect, limitOnly, NON_ULTRA_LIMIT, PRESETS, validLimit, type Preset, type VideoLimit } from './quality';
 import { describeVideo, type MediaStats } from './stats';
 import { VideoDriver, type AppliedVideo } from './video';
 
@@ -66,7 +66,7 @@ export class MediaQuality {
   setLimits(send: VideoLimit, receive: VideoLimit) {
     if (!validLimit(send) || !validLimit(receive)) { this.update({ error: 'Use valid resolution, frame-rate, and video bitrate limits (0.15–30 Mbps).' }); return; }
     // The UI also bounds input; the protocol validator independently rejects invalid values.
-    const max = this.state.ultraAvailable ? PRESETS.ultra : PRESETS.high;
+    const max = this.state.ultraAvailable ? PRESETS.ultra : NON_ULTRA_LIMIT;
     send = intersect(send, max); receive = intersect(receive, max);
     this.update({ custom: true, send: limitOnly(send), receive: limitOnly(receive), sendDescription: describeLimit(send), receiveDescription: describeLimit(receive), error: '' });
     this.publish(); void this.apply();
@@ -112,7 +112,7 @@ export class MediaQuality {
     this.update({ stats, sent: describeVideo(stats.sent), received: describeVideo(stats.received) });
     this.publish(); void this.apply();
   }
-  private receivingLimit() { return intersect(this.state.receive, this.receiveGuard.limit(), this.state.ultraAvailable ? PRESETS.ultra : PRESETS.high); }
+  private receivingLimit() { return intersect(this.state.receive, this.receiveGuard.limit(), this.state.ultraAvailable ? PRESETS.ultra : NON_ULTRA_LIMIT); }
   private publish() {
     if (!this.state.peerSupported || this.disposed) return;
     const policy = { receive: this.receivingLimit(), audioOnly: this.state.audioOnly, pauseIncoming: this.receiveGuard.paused };
@@ -124,7 +124,7 @@ export class MediaQuality {
     this.ackTimer = setTimeout(() => this.update({ status: 'Incoming limit is unconfirmed · remote acknowledgment timed out' }), 5_000);
   }
   private effective() {
-    let limit = intersect(this.state.send, this.sendGuard.limit(), this.remote?.receive ?? PRESETS.ultra, this.state.ultraAvailable ? PRESETS.ultra : PRESETS.high);
+    let limit = intersect(this.state.send, this.sendGuard.limit(), this.remote?.receive ?? PRESETS.ultra, this.state.ultraAvailable ? PRESETS.ultra : NON_ULTRA_LIMIT);
     const stats = this.state.stats;
     if (stats?.relay !== false) limit.bitrate = Math.min(limit.bitrate, this.relayLimit);
     // Startup estimates are often ~300 kbps before probing. Pausing from that

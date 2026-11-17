@@ -1,4 +1,4 @@
-import { intersect, limitOnly, PRESETS, type VideoLimit } from './quality';
+import { intersect, limitOnly, NON_ULTRA_LIMIT, type VideoLimit } from './quality';
 
 // Small common runtime contract shared by browser WebRTC and RN WebRTC 155.
 // Each platform casts its peer/stream once at the boundary; no DOM imports here.
@@ -44,7 +44,7 @@ export class VideoDriver {
     let limit = limitOnly(request), note = '', supported = true, needsNegotiation = false;
     const transceiver = this.peer.getTransceivers().find(t => t.sender.track?.kind === 'video' || t.receiver.track?.kind === 'video');
     const sender = transceiver?.sender;
-    if (limit.height > 1080 && !this.canUltra()) { limit = intersect(limit, PRESETS.high); note = '4K capture is not verified on this device'; }
+    if (limit.height > 1080 && !this.canUltra()) { limit = intersect(limit, NON_ULTRA_LIMIT); note = '4K capture is not verified on this device'; }
     const off = pause || !cameraIntent;
     if (off) {
       this.disableImmediately();

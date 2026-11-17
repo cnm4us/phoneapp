@@ -3,13 +3,15 @@ export type VideoLimit = { width: number; height: number; fps: number; bitrate: 
 export const PRESETS = {
   auto: { label: 'Auto', width: 1920, height: 1080, fps: 30, bitrate: 6_000_000 },
   ultra: { label: 'Ultra · 4K/60 experimental', width: 3840, height: 2160, fps: 60, bitrate: 30_000_000 },
-  high: { label: 'High · 1080p/60', width: 1920, height: 1080, fps: 60, bitrate: 8_000_000 },
+  high: { label: 'High · 1080p/30', width: 1920, height: 1080, fps: 30, bitrate: 8_000_000 },
   hd: { label: 'HD · 720p/30', width: 1280, height: 720, fps: 30, bitrate: 3_000_000 },
   standard: { label: 'Standard · 480p/30', width: 854, height: 480, fps: 30, bitrate: 1_200_000 },
   saver: { label: 'Data saver · 360p/24', width: 640, height: 360, fps: 24, bitrate: 450_000 },
   minimum: { label: 'Minimum · 240p/15', width: 426, height: 240, fps: 15, bitrate: 200_000 },
 } satisfies Record<string, VideoLimit & { label: string }>;
 export type Preset = keyof typeof PRESETS;
+// Advanced controls retain their existing bounds independently of the preset.
+export const NON_ULTRA_LIMIT: VideoLimit = { ...limitOnly(PRESETS.high), fps: 60 };
 export const START_LIMIT: VideoLimit = { ...PRESETS.hd, fps: 24 };
 export function limitOnly(v: VideoLimit): VideoLimit {
   return { width: v.width, height: v.height, fps: v.fps, bitrate: v.bitrate };

@@ -61,6 +61,8 @@ See `package.json` for actual scripts. Install Chromium once using `npx playwrig
 
 ## Quality verification
 
+Current preset labels: **High · 1080p/30** and **HD · 720p/30** on native/browser. High's video ceiling stays 8 Mbps (6 Mbps relay); HD stays 3 Mbps. Advanced bounds remain separate. Existing development builds load the JavaScript update by reloading and selecting High; no new EAS build. See [latest evidence](testing/2026-11-17-adaptive-quality.md).
+
 Latest usability increment: [plan 0004](plans/0004-call-testing-usability.md) and [evidence](testing/2026-11-17-call-usability.md). Current suites have 43 unit/server/adapter/diagnostic cases and 13 browser scenarios; older counts below describe the quality checkpoint. New rooms default to 240 minutes (`ROOM_TTL_MINUTES`, maximum 480). Short-code resolution uses exact HTTPS `POST /rooms/resolve`, proxied to signaling; codes stay out of URL logs. Native clients load the JavaScript UI/resolver through Metro; no new build submitted.
 
 Quality verification extends `npm test` to 31 cases and browser acceptance to 12 scenarios. Latest evidence: [quality report](testing/2026-11-17-adaptive-quality.md). `npm run test:quality-network` is a Linux-only, roughly two-minute UDP impairment experiment requiring installed `ip`, `tc`, `turnserver`, `socat`, Chromium, and passwordless `sudo` for a disposable network namespace/veth. All were exercised on this EC2 host. The script launches isolated test services on a benchmark subnet, uses synthetic credentials, shapes only its veth pair, and cleans up. It never uses live TURN or shapes the host primary interface. Output stays under ignored `artifacts/private/`; review before publishing. Do not run concurrent copies.

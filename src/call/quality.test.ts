@@ -166,7 +166,7 @@ test('unsupported mandatory sender limits stop video while leaving audio/connect
   f.driver.dispose();
 });
 
-test('changing only outgoing 1080p High FPS from 60 to 30 updates the sender and preserves the incoming ceiling', async t => {
+test('High selects 1080p/30 in both directions; an outgoing FPS override preserves the incoming ceiling', async t => {
   const f = cameraFixture(), quality = new MediaQuality(() => {}, () => {}); t.after(() => quality.dispose());
   quality.configure(f.driver, {}); quality.setPreset('high'); await quality.apply();
   // Allow stable feedback to lift the conservative startup guard to High.
@@ -178,9 +178,14 @@ test('changing only outgoing 1080p High FPS from 60 to 30 updates the sender and
     }, at);
     await quality.apply();
   }
-  assert.equal(f.transceiver.sender.getParameters().encodings[0].maxFramerate, 60);
-  quality.setLimits({ ...quality.state.send, fps: 30 }, quality.state.receive); await quality.apply();
-  assert.equal(quality.state.send.height, 1080); assert.equal(quality.state.send.fps, 30);
-  assert.equal(quality.state.receive.fps, 60); assert.equal(quality.state.custom, true);
   assert.equal(f.transceiver.sender.getParameters().encodings[0].maxFramerate, 30);
+  assert.equal(quality.state.send.height, 1080); assert.equal(quality.state.send.fps, 30);
+  assert.equal(quality.state.receive.height, 1080); assert.equal(quality.state.receive.fps, 30);
+  quality.setLimits({ ...quality.state.send, fps: 15 }, quality.state.receive); await quality.apply();
+  assert.equal(quality.state.send.fps, 15); assert.equal(quality.state.receive.fps, 30);
+  assert.equal(quality.state.custom, true);
+  assert.equal(f.transceiver.sender.getParameters().encodings[0].maxFramerate, 15);
+  // Preset simplification must not silently clamp an explicit advanced choice.
+  quality.setLimits({ ...quality.state.send, fps: 60 }, quality.state.receive); await quality.apply();
+  assert.equal(quality.state.send.fps, 60); assert.equal(quality.state.receive.fps, 30);
 });

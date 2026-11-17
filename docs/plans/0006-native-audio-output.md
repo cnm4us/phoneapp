@@ -1,6 +1,6 @@
 # 0006 Native speaker and phone audio output
 
-Status: implementation prepared; native builds and physical acceptance pending. Updated: 2026-11-17. Requirements: COM-01, COM-07 in [PRD](../PRD.md).
+Status: implemented; both native builds passed; installation/physical acceptance pending. Updated: 2026-11-17. Requirements: COM-01, COM-07 in [PRD](../PRD.md).
 
 ## Outcome and scope
 
@@ -22,7 +22,7 @@ Use a small local Expo module with Swift AVAudioSession and Kotlin AudioManager.
 - [x] Add call-screen Speaker and Settings output controls without changing mic mute.
 - [x] Verify lifecycle/race/error tests, TypeScript, JS exports, native discovery, and generated configuration/archive inclusion.
 - [x] Prepare reviewable code and document exact build/device steps.
-- [ ] Obtain paid-build authorization and submit selected EAS development builds.
+- [x] Obtain paid-build authorization and submit selected EAS development builds.
 - [ ] Build/install and test Android/iPhone routes on physical devices.
 
 ## Data and configuration
@@ -38,7 +38,7 @@ No DB, backend, TURN, recording, or patient data. Local module is included in EA
 | Output selection | Speaker audible, Phone private when available, Automatic respects connected accessories | Device pending |
 | Headset changes | Current output/options reflect OS changes; unavailable earpiece rejected honestly | Device pending |
 | Repeated calls/errors | No stale speaker/mode override after hangup; errors do not end media | JS error/cleanup tests pass; actual native reset pending |
-| Native discovery/build | Both platforms link module; native compilation succeeds | Both autolinking resolves and prebuild pass; source archive includes module; native compilation pending |
+| Native discovery/build | Both platforms link module; native compilation succeeds | Both EAS development builds FINISHED with native compilation/linking; installation/actual audio pending |
 
 ## Risks and recovery
 
@@ -46,8 +46,8 @@ OS route changes and WebRTC audio-session updates can override preferences; repo
 
 ## Handoff
 
-Owner subsequently reports apparently selected Speaker/default Automatic with ineffective taps. EAS build-list recheck shows only the two original binaries; no audio-output build has been submitted. Original apps have only updated JS and no native module, so controls are unavailable. Default Automatic checkmark currently appears even without native support; clarify/hide that inactive selection and show explicit update-required status in the next safe update window. An active room was present during this report; no source edit/reload interrupted it. Build authorization remains pending; do not diagnose this as a failed native routing implementation or claim hardware acceptance.
+Owner subsequently reports apparently selected Speaker/default Automatic with ineffective taps. At that point, EAS history contained only the two original binaries; the owner then authorized both updated builds, which have now finished successfully. Original apps have only updated JS and no native module, so controls are unavailable. Resolved the misleading default checkmark: unavailable controls show a setup/update message; active explicit-route checkmarks require OS route confirmation. Labels now clarify private earpiece and room speaker. Prepared UI changes separately during the active room, then applied after the owner confirmed hanging up. Owner now explicitly approved both builds. Do not diagnose the old-binary behavior as a failed native routing implementation or claim hardware acceptance.
 
-TypeScript, 50 unit/server cases, and iOS/Android JS exports pass in an isolated checkout. Expo Doctor passes 21/21. Applied after zero active rooms; the live-checkout EAS source archive contains matching native/config sources, excludes .env.server/server files, and has no backend restart. Prebuild with `--no-install` passes. Both platform autolinking resolves list PhoneappAudio's native class/pod; a local EAS archive inspection includes Kotlin/Swift/config files. No native SDK/compiler is configured here; these are not native compilation or audio tests. The browser and backend are unchanged, so public browser scenarios were not repeated as proof of native routing. Current original Android/iOS binaries do not contain this module. Next: authorize new EAS builds, install updates, and test Speaker/Phone/Automatic, accessory hotplug, audio-only/video transitions, permissions/errors, interruption and repeated hangup/rejoin on both devices. Obtain model/OS details when running acceptance. Keep M1 and physical acceptance gates open. No cloud build has been submitted for this increment.
+TypeScript, 50 unit/server cases, and iOS/Android JS exports pass in an isolated checkout. Expo Doctor passes 21/21. Applied after zero active rooms; the live-checkout EAS source archive contains matching native/config sources, excludes .env.server/server files, and has no backend restart. Prebuild with `--no-install` passes. Both platform autolinking resolves list PhoneappAudio's native class/pod; a local EAS archive inspection includes Kotlin/Swift/config files. No native SDK/compiler is configured on EC2; native compilation/linking were subsequently verified by the two successful EAS builds, not these local checks. Actual listening remains unverified. The browser and backend are unchanged, so public browser scenarios were not repeated as proof of native routing. Current original Android/iOS binaries do not contain this module. Next: install the two approved, successful EAS builds and test Speaker/Phone/Automatic, accessory hotplug, audio-only/video transitions, permissions/errors, interruption and repeated hangup/rejoin on both devices. Obtain model/OS details when running acceptance. Keep M1 and physical acceptance gates open. Submitted development builds from commit 258902b: Android [879fa37b](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/879fa37b-1746-4a83-baa2-55d666a7a3df), iOS [06b7c87f](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/06b7c87f-3ba0-4ec6-8e6e-268555cf13d1). EAS reused existing remote credentials. Both iOS 06b7c87f and Android 879fa37b finished successfully. Android Gradle reports BUILD SUCCESSFUL; iOS packaged and linked PhoneappAudio. Latest display-only clarification passes TypeScript and both native JS exports and is live through Metro after the owner ended the call; native source is unchanged from the build submissions. Native success is not physical routing acceptance.
 
 References: [Expo local modules](https://docs.expo.dev/workflow/customizing/), [Android AudioManager](https://developer.android.com/reference/android/media/AudioManager), [Apple output override](https://developer.apple.com/documentation/avfaudio/avaudiosession/overrideoutputaudioport(_:)).

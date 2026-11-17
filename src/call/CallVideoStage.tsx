@@ -33,7 +33,7 @@ export function CallVideoStage(props: Props) {
     </View>
     <View style={styles.controls}>
       <Button title={props.muted ? 'Unmute' : 'Mute'} onPress={props.mute} />
-      <Button title={props.audioOutput.route === 'speaker' ? 'Speaker on' : 'Speaker'} accessibilityLabel="Toggle speakerphone" accessibilityState={{ selected: props.audioOutput.route === 'speaker' }} disabled={!props.audioOutput.active || props.audioOutput.busy || (props.audioOutput.route !== 'speaker' && !props.audioOutput.choices.includes('speaker'))} onPress={props.speaker} />
+      {props.audioOutput.active ? <Button title={props.audioOutput.route === 'speaker' ? 'Speaker on' : 'Speaker'} accessibilityLabel="Toggle speakerphone" accessibilityState={{ selected: props.audioOutput.route === 'speaker' }} disabled={props.audioOutput.busy || (props.audioOutput.route !== 'speaker' && !props.audioOutput.choices.includes('speaker'))} onPress={props.speaker} /> : !!props.audioOutput.error && <Button title="Audio setup" onPress={props.settings} />}
       <Button title={props.cameraIntent ? 'Camera off' : 'Camera on'} disabled={props.cameraDisabled} onPress={props.camera} />
       <Button title="Hang up" color="#ff8791" onPress={props.hangup} />
     </View>

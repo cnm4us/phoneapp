@@ -15,3 +15,5 @@ The M1 duration display is experimental; durable call-derived time arrives with 
 M1 plan: [0001](plans/0001-webrtc-poc.md). Create later plans when their scope is concrete using [the template](plans/TEMPLATE.md). Do not preapprove providers, spending, or billable behavior through this roadmap.
 
 Supporting [plan 0002](plans/0002-browser-companion.md) adds an initial COM-01 browser participant for solo M1 testing. The browser page is deployed and passes automated media checks; this does not complete the later patient-facing browser/access workflow or replace the original physical-device matrix.
+
+Next planned communications iteration: [0003 adaptive call quality](plans/0003-adaptive-call-quality.md), covering COM-07–09. The implementation plan is ready: opt-in very high ceilings, controls for reducing both outgoing and incoming video, audio-first adaptation, and coordinated audio-only mode. Implementation and quality/device acceptance have not started; original M1 acceptance remains open.

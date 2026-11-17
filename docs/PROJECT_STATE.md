@@ -1,6 +1,6 @@
 # Current project state
 
-Updated: 2026-11-16 (client date). M0 complete. **M1 in progress: runtime foundation implemented; native/device acceptance pending.** Branch: `feat/webrtc-poc`.
+Updated: 2026-11-17 UTC. M0 complete. **M1 in progress: runtime foundation implemented; native/device acceptance pending.** Branch: `feat/webrtc-poc`.
 
 Review: [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Native foundation commit: `4874959`; browser implementation and follow-up documentation are on the same branch at newer commits. Do not switch the live checkout to `main`, which does not yet include the runtime code.
 
@@ -22,7 +22,9 @@ Active plan: [0001 WebRTC proof of concept](plans/0001-webrtc-poc.md). Keep it o
 
 Supporting plan: [0002 browser companion](plans/0002-browser-companion.md), implemented/deployed with automated acceptance. Next action: capture the device/network details of the owner's reported successful use and complete the remaining native/Safari and original iPhone/Android matrix when devices are available. Both native builds succeeded. Public signaling, TURN, and browser media tests pass.
 
-Owner subsequently reported the first round is working well. Detailed device/network scenarios and measurements have not been logged, so the formal matrix remains open. Agreed next iteration is captured in [plan 0003](plans/0003-adaptive-call-quality.md): adaptive quality ceilings, audio-first behavior, receive-side requests, and explicit two-way audio-only controls. Those additions are requirements only, not implemented features.
+Owner subsequently reported the first round is working well. Detailed device/network scenarios and measurements have not been logged, so the formal matrix remains open.
+
+Next implementation plan: [0003 adaptive call quality](plans/0003-adaptive-call-quality.md), ready for implementation at the owner's request. It specifies Auto plus presets through opt-in experimental 4K/60 fps at a 30 Mbps video ceiling, controls down to 240p/audio-only, separate send/receive limits, audio-first adaptation, consent-aware restoration, compatible signaling, relay capacity gates, and an acceptance matrix. These are proposed settings and unimplemented features. Current TURN limits need capacity review before enabling the highest ceilings; no live configuration changed. Exact next development action is step 1: verify installed APIs/device capabilities and implement shared policy/stat foundations. Original M1 physical acceptance remains a separate open action.
 
 ## Decisions and constraints
 
@@ -51,7 +53,8 @@ Development services follow this checkout; stop or account for them before chang
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
 - Browser tests: 7/7 on the public HTTPS deployment in Chromium, including actual synthetic audio/video, repeat calls, controls/cleanup, forced relay candidate/media verification, audio-only/video mix, permission/room errors, playback fallback, fragment cleanup, and responsive widths. See [browser report](testing/2026-11-16-browser-companion.md). iPad viewport tests are not Safari/iPad hardware tests.
 - Physical acceptance: owner reports successful initial use; the device pair, network conditions, and structured matrix results have not been captured. M1 is not complete. Prior foundation evidence: [verification report](testing/2026-11-16-poc-foundation.md).
+- Quality planning: expanded plan 0003 and aligned PRD/roadmap/handoff documents; documentation checker and whitespace checks passed. This documentation-only change did not run new media/device tests, deploy changes, or request EAS builds.
 
 ## Resume prompt
 
-“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, docs/SETUP.md, and plans 0001/0002. Native builds and the browser companion are available. Continue with a real browser-to-iPhone call, then the original two-phone matrix; record actual device results.”
+“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, docs/SETUP.md, and plan 0003. Native builds and the browser companion are available. The owner requested a high-ceiling quality implementation plan, which is now ready but unimplemented. For implementation, start with plan 0003 step 1; retain the original plan 0001 physical-device matrix as open and record actual device results when available.”

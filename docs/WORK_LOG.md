@@ -33,3 +33,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Confirmed native and browser implementation is already committed/pushed on `feat/webrtc-poc` through `1906d38`, in draft PR 1. The user requested a first-round commit/push checkpoint; no main-branch merge was requested.
 - Owner reports the first round is working well. Formal device/network acceptance remains undocumented; retain that distinction from automated results.
 - Recorded agreed quality ceilings, audio-first behavior, coordinated receive constraints, and explicit two-way audio-only mode as COM-07 through COM-09 and [proposed plan 0003](plans/0003-adaptive-call-quality.md). These are follow-up requirements; no runtime behavior changed for this checkpoint.
+
+## 2026-11-17 UTC High-ceiling quality implementation plan
+
+- Expanded [plan 0003](plans/0003-adaptive-call-quality.md) into seven implementation stages with preset ceilings from opt-in experimental 4K/60 fps at 30 Mbps down to 240p and two-way audio-only. Added advanced send/receive controls, capability fallbacks, measured-quality UI, audio-first triggers/recovery, camera-consent rules, and protocol compatibility/renegotiation requirements.
+- Inspected installed native sender APIs and TURN template limits. Recorded the current 8 Mbps per-allocation relay ceiling and a capacity-verification gate before enabling Ultra; proposed configuration is clearly distinguished from live settings.
+- Defined unit/protocol/browser/physical tests and isolated transport impairment testing. Updated PRD, roadmap, and continuation state. No runtime, database, infrastructure, deployment, or paid build changes.
+- Verification: `python3 scripts/check_project.py` and `git diff --check` passed. Implementation and device/media acceptance for this plan have not started; next development action is plan 0003 step 1.

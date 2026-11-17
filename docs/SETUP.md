@@ -64,13 +64,13 @@ For an authorized Android rebuild, use `npm run build:android`. The `development
 
 ## Run on the two phones
 
-1. Install the successful Android APK from the EAS build page on the wife's Android. Install the eventual iPhone build through its EAS installation link after provisioning.
+1. On Android, open the [APK download](https://expo.dev/artifacts/eas/6Pq6rQTGIxbz6mLmAU4c7IMMM_7ZKOds5ttHuUxUzHM.apk) in Chrome, open the downloaded file, allow that source to install if Android asks, and install **Phoneapp POC**. The existing [Android development build](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c) was rechecked as FINISHED/INTERNAL/development. No new build is needed for current JS changes. The owner's iPhone development build is already installed.
 2. From the EC2 project, run `npm run start:tunnel` if Metro is not already running. The local `@expo/ngrok` dependency is installed. Only run one Metro process on port 8081. Check its terminal for the current development-client QR/link.
-3. Open the custom Phoneapp POC app, sign into the matching Expo account in its launcher if needed, and open the running development server. The Expo tunnel only serves the development app; signaling/media use their own endpoints.
-4. On the creator phone, leave the signaling address as `https://phoneapp.bawebtech.com`, paste the private test access key, and tap **Create invitation**.
-5. Tap **Share invitation** before joining. Paste that invitation on the second phone. Sharing after joining may background the foreground-only call and end it.
-6. Select **Send video** or audio-only independently on each phone. Tap **Join call** on both, grant microphone/camera access, and keep both apps in the foreground.
-7. Try mute, camera controls, and hangup. Create a new invitation for the next session. For relay testing, enable **Force TURN relay for testing** before joining; use **Refresh connection details** to capture candidate types.
+3. Open **Phoneapp POC**, then open the current development server in its launcher. If it is not listed, choose **Enter URL manually** and paste the current HTTPS Expo tunnel address, or scan the development-client QR. The tunnel serves current app JavaScript; signaling/media use their own endpoints. The phone needs the custom installed app rather than Expo Go.
+4. On the creator phone, open **Settings**, leave the signaling address as `https://phoneapp.bawebtech.com`, and enter the private test access key. Tap **Done**, then **Create invitation**. The guest needs only the room code.
+5. Tap **Share room code** before joining. Enter the eight digits on the second phone. Sharing after joining may background the foreground-only call and end it. Leave any existing browser call first; rooms allow two participants.
+6. Select **Send video when joining** in Settings or audio-only independently on each phone. Tap **Join call** on both, grant microphone/camera access, and keep both apps in the foreground.
+7. Try mute, camera controls, and hangup. Create a new invitation for the next session. For relay testing, enable **Force TURN relay for testing** in Settings before joining; in-call Settings contains **Refresh connection details** and quality controls.
 8. Execute the full [M1 matrix](plans/0001-webrtc-poc.md) and save a sanitized report from [the template](testing/DEVICE_REPORT_TEMPLATE.md). Do not treat connected timer seconds as approved billing time.
 
 ## Call your iPhone from a browser

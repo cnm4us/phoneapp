@@ -117,3 +117,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Inspected pinned Expo 57 native source and versioned official docs. Added a guarded iOS-only optional `DevMenuPreferences` call to hide Expo's floating Tools button; shake/three-finger preferences remain unchanged. Unsupported bridges fail without blocking the app; manual Expo Tools button toggle remains available. No dependency/configuration/paid-build change.
 - Prepared in an isolated checkout while the owner could continue testing. Corrected removed RN StyleSheet API usage found by TypeScript; final TypeScript and both native JS exports pass. After sanitized logs showed no active rooms, applied the reviewed patch. Metro status is running. No backend/browser/TURN restart or media-policy change. Documentation/whitespace checks pass; prior unit/browser suites were not repeated as native UI proof.
 - Next physical acceptance: reload app, verify gear/panel/Done/back, invitation/key flow, full-height/Fill, continued audio/video/clock through panel changes, and Expo button suppression/gesture access. No physical pass is claimed. Messaging, full M1, sustained-call and Ultra acceptance remain open.
+
+## 2026-11-17 Android installation handoff
+
+- Owner says the native UI is looking good and now has the wife's Android. Recorded general presentation feedback; detailed panel/gesture/media acceptance remains open.
+- Rechecked Android build 2cf8e5a8 as FINISHED/INTERNAL/development and retrieved its APK download link. Queried the running Metro Android manifest for its current tunnel host and verified public /status returns packager-status:running. No rebuild/deployment or signing changes.
+- Updated two-phone install/setup instructions for the current settings panel and eight-digit rooms. Android installation/call result remains pending. Documentation/whitespace checks pass; no runtime tests repeated for documentation-only changes.

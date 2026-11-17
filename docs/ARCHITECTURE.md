@@ -28,6 +28,7 @@ The direct WebRTC implementation is a learning experiment; do not assume it is t
 - `deploy/`: project-specific nginx/systemd/coturn templates. nginx terminates HTTPS/WSS; signaling binds `127.0.0.1:8787`; coturn binds the EC2 private IP on 3478 and TLS 5349 with a bounded UDP relay range.
 - `.env.server`: ignored, mode 600, with generated room-creation key and TURN master secret. Clients receive only time-limited TURN credentials after room authorization. No recording or conversation persistence.
 - `scripts/`: configuration bootstrap, public signaling smoke test, and Linux coturn packet-exchange diagnostic.
+- `web/`: responsive browser companion. It uses the same native signaling protocol and shared clock/invitation/ICE helpers. esbuild emits `web/dist`; server startup loads only HTML/JS/CSS from an explicit allowlist. nginx routes those paths through the existing HTTPS origin, with no CORS or new account/service required. Creator key is entered in memory; optional invitation fragments are removed from the address bar after loading.
 
 The live development services follow this checkout. Before switching to a branch without server code or changing dependencies, stop the project services or prepare the replacement. This is a development deployment, not an immutable production release.
 

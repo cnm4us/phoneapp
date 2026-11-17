@@ -7,6 +7,7 @@ This experiment connects two native development builds in the foreground. Use te
 | Component | Location / endpoint |
 | --- | --- |
 | Native app | Repository root; `App.tsx`, `src/call/`, `app.config.ts` |
+| Browser companion | `https://phoneapp.bawebtech.com/`; source `web/`, compiled allowlisted assets `web/dist` |
 | Signaling | `https://phoneapp.bawebtech.com`; WebSocket path `/signal`; health `/health` |
 | Signaling process | `phoneapp-signaling.service`, bound to `127.0.0.1:8787` |
 | TURN | `phoneapp.bawebtech.com:3478` UDP/TCP; `:5349` TLS/TCP; UDP relay ports 49160-49200 |
@@ -23,6 +24,8 @@ Private `.env.server` contains `POC_ACCESS_KEY` and `TURN_SECRET`. It is ignored
 `TURN_SECRET` must match the rendered coturn config under `/etc/phoneapp/`. It is never embedded in the app. Authenticated room members receive HMAC credentials valid for the bounded room lifetime. Invitations and active rooms expire after 30 minutes; leaving ends the room, so create a fresh invitation for another call.
 
 On a fresh checkout, `npm ci` installs pinned app/test dependencies. `npm run init:local` generates a new ignored `.env.server` only if absent; creating that file does not deploy TURN, obtain a certificate, or change firewall rules. Do not run it expecting to rotate an existing deployment's secret. Template configuration files are `.env.example` and `.env.server.example` at the repository root.
+
+Before starting the signaling server, run `npm run build:web`. The server reads only the built HTML/JS/CSS allowlist into memory; it never serves arbitrary repository files. Rebuild and restart signaling after browser source changes.
 
 ## Network setup
 
@@ -42,6 +45,8 @@ Run the real-device forced-relay scenario after installing both apps. This serve
 EAS CLI 27.10.0 is installed globally on this host, and `eas whoami` verified the owner account. The app is linked and uses IDs `com.bawebtech.phoneapp.poc` on both platforms. The Android keystore was created and is managed by EAS. No signing material was downloaded into Git.
 
 The Android development build finished successfully: [build 2cf8e5a8](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c). That upload used the working-tree implementation before the final documentation commit; the development client loads subsequent JavaScript from Metro.
+
+The owner's [iOS build 0e5beca1](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/0e5beca1-cdcd-4d69-9c85-90f26667e21d) also finished successfully; owner reports the native screen is visible. The signing/config instructions below document setup/rebuilds, not a remaining blocker for that installed build.
 
 EAS reported that the account is over its included build credits and charges further builds at pay-as-you-go rates. The owner explicitly approved pay-as-you-go for the iPhone build on 2026-11-16; that build no longer needs spending confirmation. Keep unrelated paid builds outside this authorization.
 
@@ -67,6 +72,17 @@ For an authorized Android rebuild, use `npm run build:android`. The `development
 6. Select **Send video** or audio-only independently on each phone. Tap **Join call** on both, grant microphone/camera access, and keep both apps in the foreground.
 7. Try mute, camera controls, and hangup. Create a new invitation for the next session. For relay testing, enable **Force TURN relay for testing** before joining; use **Refresh connection details** to capture candidate types.
 8. Execute the full [M1 matrix](plans/0001-webrtc-poc.md) and save a sanitized report from [the template](testing/DEVICE_REPORT_TEMPLATE.md). Do not treat connected timer seconds as approved billing time.
+
+## Call your iPhone from a browser
+
+1. Open `https://phoneapp.bawebtech.com` in Chrome/Edge on your computer or Safari on the iPad. The browser companion does not need Expo, Metro, EAS installation, or iPad device registration.
+2. Create an invitation on either the native app or browser. The creator needs `POC_ACCESS_KEY` from the private `.env.server` file; the other participant only needs the invitation.
+3. Use **Copy code** in the browser and paste that exact code in the native app's invitation field. Alternatively, paste a native-created invitation into the browser's **I have an invitation** tab. A **Copy browser link** option creates a link for another browser, not a native-app deep link. Its fragment is removed when the page loads, and you still tap Join yourself.
+4. Choose whether to send video and tap **Join call** on both devices. Allow camera/microphone access. Keep the native app and browser in the foreground. Use headphones when devices are near each other to prevent feedback.
+5. If Safari blocks playback, use **Tap to play call audio / video** in the call panel. This fallback is tested with an injected browser policy block; real Safari/iPad behavior still needs your confirmation.
+6. **Connection details** contains the optional forced-TURN setting (set before joining), candidate types, and received bytes. Ending a call closes the room; create a fresh invitation for another call. No conversation is recorded or stored.
+
+This first browser companion uses the existing native protocol, so it does not require a new iPhone build. Automated browser-to-browser results are recorded separately from manual browser-to-native or Safari results.
 
 ## Operate and diagnose the services
 

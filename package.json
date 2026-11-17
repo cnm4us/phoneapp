@@ -8,15 +8,18 @@
     "start:tunnel": "expo start --dev-client --tunnel",
     "dev:server": "tsx watch --env-file=.env.server server/index.ts",
     "start:server": "tsx --env-file=.env.server server/index.ts",
-    "test": "tsx --test server/server.test.ts src/call/core.test.ts",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p server/tsconfig.json",
+    "test": "npm run build:web && tsx --test server/server.test.ts src/call/core.test.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p web/tsconfig.json && tsc --noEmit -p web/tests/tsconfig.json",
     "check:docs": "python3 scripts/check_project.py",
     "doctor": "expo-doctor",
     "build:ios": "eas build --platform ios --profile development",
     "build:android": "eas build --platform android --profile development",
     "init:local": "node scripts/init-local.mjs",
     "smoke": "tsx --env-file=.env.server scripts/smoke.ts",
-    "bundle:check": "expo export --platform ios --platform android --output-dir artifacts/bundles"
+    "bundle:check": "expo export --platform ios --platform android --output-dir artifacts/bundles",
+    "build:web": "node scripts/build-web.mjs",
+    "test:browser": "npm run build:web && playwright test",
+    "test:browser:live": "node --env-file=.env.server scripts/test-browser-live.mjs"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -35,9 +38,11 @@
   },
   "devDependencies": {
     "@expo/ngrok": "4.1.3",
+    "@playwright/test": "1.65.1",
     "@types/node": "22.20.5",
     "@types/react": "19.2.18",
     "@types/ws": "8.18.2",
+    "esbuild": "0.28.2",
     "expo-doctor": "1.21.8",
     "tsx": "4.23.15",
     "typescript": "6.0.3"

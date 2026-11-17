@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { ClientMessage, IceServer, ServerMessage } from '../shared/protocol';
+import { loadWebAssets, webHeaders } from './web-assets';
 
 export interface Options {
   accessKey: string;
@@ -12,6 +13,7 @@ export interface Options {
   turnUrls?: string[];
   turnSecret?: string;
   log?: (event: Record<string, unknown>) => void;
+  webRoot?: string;
 }
 type Peer = { socket: WebSocket; alive: boolean; roomId?: string; initiator?: boolean; count: number; window: number };
 type Room = { token: string; sessionId: string; expiresAt: number; peers: Set<Peer>; phase: 'waiting' | 'ready' | 'offered' | 'answered' };
@@ -43,6 +45,7 @@ export function createSignaling(options: Options) {
   const peers = new Set<Peer>();
   const log = options.log ?? (() => {});
   const turnConfigured = Boolean(options.turnUrls?.length && options.turnSecret);
+  const assets = options.webRoot ? loadWebAssets(options.webRoot) : undefined;
   let createWindow = now();
   let creates = 0;
   const send = (p: Peer, message: ServerMessage) => {
@@ -77,6 +80,12 @@ export function createSignaling(options: Options) {
   const authorized = (req: IncomingMessage) => equal(req.headers.authorization ?? '', `Bearer ${options.accessKey}`);
   const http = createServer((req, res) => {
     expire();
+    const asset = assets?.get((req.url ?? '').split('?')[0]);
+    if (asset && (req.method === 'GET' || req.method === 'HEAD')) {
+      res.writeHead(200, { ...webHeaders, 'Content-Type': asset.contentType });
+      res.end(req.method === 'HEAD' ? undefined : asset.body);
+      return;
+    }
     if (req.method === 'GET' && req.url === '/health') return json(res, 200, { ok: true, service: 'phoneapp-signaling', turnConfigured });
     if (req.method !== 'POST' || req.url !== '/rooms') return json(res, 404, { error: 'Not found' });
     if (!authorized(req)) return json(res, 401, { error: 'Test access key required' });

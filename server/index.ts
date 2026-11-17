@@ -1,4 +1,5 @@
 import { createSignaling } from './server';
+import { resolve } from 'node:path';
 
 const urls = (value: string | undefined) => value?.split(',').map((v) => v.trim()).filter(Boolean) ?? [];
 const turnUrls = urls(process.env.TURN_URLS);
@@ -8,6 +9,7 @@ const server = createSignaling({
   stunUrls: urls(process.env.STUN_URLS ?? 'stun:stun.l.google.com:19302'),
   turnUrls,
   turnSecret: process.env.TURN_SECRET,
+  webRoot: resolve('web/dist'),
   log: (event) => console.log(JSON.stringify({ at: new Date().toISOString(), ...event })),
 });
 const port = Number(process.env.PORT ?? 8787);

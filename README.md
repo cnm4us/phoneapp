@@ -2,7 +2,7 @@
 
 A native iOS and Android communications app for capturing care-team work and reviewing patient-level time. The first milestone is a WebRTC proof of concept between the owner's iPhone and his wife's Android phone.
 
-**Status:** native app and signaling implementation available; physical-phone acceptance pending. HTTPS/WebSocket signaling is running at `https://phoneapp.bawebtech.com`; authenticated public TURN UDP/TCP/TLS probes pass. The Android native build succeeded; iPhone signing/build setup is in progress. Development uses synthetic data; HIPAA implementation is a later milestone.
+**Status:** native apps, browser companion, and signaling are available; physical call acceptance pending. Open [the browser companion](https://phoneapp.bawebtech.com) to join the native app from Windows or an iPad browser. Public signaling/relay checks and browser media tests pass. iOS and Android native builds succeeded. Development uses synthetic data; HIPAA implementation is a later milestone.
 
 ## Start here
 
@@ -10,6 +10,7 @@ A native iOS and Android communications app for capturing care-team work and rev
 - [Current project state](docs/PROJECT_STATE.md): what exists and the next action.
 - [Roadmap](docs/ROADMAP.md): milestones and dependencies.
 - [First implementation plan](docs/plans/0001-webrtc-poc.md): two-device WebRTC experiment.
+- [Browser companion plan](docs/plans/0002-browser-companion.md): browser UI, synthetic media tests, and deployment evidence.
 - [Agent instructions](AGENTS.md): how to resume and maintain this repository.
 - [Tools and access](docs/TOOLS.md): verified capabilities, connection setup, and commands.
 - [Database workflow](docs/DATABASE.md): ownership and migration policy.
@@ -35,10 +36,13 @@ The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `
 npm ci
 npm run typecheck
 npm test
+npm run test:browser
 npm run doctor
 npm run bundle:check
 ```
 
 For local service configuration, `npm run init:local` creates private `.env.server` only if absent. See the setup guide before starting services: this host already runs `phoneapp-signaling` and `phoneapp-turn`; do not start another server on their port. The POC has no persistent patient database.
+
+Run `npm run build:web` before starting/restarting signaling on a fresh checkout. For browser tests, install Chromium once with `npx playwright install chromium`; forced-relay testing needs configured/reachable TURN. `npm run test:browser:live` checks the deployed site using the private creator key and synthetic media; it does not operate physical devices.
 
 Repository: <https://github.com/cnm4us/phoneapp>

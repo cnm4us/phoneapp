@@ -13,3 +13,5 @@
 The M1 duration display is experimental; durable call-derived time arrives with the ledger/integration milestones. Reorder later milestones when evidence or user priorities justify it. Record scope changes in the PRD and the relevant plan.
 
 M1 plan: [0001](plans/0001-webrtc-poc.md). Create later plans when their scope is concrete using [the template](plans/TEMPLATE.md). Do not preapprove providers, spending, or billable behavior through this roadmap.
+
+Supporting [plan 0002](plans/0002-browser-companion.md) adds an initial COM-01 browser participant for solo M1 testing. The browser page is deployed and passes automated media checks; this does not complete the later patient-facing browser/access workflow or replace the original physical-device matrix.

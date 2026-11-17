@@ -18,6 +18,8 @@ deploy/
 docs/
 server/
 scripts/
+web/
+playwright.config.ts
 test-results/
 coverage/
 *.log

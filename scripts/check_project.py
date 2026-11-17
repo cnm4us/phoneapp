@@ -28,6 +28,8 @@ REQUIRED = (
     "docs/SETUP.md",
     "docs/decisions/0002-webrtc-implementation.md",
     "docs/testing/2026-11-16-poc-foundation.md",
+    "docs/plans/0002-browser-companion.md",
+    "docs/testing/2026-11-16-browser-companion.md",
     ".github/pull_request_template.md",
     "docs/templates/docs-workflow.yml",
 )

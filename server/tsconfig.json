@@ -4,5 +4,5 @@
     "strict": true, "noEmit": true, "esModuleInterop": true,
     "skipLibCheck": true, "types": ["node"]
   },
-  "include": ["./**/*.ts", "../shared/**/*.ts", "../src/call/core.ts", "../src/call/core.test.ts", "../scripts/smoke.ts"]
+  "include": ["./**/*.ts", "../shared/**/*.ts", "../src/call/core.ts", "../src/call/core.test.ts", "../scripts/smoke.ts", "../scripts/browser-test-server.ts"]
 }

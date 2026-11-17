@@ -2,6 +2,7 @@ import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createHmac } from 'node:crypto';
+import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
 import { createSignaling, type Options } from './server';
 import type { Invitation, ServerMessage } from '../shared/protocol';
@@ -162,4 +163,23 @@ test('TURN master secret stays server-side; joined peers receive bounded HMAC cr
 test('incomplete TURN config and weak access keys fail startup', () => {
   assert.throws(() => createSignaling({ accessKey: 'short' }), /24/);
   assert.throws(() => createSignaling({ accessKey: key, turnUrls: ['turn:relay.invalid'] }), /together/);
+});
+
+test('browser assets have correct types and headers; arbitrary project files stay inaccessible', async (t) => {
+  const f = await fixture(t, { webRoot: resolve('web/dist') });
+  for (const [path, type] of [['/', 'text/html'], ['/app.js', 'text/javascript'], ['/styles.css?version=test', 'text/css']]) {
+    const response = await fetch(`${f.base}${path}`);
+    assert.equal(response.status, 200);
+    assert(response.headers.get('content-type')?.includes(type));
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+    assert(response.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
+    const contents = await response.text();
+    assert(contents.length > 0);
+    assert(!contents.includes(key));
+  }
+  for (const path of ['/.env.server', '/server/server.ts', '/app.config.ts', '/web/main.ts']) assert.equal((await fetch(`${f.base}${path}`)).status, 404);
+  const head = await fetch(`${f.base}/`, { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  assert.equal(await head.text(), '');
 });

@@ -6,6 +6,8 @@
 python3 scripts/check_project.py
 npm run typecheck
 npm test
+npm run test:browser
+npm run test:browser:live
 npm run doctor
 npm run bundle:check
 ```
@@ -13,6 +15,8 @@ npm run bundle:check
 The Python check validates project artifacts and local Markdown links/references. TypeScript checks app, server, and test logic. Node tests exercise live local signaling and pure call helpers. Expo Doctor checks dependency/configuration health; bundle export compiles both platforms' JavaScript, not native binaries. A [GitHub Actions template](templates/docs-workflow.yml) is provided but not enabled because workflow-write permission is unavailable.
 
 `npm run smoke` loads the private server key from `.env.server` and checks the public HTTPS/WSS path through nginx with two synthetic signaling peers. It does not exchange real media. `python3 scripts/check-turn.py --transport udp` (also `tcp` or `tls`) uses the installed Linux coturn client to send relay test packets. Neither establishes physical-phone acceptance. See [the implementation report](testing/2026-11-16-poc-foundation.md) and [setup](SETUP.md).
+
+The browser companion tests use Chromium's synthetic media devices while performing actual peer negotiation and transferring media. They assert remote video dimensions/playback and increasing inbound bytes; the forced-relay scenario also checks selected relay candidate types. Tests cover controls, capture teardown, repeat calls, audio-only/video mix, invalid room/key, permission denial, autoplay recovery, fragment removal, and viewport overflow. The public variant uses the deployed HTTPS/WSS path. See [browser evidence](testing/2026-11-16-browser-companion.md). Native iPhone/Android, real cameras/microphones, and Safari remain manual checks.
 
 ## Implementation checks
 
@@ -23,7 +27,7 @@ Add only tests that verify meaningful behavior. Keep actual commands and limits 
 | Type/lint/build checks | App/backend configuration and code consistency | Compilation does not prove media works. |
 | Signaling tests | Two-member limit, invite expiry, invalid payloads, disconnect cleanup, candidate/offer exchange, rejoin behavior | Protocol success does not prove audio/video exchange. |
 | App logic tests | State transitions, timer boundaries, permission errors, cleanup | Mocked WebRTC cannot validate hardware or native routing. |
-| Optional browser harness | Negotiation and browser peer behavior; Playwright if appropriate | Browser emulation is not a native iPhone/Android device test. |
+| Browser companion | Playwright synthetic-media calls, forced TURN, controls/cleanup, permission/playback errors, responsive widths | Chromium at iPad viewport dimensions is not Safari or native hardware verification. |
 | Physical devices | Native media capture/playback, camera switching, cross-network connection, teardown | Requires owner-operated devices until remote tooling is explicitly configured. |
 | Database | Clean install, upgrade, constraints, event idempotency, time/export reconciliation | Use isolated test data/targets; no DB currently exists. |
 

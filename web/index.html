@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#10242b" />
+    <meta
+      name="description"
+      content="Join a Phoneapp test call from your browser."
+    />
+    <title>Phoneapp · Browser companion</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body data-state="idle">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Phoneapp home"
+        ><span class="brand-mark" aria-hidden="true"
+          ><svg viewBox="0 0 24 24">
+            <rect x="3" y="6" width="12" height="12" rx="4" />
+            <path d="m15 10 6-3v10l-6-3" /></svg></span
+        >phoneapp<span class="brand-divider"></span
+        ><span class="brand-subtitle">Browser companion</span></a
+      >
+      <span class="test-badge"><span></span>Test environment</span>
+    </header>
+    <main class="workspace">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">A SECOND SEAT FOR YOUR CALL</p>
+        <h1 id="page-title">
+          Your phone. This browser.<br />One conversation.
+        </h1>
+        <p>
+          Join your native app from a computer or iPad. Keep both devices open,
+          and use headphones if they’re nearby.
+        </p>
+      </section>
+      <div class="call-layout">
+        <section class="setup panel" aria-labelledby="setup-heading">
+          <div class="section-heading">
+            <span class="step">01</span>
+            <div>
+              <h2 id="setup-heading">Set up your call</h2>
+              <p>Two devices, one invitation.</p>
+            </div>
+          </div>
+          <div class="tabs" role="group" aria-label="Invitation options">
+            <button id="create-tab" type="button" aria-pressed="true">
+              New invitation</button
+            ><button id="join-tab" type="button" aria-pressed="false">
+              I have an invitation
+            </button>
+          </div>
+          <form id="call-form">
+            <fieldset id="setup-fields">
+              <legend class="sr-only">Invitation and call preferences</legend>
+              <div id="creator-pane">
+                <label for="access-key"
+                  >Test access key
+                  <span class="sub-label">Creator only</span></label
+                >
+                <input
+                  id="access-key"
+                  type="password"
+                  autocomplete="off"
+                  spellcheck="false"
+                  autocapitalize="none"
+                  placeholder="Paste your private test key"
+                  aria-describedby="key-help"
+                />
+                <p class="field-help" id="key-help">
+                  Only the person creating an invitation needs this key.
+                </p>
+                <button
+                  id="create"
+                  type="button"
+                  class="button secondary full"
+                  disabled
+                >
+                  Create invitation <span aria-hidden="true">↗</span>
+                </button>
+                <details class="key-details">
+                  <summary>Where do I find the test key?</summary>
+                  <p>
+                    Open your project’s private <code>.env.server</code> file in
+                    VS Code and copy <code>POC_ACCESS_KEY</code>. It stays in
+                    this page’s memory and is never saved in browser storage.
+                  </p>
+                </details>
+                <div class="separator"></div>
+              </div>
+              <label for="invitation">Invitation code</label>
+              <textarea
+                id="invitation"
+                rows="2"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="none"
+                maxlength="256"
+                placeholder="Create one above, or paste a shared code"
+                aria-describedby="invite-help"
+              ></textarea>
+              <p class="field-help" id="invite-help">
+                Paste this same code into the iPhone app.
+              </p>
+              <div class="preference">
+                <div>
+                  <label for="video">Send video</label>
+                  <p>Turn off for an audio-only call.</p>
+                </div>
+                <input id="video" type="checkbox" role="switch" checked />
+              </div>
+            </fieldset>
+            <div class="copy-actions">
+              <button id="copy-code" type="button" class="text-button" disabled>
+                Copy code</button
+              ><span aria-hidden="true">·</span
+              ><button
+                id="copy-link"
+                type="button"
+                class="text-button"
+                disabled
+              >
+                Copy browser link
+              </button>
+            </div>
+            <p id="notice" class="notice" role="status" aria-live="polite"></p>
+            <p id="error" class="error" role="alert" hidden></p>
+            <button
+              id="join"
+              type="submit"
+              class="button primary full"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="6" width="12" height="12" rx="3" />
+                <path d="m15 10 6-3v10l-6-3" /></svg
+              >Join call
+            </button>
+          </form>
+          <p class="privacy-note">
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <rect x="4" y="8" width="12" height="9" rx="2" />
+              <path d="M6 8V6a4 4 0 0 1 8 0v2" /></svg
+            >Your microphone and camera turn on when you join. Nothing is
+            recorded.
+          </p>
+        </section>
+        <section class="call-panel" aria-label="Call">
+          <div class="stage" id="stage">
+            <div class="stage-top">
+              <span class="status-pill" id="status" role="status"
+                >Ready to connect</span
+              ><output class="elapsed" id="elapsed" aria-label="Connected time"
+                >00:00</output
+              >
+            </div>
+            <video
+              id="remote"
+              autoplay
+              playsinline
+              aria-label="Other participant’s video"
+            ></video>
+            <div id="stage-placeholder" class="stage-placeholder">
+              <div class="orbit">
+                <span class="orbit-inner"
+                  ><svg viewBox="0 0 64 64" aria-hidden="true">
+                    <circle cx="32" cy="24" r="10" />
+                    <path d="M14 52c0-11 8-17 18-17s18 6 18 17" /></svg></span
+                ><span class="orbit-dot"></span>
+              </div>
+              <h2 id="stage-title">A place for the other side.</h2>
+              <p id="stage-description">
+                Create or paste an invitation,<br />then join on both devices.
+              </p>
+            </div>
+            <div class="local-preview" id="local-preview" hidden>
+              <video
+                id="local"
+                autoplay
+                playsinline
+                muted
+                aria-label="Your camera preview"
+              ></video
+              ><span>You</span>
+            </div>
+            <button
+              id="play-audio"
+              type="button"
+              class="button playback"
+              hidden
+            >
+              Tap to play call audio / video
+            </button>
+            <div class="stage-caption">
+              <span class="stage-caption-dot"></span
+              ><span>Phoneapp test call</span
+              ><span class="stage-caption-right"
+                >Keep this page in the foreground</span
+              >
+            </div>
+          </div>
+          <div class="controls" aria-label="Call controls">
+            <button id="mute" class="control-button" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="3" width="6" height="12" rx="3" />
+                <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></svg
+              ><span>Mute</span></button
+            ><button id="camera" class="control-button" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="6" width="12" height="12" rx="3" />
+                <path d="m15 10 6-3v10l-6-3" /></svg
+              ><span>Camera off</span></button
+            ><span class="control-divider"></span
+            ><button
+              id="hangup"
+              class="control-button end-call"
+              type="button"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M3 15v-4c5-5 13-5 18 0v4l-5-1v-3a14 14 0 0 0-8 0v3Z"
+                /></svg
+              ><span>Leave call</span>
+            </button>
+          </div>
+          <details class="diagnostics">
+            <summary>
+              Connection details
+              <span class="diagnostics-hint">For testing</span>
+            </summary>
+            <div class="diagnostics-content">
+              <label class="relay-label"
+                ><input id="relay" type="checkbox" />Use TURN relay only</label
+              >
+              <p class="field-help">
+                Set before joining to test the relay path.
+              </p>
+              <dl>
+                <div>
+                  <dt>Session</dt>
+                  <dd id="session">Not joined</dd>
+                </div>
+                <div>
+                  <dt>Media path</dt>
+                  <dd id="path">Not connected</dd>
+                </div>
+                <div>
+                  <dt>Media received</dt>
+                  <dd><output id="received" data-bytes="0">0 bytes</output></dd>
+                </div>
+              </dl>
+              <button id="refresh" type="button" class="text-button" disabled>
+                Refresh details
+              </button>
+            </div>
+          </details>
+        </section>
+      </div>
+      <footer>
+        Built for your first WebRTC experiment.<span
+          >Test conversations only · Two participants per room</span
+        >
+      </footer>
+    </main>
+  </body>
+</html>

@@ -12,7 +12,7 @@ Updated: 2026-11-16. Record verified capabilities separately from proposals. Con
 | Python | Python 3 installed | Runs documentation check without third-party dependencies. |
 | Docker | Not found on PATH | Disposable container DB testing is unavailable until configured. |
 | PostgreSQL client | `psql` not found on PATH | No database connection has been established. |
-| EAS | CLI 27.10.0 installed globally; authenticated as `mbcollins2`; project linked | Android build submitted. No suitable iOS internal-distribution credentials found in noninteractive mode. Owner approved iPhone pay-as-you-go. |
+| EAS | CLI 27.10.0; authenticated as `mbcollins2`; project linked | Android and iOS native builds finished successfully. Owner approved iPhone pay-as-you-go; no new build needed for browser companion. |
 | Apple Developer | Owner reports an account | Access credentials remain with the owner; use EAS-supported signing flow. |
 | iPhone / Android | Owner and wife own the devices | Models/OS versions unknown; no remote device-control tool configured. |
 | nginx / certbot | Installed; dedicated hostname site/certificate deployed | `https://phoneapp.bawebtech.com/health` verified. Other sites were not edited. |
@@ -22,7 +22,7 @@ Updated: 2026-11-16. Record verified capabilities separately from proposals. Con
 
 - Shell/filesystem tools can edit source, run available checks, and manage Git in the checkout.
 - A connected GitHub tool verified repository metadata, but workflow/PR writes were denied in this session. Authenticated Git/`gh` successfully pushed the feature branch and opened [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Rediscover availability in a new session; ordinary CLI repository writes work, while workflow-write scope is still missing.
-- Browser automation tools were exposed in this session but have not been exercised for this project. They can assist with a future web test harness; they do not control native apps on the two physical phones.
+- Playwright 1.65.1 / Chromium and browser developer tools have now been exercised for the companion. Tests use synthetic camera/microphone input and real WebRTC media. They do not control native apps on the physical phones.
 - No dedicated database connector or native-device test connection has been verified. Add exact capabilities only after an actual connectivity/test run.
 
 ## Commands available now
@@ -36,6 +36,9 @@ npm test
 npm run doctor
 npm run bundle:check
 npm run smoke
+npm run build:web
+npm run test:browser
+npm run test:browser:live
 git status --short --branch
 git diff --check
 ```
@@ -47,13 +50,13 @@ The [GitHub Actions template](templates/docs-workflow.yml) can run the same chec
 | Area | Plan | When to mark ready |
 | --- | --- | --- |
 | Native app | Expo CLI, global EAS CLI 27.10.0, TypeScript, Expo Doctor, native generation and JS bundles available | Native cloud result and physical behavior are separate; see current state/report. No dedicated lint runner configured. |
-| Signaling/backend | Node tests via `tsx`; actual local HTTP/WSS protocol tests and public smoke | 15 tests pass; no media in signaling smoke. |
-| Browser harness | Playwright if a web peer/debug harness is useful | Tests run against a real harness; browser results remain separate from physical-device results. |
+| Signaling/backend | Node tests via `tsx`; local HTTP/WSS tests, static allowlist/headers, public smoke | 16 tests pass; no media in signaling smoke. |
+| Browser companion | Buildless UI source in `web/`, TypeScript bundled by esbuild 0.28.2, Playwright 1.65.1 | 7 deployed-site checks pass in Chromium with synthetic media. Physical/native/Safari results remain separate. |
 | Native acceptance | Both physical phones, EAS artifacts, sanitized session diagnostics | Owners install builds and execute the matrix in the active plan. |
 | DB access | Dedicated dev/test database and CLI or driver; migration runner selected with persistence stack | Connectivity verified to the recorded target without printing secrets. |
 | DB tests | Disposable or isolated DB, clean install + upgrade checks | Bootstrap and migration commands work and outcomes are recorded. |
 
-See `package.json` for actual scripts. Playwright has not been installed/exercised; it would test web behavior, not native iPhone camera/audio or background ringing. Linux relay diagnostics use `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`) and private `.env.server`. They do not prove physical-phone media.
+See `package.json` for actual scripts. Install Chromium once using `npx playwright install chromium`. Local browser tests start an isolated server on loopback 8790 with a synthetic creator key; if `.env.server` exists, only the configured TURN connection is reused. Without TURN the relay scenario is explicitly skipped. `test:browser:live` uses `.env.server` to exercise the public site; it creates temporary rooms and transfers synthetic media. Neither controls the physical phones. Linux relay diagnostics remain available with `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`).
 
 ## Connection registry
 
@@ -65,6 +68,7 @@ Populate this table as each service is configured. Use aliases and secret refere
 | App identifiers | iOS / Android | `com.bawebtech.phoneapp.poc` | Not applicable | Configured; native/device result pending |
 | Metro | Development | Port 8081, `npm run start:tunnel`; ephemeral URL in its terminal | Existing Expo session | Tunnel started; recheck process |
 | Signaling | Development | `https://phoneapp.bawebtech.com`, WSS `/signal`, private listener 8787 | `.env.server` (600), creator key entered in app | Public health/WSS smoke passed |
+| Browser companion | Development | `https://phoneapp.bawebtech.com/`, `/app.js`, `/styles.css` | Creator key entered only when creating; guest uses invitation | Public Chromium media tests passed |
 | TURN | Development | Host `phoneapp.bawebtech.com`; 3478 UDP/TCP, 5349 TLS, UDP relay 49160-49200 | `.env.server` master secret + `/etc/phoneapp/turnserver.conf`; client HMAC credentials expire | Local/public probes pass; real phones pending |
 | Database | Dev / test | Not provisioned | Future ignored env/secret store | No |
 | Twilio | Future development | Not linked | Backend-only secret store | No |
@@ -83,9 +87,11 @@ Before using DB tooling, verify target host/database/environment and intended mi
 
 Full instructions and recovery: [setup/runbook](SETUP.md). `phoneapp-signaling` and `phoneapp-turn` are enabled systemd services. Check with `sudo systemctl status phoneapp-signaling phoneapp-turn --no-pager`; restart only the affected project unit after checks. Their runtime follows this development checkout, so account for running services before changing branches/dependencies. Generated native folders and private artifacts are ignored.
 
+Before starting/restarting signaling, run `npm run build:web`: it loads the three allowlisted compiled assets from `web/dist` at startup. Asset changes need a signaling restart after tests. nginx routes only those three page/assets paths plus existing APIs; arbitrary repository files are not served. Build outputs, private screenshots, and browser test results are ignored.
+
 The AWS role cannot describe/manage EC2 security groups. No AWS rules were changed by the agent. Owner confirmed inbound TCP 3478/5349, UDP 3478 and `49160-49200` were added; public relay probes subsequently passed. AWS Console requires an ordinary ASCII hyphen for the range. A configured health flag alone does not prove reachability.
 
-EAS Android build: [2cf8e5a8](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c), finished successfully. iOS noninteractive submission stopped before upload because internal-distribution credentials were missing; owner interaction for Apple signing/device registration remains necessary. Pay-as-you-go for the iPhone build is explicitly authorized.
+EAS native builds: [Android 2cf8e5a8](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c) and [iOS 0e5beca1](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/0e5beca1-cdcd-4d69-9c85-90f26667e21d), both finished successfully. Owner reports the iPhone app is open. The historical signing/config stops are resolved for that build. Additional devices still need appropriate provisioning when using the native app; an iPad browser needs no EAS enrollment.
 
 `npm run start:tunnel` uses installed local ngrok tooling. Keep the Metro terminal running while development clients use it; no persistent Metro systemd service was installed. Do not start duplicate listeners on 8081 or 8787.
 

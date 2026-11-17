@@ -82,7 +82,19 @@ For an authorized Android rebuild, use `npm run build:android`. The `development
 5. If Safari blocks playback, use **Tap to play call audio / video** in the call panel. This fallback is tested with an injected browser policy block; real Safari/iPad behavior still needs your confirmation.
 6. **Connection details** contains the optional forced-TURN setting (set before joining), candidate types, and received bytes. Ending a call closes the room; create a fresh invitation for another call. No conversation is recorded or stored.
 
-This first browser companion uses the existing native protocol, so it does not require a new iPhone build. Automated browser-to-browser results are recorded separately from manual browser-to-native or Safari results.
+The quality iteration negotiates additive capabilities after the original join, preserving existing-client compatibility. Its JavaScript controls use the installed native module. Reload the browser and the Expo development app from the running Metro session to try them; no new native build was submitted. Automated browser-to-browser results remain separate from physical native/Safari evidence.
+
+## Adjust call quality
+
+Use **Call quality** before or during a call. Auto begins conservatively below a 1080p/30 ceiling; High allows up to 1080p/60 where devices, receiver limits, and network permit. Standard/Data saver/Minimum reduce video resolution and bitrate. Presets set send/receive preferences together; **Advanced** separates them. Requested ceilings and actual output intentionally differ. **Full screen** changes display size independently of quality.
+
+**Send video** off joins without the local camera and can still receive video. **Audio only · both directions** is coordinated: either participant may retain it. After both leave this mode, choose **Camera on** locally to resume. A remote request never activates your camera. With an older client, remote controls are labeled unavailable and two-way suppression cannot be confirmed.
+
+Audio-first adaptation reduces/pauses video when audio suffers and restores it gradually after sustained improvement. Network failure can still interrupt audio. Unsupported settings and negotiation failures are reported; use a new invitation if video cannot resume while audio remains usable.
+
+Defaults: `RELAY_VIDEO_MAX_BITRATE=6000000` bits/s and `ENABLE_EXPERIMENTAL_ULTRA=false`. The live TURN quota is 1000000 bytes/s (8 Mbps) per allocation; the lower application cap leaves audio/transport headroom. Verify effective quotas/capacity before raising either limit. The 4K/60, 30 Mbps policy remains experimental and gated by server/device support; native capability enumeration is unavailable in the installed wrapper. [Plan 0003](plans/0003-adaptive-call-quality.md) lists remaining gates.
+
+Run checks and `npm run build:web` before restarting only `phoneapp-signaling`. It loads assets into memory; current rooms end on restart. Keep protocol-2 server support while rolling back client features. No TURN restart is needed for UI/policy changes. The isolated `npm run test:quality-network` experiment is documented in [tools](TOOLS.md) and [quality evidence](testing/2026-11-17-adaptive-quality.md); never shape the host primary interface.
 
 ## Operate and diagnose the services
 

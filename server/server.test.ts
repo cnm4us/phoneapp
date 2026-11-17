@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
 import { createSignaling, type Options } from './server';
 import type { Invitation, ServerMessage } from '../shared/protocol';
+import { limitOnly, PRESETS } from '../src/call/quality';
 
 const key = 'unit-test-only-key-not-for-real-use';
 class Client {
@@ -163,6 +164,52 @@ test('TURN master secret stays server-side; joined peers receive bounded HMAC cr
 test('incomplete TURN config and weak access keys fail startup', () => {
   assert.throws(() => createSignaling({ accessKey: 'short' }), /24/);
   assert.throws(() => createSignaling({ accessKey: key, turnUrls: ['turn:relay.invalid'] }), /together/);
+});
+
+test('quality capability handshake preserves legacy peers and scopes validated, revisioned policies', async t => {
+  const f = await fixture(t), invite = await f.create();
+  const a = await f.connect(invite), joined = await a.next('joined');
+  assert.equal(joined.protocolVersion, 2); assert.equal(joined.relayVideoMaxBitrate, 6_000_000); assert.equal(joined.ultraEnabled, false);
+  a.send({ type: 'capabilities', version: 2 });
+  const b = await f.connect(invite); await b.next('joined'); await a.next('ready'); await b.next('ready');
+  // The legacy peer sees only the existing ready event, no new control events.
+  assert(!b.messages.some(m => m.type === 'peer-capabilities'));
+  b.send({ type: 'capabilities', version: 2 }); await a.next('peer-capabilities'); await b.next('peer-capabilities');
+  const policy = { type: 'media-policy', revision: 2, receive: limitOnly(PRESETS.saver), audioOnly: false, pauseIncoming: false };
+  a.send(policy); assert.deepEqual(await b.next('media-policy'), policy);
+  a.send({ ...policy, revision: 1 });
+  a.send({ type: 'ice', candidate: { candidate: 'barrier', sdpMid: null, sdpMLineIndex: 0 } }); await b.next('ice');
+  assert(!b.messages.some(m => m.type === 'media-policy'));
+  b.send({ type: 'policy-applied', revision: 2, applied: limitOnly(PRESETS.saver), videoPaused: false, supported: true });
+  assert.equal((await a.next('policy-applied')).revision, 2);
+});
+
+test('quality messages reject non-finite/out-of-range limits and spoofed routing', async t => {
+  const f = await fixture(t);
+  for (const extra of [{ receive: { ...limitOnly(PRESETS.auto), bitrate: null } }, { receive: { ...limitOnly(PRESETS.auto), fps: 120 } }, { to: 'another-room' }]) {
+    const a = await f.connect(await f.create()); await a.next('joined');
+    a.send({ type: 'media-policy', revision: 1, receive: limitOnly(PRESETS.auto), audioOnly: false, pauseIncoming: false, ...extra });
+    assert.equal((await a.next('error')).code, 'invalid-message');
+  }
+});
+
+test('renegotiation is serialized through the original offerer; simultaneous requests queue safely', async t => {
+  const f = await fixture(t), invite = await f.create();
+  const a = await f.connect(invite); await a.next('joined'); a.send({ type: 'capabilities', version: 2 });
+  const b = await f.connect(invite); await b.next('joined'); b.send({ type: 'capabilities', version: 2 });
+  await a.next('ready'); await b.next('ready'); await a.next('peer-capabilities'); await b.next('peer-capabilities');
+  const exchange = async (negotiationId?: number) => {
+    const id = negotiationId ? { negotiationId } : {};
+    a.send({ type: 'offer', description: { type: 'offer', sdp: 'synthetic-offer' }, ...id }); await b.next('offer');
+    b.send({ type: 'answer', description: { type: 'answer', sdp: 'synthetic-answer' }, ...id }); await a.next('answer');
+  };
+  await exchange();
+  a.send({ type: 'renegotiate' }); const first = await a.next('negotiate');
+  b.send({ type: 'renegotiate' });
+  await exchange(first.negotiationId);
+  const second = await a.next('negotiate'); assert.equal(second.negotiationId, first.negotiationId + 1);
+  await exchange(second.negotiationId);
+  assert(!b.messages.some(m => m.type === 'negotiate'));
 });
 
 test('browser assets have correct types and headers; arbitrary project files stay inaccessible', async (t) => {

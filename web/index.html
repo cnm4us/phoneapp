@@ -109,7 +109,7 @@
               <div class="preference">
                 <div>
                   <label for="video">Send video</label>
-                  <p>Turn off for an audio-only call.</p>
+                  <p>Turn off to join without your camera.</p>
                 </div>
                 <input id="video" type="checkbox" role="switch" checked />
               </div>
@@ -151,6 +151,7 @@
         </section>
         <section class="call-panel" aria-label="Call">
           <div class="stage" id="stage">
+            <button id="fullscreen" type="button" class="fullscreen-button">Full screen</button>
             <div class="stage-top">
               <span class="status-pill" id="status" role="status"
                 >Ready to connect</span
@@ -228,6 +229,28 @@
               ><span>Leave call</span>
             </button>
           </div>
+          <section class="quality-panel" aria-labelledby="quality-heading">
+            <h2 id="quality-heading">Call quality</h2>
+            <p class="field-help">Ceilings adapt downward as needed. Audio comes first.</p>
+            <label for="quality">Quality ceiling · send and receive</label>
+            <select id="quality"></select>
+            <button id="audio-only" type="button" class="button secondary full" aria-pressed="false">Audio only · both directions</button>
+            <p id="quality-status" class="notice" role="status" aria-live="polite"></p>
+            <p id="quality-error" class="error" role="alert" hidden></p>
+            <p id="ultra-help" class="field-help">4K is experimental and requires verified device and server support.</p>
+            <dl class="quality-measurements">
+              <div><dt>Sending ceiling</dt><dd id="send-limit"></dd></div>
+              <div><dt>Incoming ceiling</dt><dd id="receive-limit"></dd></div>
+              <div><dt>Actual sent</dt><dd id="sent-quality"></dd></div>
+              <div><dt>Actual received</dt><dd id="received-quality"></dd></div>
+              <div><dt>Incoming audio</dt><dd id="incoming-audio-quality"></dd></div>
+              <div><dt>Outgoing audio feedback</dt><dd id="outgoing-audio-quality"></dd></div>
+            </dl>
+            <details id="advanced-quality"><summary>Advanced · separate send / receive limits</summary>
+              <div id="directional-limits"></div>
+              <button id="apply-limits" type="button" class="button secondary full">Apply limits</button>
+            </details>
+          </section>
           <details class="diagnostics">
             <summary>
               Connection details

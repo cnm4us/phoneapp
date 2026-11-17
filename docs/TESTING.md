@@ -8,6 +8,7 @@ npm run typecheck
 npm test
 npm run test:browser
 npm run test:browser:live
+npm run test:quality-network
 npm run doctor
 npm run bundle:check
 ```
@@ -19,6 +20,8 @@ The Python check validates project artifacts and local Markdown links/references
 The browser companion tests use Chromium's synthetic media devices while performing actual peer negotiation and transferring media. They assert remote video dimensions/playback and increasing inbound bytes; the forced-relay scenario also checks selected relay candidate types. Tests cover controls, capture teardown, repeat calls, audio-only/video mix, invalid room/key, permission denial, autoplay recovery, fragment removal, and viewport overflow. The public variant uses the deployed HTTPS/WSS path. See [browser evidence](testing/2026-11-16-browser-companion.md). Native iPhone/Android, real cameras/microphones, and Safari remain manual checks.
 
 ## Implementation checks
+
+The quality increment extends browser acceptance to 12 scenarios: directional incoming limits, cameras added after camera-less joins, simultaneous changes, two-way video-RTP suppression with audio continuity on direct/relay routes, consent-aware restoration, negotiation-failure survival, and full-screen layout. Unit/server coverage includes shared policy/stats/controller and native API fallbacks (31 tests). The Linux impairment harness uses real UDP through isolated TURN and netem on a disposable veth pair; automation uses a private Unix socket outside the shaped path. See [quality evidence](testing/2026-11-17-adaptive-quality.md). HTTP throttling or packet counters do not establish perceptual speech quality/end-to-end delay.
 
 Add only tests that verify meaningful behavior. Keep actual commands and limits in [tools/access](TOOLS.md).
 

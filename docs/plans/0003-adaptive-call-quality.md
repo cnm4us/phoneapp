@@ -1,14 +1,14 @@
 # 0003 Adaptive call quality and audio-first controls
 
-Status: ready for implementation; implementation not started. Updated: 2026-11-17 UTC. Requirements: COM-07, COM-08, COM-09 in [the PRD](../PRD.md).
+Status: implemented; physical-device acceptance and experimental Ultra capacity gates pending. Updated: 2026-11-17 UTC. Requirements: COM-07, COM-08, COM-09 in [the PRD](../PRD.md).
 
 ## Outcome and scope
 
 Provide native iOS/Android and browser participants with very high video ceilings, simple controls for reducing quality, automatic adaptation below their selected ceilings, and an explicit two-way audio-only mode. Protect intelligible, low-latency speech throughout. Full-screen viewing works at every resolution; lower-resolution video looks softer when enlarged.
 
-This plan covers foreground, two-person calls using the existing infrastructure. It does not add recording, clinical data, background calling, telephone/SMS integration, or database persistence. Creating this document does not change live settings or submit EAS builds. The original [M1 physical-device matrix](0001-webrtc-poc.md) remains open.
+This plan covers foreground, two-person calls using the existing infrastructure. It does not add recording, clinical data, background calling, telephone/SMS integration, or database persistence. The original [M1 physical-device matrix](0001-webrtc-poc.md) remains open.
 
-## Current evidence
+## Baseline evidence before implementation
 
 First-round native and browser calling is deployed. The owner reports successful use; device/network details and measured quality were not captured. Native capture requests 640x480 at 24 fps; browser capture requests approximately 640x480. Neither client implements these presets, sender bitrate limits, coordinated receive limits, an application audio-first controller, or coordinated audio-only mode. Current camera toggles are local controls.
 
@@ -20,7 +20,7 @@ Current [TURN template](../../deploy/turnserver.conf.example) sets `max-bps=1000
 
 ## Quality controls and initial ceilings
 
-These are proposed engineering starting values, to be tuned through testing. Mbps means decimal megabits per second. Video bitrate ceilings exclude audio and transport overhead. They are limits, not reserved bandwidth or promised output. WebRTC congestion control continues adapting below them.
+These are the implemented initial engineering ceilings, subject to further device/network tuning. Mbps means decimal megabits per second. Video bitrate ceilings exclude audio and transport overhead. They are limits, not reserved bandwidth or promised output. WebRTC congestion control continues adapting below them.
 
 | Selection | Maximum video dimensions, landscape | Maximum frame rate | Video bitrate ceiling | Intended behavior |
 | --- | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Initial controller thresholds below are hypotheses for controlled testing, not v
 | About 20 seconds of stable audio, loss below 1%, and adequate headroom | Recover one rung at a time, no faster than every ten seconds, below all user/device/peer limits. |
 | Missing or unreliable measurements | Keep conservative limits, offer audio-only, and do not automatically escalate to Ultra. |
 
-When an outgoing capacity estimate exists, initially leave 20–30% headroom and a conservative allowance of about 128 kbps for audio and overhead before assigning a video budget. This is a budgeting heuristic, not a network reservation or a claim that every audio codec needs that rate. Tune against actual transport measurements. Avoid long buffering that turns conversation into delayed speech. Network failure can still interrupt audio.
+When audio needs help and an outgoing capacity estimate exists, budget about 75% of that estimate minus 128 kbps for video. Healthy startup estimates alone must not pause video or prevent WebRTC probing; tests exposed that deadlock. After a pause, sustained clean audio permits a minimum-rung probe even if an estimate is absent. This is a budgeting heuristic, not a network reservation or a claim that every audio codec needs that rate. Tune against actual transport measurements. Avoid long buffering that turns conversation into delayed speech. Network failure can still interrupt audio.
 
 ### Explicit audio-only and camera consent
 
@@ -89,15 +89,15 @@ Extend the authenticated two-person room protocol; retain existing authorization
 
 ## Implementation steps
 
-Deliver these increments on the feature branch with tests and evidence at each gate. Proposed new modules/test files are not available yet.
+Implementation is on the feature branch. Shared modules and adapters are available under `src/call/`; latest commands/results and limits are in [verification](../testing/2026-11-17-adaptive-quality.md). Checkboxes 6–7 retain the uncompleted high-ceiling and physical acceptance gates.
 
-- [ ] **1. Establish capabilities and baseline.** Inspect the installed native/browser APIs; capture sanitized baseline stats on the actual devices. Add shared policy/stat normalization modules under `src/call/` with separate platform adapters. Record codec/capture limitations and confirm whether existing development binaries suffice. Gate: unsupported APIs fall back safely, and actual output is distinguishable from requested settings.
-- [ ] **2. Extend signaling compatibly.** Update `shared/protocol.ts` and server state/validation for capability negotiation, policy requests/acks, and serialized renegotiation. Gate: existing clients still connect; invalid, stale, cross-room, duplicate, and excessive updates are handled; simultaneous changes do not cause offer glare.
-- [ ] **3. Add presets and directional limits.** Integrate policy into `src/call/session.ts` and `web/call.ts`; add controls and measured status in `App.tsx` and browser UI. Gate: changing quality before/during calls constrains the correct direction, preserves audio/timer, and respects remote/device caps. Keep Ultra gated until step 6.
-- [ ] **4. Implement audio-only and consent.** Add confirmed two-way video suppression, camera release, permission-aware restoration, and initial-audio-only-to-video negotiation. Gate: both clients report the applied mode; video RTP stops; no remote action overrides local camera intent.
-- [ ] **5. Implement audio-first adaptation.** Add deterministic controller state, conservative budgets, pause/recovery, and visible reasons. Gate: controlled degradation reduces video promptly, stable recovery avoids oscillation, and manual restrictions remain authoritative.
-- [ ] **6. Validate relay capacity and high ceilings.** Measure direct/relay traffic, device encoding/decoding, CPU, thermal behavior, and aggregate allocation accounting. Prepare bounded project-only TURN changes and enable Ultra only for verified routes/capabilities. Gate: no relay quota silently drops high-quality media; document tested limits and unsupported combinations.
-- [ ] **7. Verify, roll out, and hand off.** Run the matrix below, record native/browser results, deploy in compatibility order, and update state/tools/testing/decision records. Keep any untested hardware ceiling labeled experimental. Do not mark the original M1 device matrix complete without its own evidence.
+- [x] **1. Establish capabilities and baseline.** Inspected installed APIs; added shared policy/stat normalization and a common media adapter. Synthetic baseline and unsupported-API fallbacks verified. Physical baseline and codec/device limits remain in the acceptance gate.
+- [x] **2. Extend signaling compatibly.** Capability negotiation, validated policies/acks, revision handling, and designated-offerer renegotiation implemented. Legacy initial calls and simultaneous camera changes pass automated tests.
+- [x] **3. Add presets and directional limits.** Integrated native/browser session and UI controls, bounded advanced inputs, measured status, and full screen. Browser directional transitions pass; native physical behavior remains to verify. Ultra stays gated.
+- [x] **4. Implement audio-only and consent.** Confirmed two-way suppression, camera release, locally approved restoration, and camera-less-to-video negotiation implemented. Direct/relay browser scenarios pass; native physical behavior remains to verify.
+- [x] **5. Implement audio-first adaptation.** Added deterministic guard timing, conservative budgets during audio impairment, video pause, gradual recovery, and visible reasons. Controlled UDP pause/recovery and behavioral tests pass. Listening/latency acceptance remains open.
+- [ ] **6. Validate relay capacity and high ceilings.** Existing live quotas retained with a 6 Mbps video cap; isolated impairment passes. Ultra stays disabled; WAN capacity/concurrency and physical 4K/60 verification remain open. Measure direct/relay traffic, device encoding/decoding, CPU, thermal behavior, and aggregate allocation accounting. Prepare bounded project-only TURN changes and enable Ultra only for verified routes/capabilities. Gate: no relay quota silently drops high-quality media; document tested limits and unsupported combinations.
+- [ ] **7. Verify, roll out, and hand off.** Automated verification, public rollout, and handoff documents done; physical acceptance remains open. Run the matrix below, record native/browser results, deploy in compatibility order, and update state/tools/testing/decision records. Keep any untested hardware ceiling labeled experimental. Do not mark the original M1 device matrix complete without its own evidence.
 
 ## Data and configuration
 
@@ -115,14 +115,14 @@ Existing commands: `npm run typecheck`, `npm test`, `npm run test:browser`, and 
 
 | Requirement / scenario | Procedure | Expected | Actual / evidence |
 | --- | --- | --- | --- |
-| COM-07: policy and stats correctness | Unit tests for cap intersections, asymmetric directions, unknown support, counter resets, stale samples, and controller timing | Deterministic decisions; no limit or consent overridden | Not implemented |
-| Protocol safety and compatibility | Server tests with current/legacy peers, malformed controls, stale revisions, simultaneous policy changes, and repeated negotiation | Authorization/limits preserved; no glare; accurate acknowledgments/fallback | Not implemented |
-| COM-07: all presets, including high ceilings | Browser media tests plus real camera/device runs; change settings before/during calls | Applied dimensions/fps remain within supported ceilings; actual RTP reported; audio/timer continue | Not implemented |
-| COM-07: constrained receiver | Set a lower incoming limit on only one participant | Other participant lowers its sending stream; unrelated direction remains within its own policy | Not implemented |
-| COM-08: congestion and recovery | Controlled bandwidth/loss steps with actual RTP; compare adaptation to fixed-high baseline | Video reduces/pauses; audio impairment improves where avoidable; recovery follows hysteresis | Not implemented |
-| COM-09: two-way audio-only | Both initiation orders, simultaneous requests, video return, and initial audio-only to video | No video RTP after drain; audio packets continue; both requests must clear; camera intent respected | Not implemented |
-| Unsupported APIs / failures | Reject constraints/parameters, omit stats, fail renegotiation, use legacy peer | Honest supported fallback; otherwise usable audio survives | Not implemented |
-| Direct and forced relay | Inspect selected candidate pair and measured media under each route | Effective route limits respected; relay quotas do not silently disrupt audio | Not implemented |
+| COM-07: policy and stats correctness | Unit tests for cap intersections, asymmetric directions, unknown support, counter resets, stale samples, and controller timing | Deterministic decisions; no limit or consent overridden | Unit/adapter tests pass; see verification |
+| Protocol safety and compatibility | Server tests with current/legacy peers, malformed controls, stale revisions, simultaneous policy changes, and repeated negotiation | Authorization/limits preserved; no glare; accurate acknowledgments/fallback | Server and browser scenarios pass |
+| COM-07: all presets, including high ceilings | Browser media tests plus real camera/device runs; change settings before/during calls | Applied dimensions/fps remain within supported ceilings; actual RTP reported; audio/timer continue | Browser lower-limit transitions pass; physical high ceilings and Ultra pending |
+| COM-07: constrained receiver | Set a lower incoming limit on only one participant | Other participant lowers its sending stream; unrelated direction remains within its own policy | Public browser media/policy checks pass |
+| COM-08: congestion and recovery | Controlled bandwidth/loss steps with actual RTP; compare adaptation to fixed-high baseline | Video reduces/pauses; audio impairment improves where avoidable; recovery follows hysteresis | Isolated UDP pause/recovery and audio continuity pass; listening/delay acceptance pending |
+| COM-09: two-way audio-only | Both initiation orders, simultaneous requests, video return, and initial audio-only to video | No video RTP after drain; audio packets continue; both requests must clear; camera intent respected | Public browser direct/relay scenarios pass |
+| Unsupported APIs / failures | Reject constraints/parameters, omit stats, fail renegotiation, use legacy peer | Honest supported fallback; otherwise usable audio survives | Unit native-wrapper failure cases and real browser negotiation failure pass |
+| Direct and forced relay | Inspect selected candidate pair and measured media under each route | Effective route limits respected; relay quotas do not silently disrupt audio | Public forced relay passes; no live quota increases or high-ceiling capacity claim |
 | Real hardware / cleanup | iPhone–Android and native–browser; Safari/iPad where available; camera switch and 10–15 minute high-quality run | Record actual supported output, heat/battery observations, cleanup, and any limitations | Not run |
 
 For impairment tests, use an isolated network namespace/veth setup or dedicated test host that shapes the actual WebRTC transport. Never attach `tc`/netem to this shared EC2 host's primary interface. HTTP/DevTools throttling alone does not prove UDP media was constrained. Establish the shaping tool and verify the imposed rates before trusting results.
@@ -143,7 +143,7 @@ Retain the previous assets/configuration and keep server support for both client
 
 ## Handoff
 
-Planning is complete; every implementation/acceptance checkbox remains open. First-round code is saved on `feat/webrtc-poc` in [PR 1](https://github.com/cnm4us/phoneapp/pull/1). Next implementation action: step 1, API/capability verification and shared policy/stat foundations. Existing native development builds may suffice for JavaScript-only controls; no new build or deployment was performed for this plan. Original M1 physical acceptance can proceed independently when both phones are available.
+Quality controls, compatible signaling, audio-first adaptation, coordinated audio-only, metrics, and full screen are implemented on `feat/webrtc-poc` in [PR 1](https://github.com/cnm4us/phoneapp/pull/1). Browser/server changes are deployed. See [verification](../testing/2026-11-17-adaptive-quality.md) and [decision 0003](../decisions/0003-adaptive-quality.md). No new native build or TURN quota change. Next: reload the existing native development app, record iPhone/Android models/OS, and test native/browser quality, audio-only/consent, and the original M1 matrix. Keep Ultra off until hardware/codec and relay-capacity gates are verified. These external checks remain open; do not mark the plan fully accepted.
 
 ## Technical references
 

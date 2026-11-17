@@ -1,6 +1,6 @@
 # Tools and access inventory
 
-Updated: 2026-11-16. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
+Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
 
 ## Verified environment
 
@@ -39,6 +39,7 @@ npm run smoke
 npm run build:web
 npm run test:browser
 npm run test:browser:live
+npm run test:quality-network
 git status --short --branch
 git diff --check
 ```
@@ -50,13 +51,19 @@ The [GitHub Actions template](templates/docs-workflow.yml) can run the same chec
 | Area | Plan | When to mark ready |
 | --- | --- | --- |
 | Native app | Expo CLI, global EAS CLI 27.10.0, TypeScript, Expo Doctor, native generation and JS bundles available | Native cloud result and physical behavior are separate; see current state/report. No dedicated lint runner configured. |
-| Signaling/backend | Node tests via `tsx`; local HTTP/WSS tests, static allowlist/headers, public smoke | 16 tests pass; no media in signaling smoke. |
-| Browser companion | Buildless UI source in `web/`, TypeScript bundled by esbuild 0.28.2, Playwright 1.65.1 | 7 deployed-site checks pass in Chromium with synthetic media. Physical/native/Safari results remain separate. |
+| Signaling/backend | Node tests via `tsx`; local HTTP/WSS tests, static allowlist/headers, public smoke | 31 unit/server/adapter tests pass; no media in signaling smoke. |
+| Browser companion | Buildless UI source in `web/`, TypeScript bundled by esbuild 0.28.2, Playwright 1.65.1 | 12 deployed-site checks pass in Chromium with synthetic media. Physical/native/Safari results remain separate. |
 | Native acceptance | Both physical phones, EAS artifacts, sanitized session diagnostics | Owners install builds and execute the matrix in the active plan. |
 | DB access | Dedicated dev/test database and CLI or driver; migration runner selected with persistence stack | Connectivity verified to the recorded target without printing secrets. |
 | DB tests | Disposable or isolated DB, clean install + upgrade checks | Bootstrap and migration commands work and outcomes are recorded. |
 
 See `package.json` for actual scripts. Install Chromium once using `npx playwright install chromium`. Local browser tests start an isolated server on loopback 8790 with a synthetic creator key; if `.env.server` exists, only the configured TURN connection is reused. Without TURN the relay scenario is explicitly skipped. `test:browser:live` uses `.env.server` to exercise the public site; it creates temporary rooms and transfers synthetic media. Neither controls the physical phones. Linux relay diagnostics remain available with `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`).
+
+## Quality verification
+
+Quality verification extends `npm test` to 31 cases and browser acceptance to 12 scenarios. Latest evidence: [quality report](testing/2026-11-17-adaptive-quality.md). `npm run test:quality-network` is a Linux-only, roughly two-minute UDP impairment experiment requiring installed `ip`, `tc`, `turnserver`, `socat`, Chromium, and passwordless `sudo` for a disposable network namespace/veth. All were exercised on this EC2 host. The script launches isolated test services on a benchmark subnet, uses synthetic credentials, shapes only its veth pair, and cleans up. It never uses live TURN or shapes the host primary interface. Output stays under ignored `artifacts/private/`; review before publishing. Do not run concurrent copies.
+
+Server flags: `RELAY_VIDEO_MAX_BITRATE` (video payload bits/s; default 6000000) and `ENABLE_EXPERIMENTAL_ULTRA` (default false). Both are nonsecret. Keep the first safely below actual TURN allocation quotas including audio/overhead; keep the latter off until device/route gates pass. See [runbook](SETUP.md). Native development binaries can load these JavaScript changes through Metro; physical behavior remains a separate check.
 
 ## Connection registry
 

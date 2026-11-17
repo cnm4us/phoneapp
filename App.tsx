@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Button, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { AppState, Button, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { RTCView } from 'react-native-webrtc';
 import { CallSession } from './src/call/session';
 import { endpoint } from './src/call/core';
 import type { Invitation } from './shared/protocol';
+import { QualityControls } from './src/call/QualityControls';
 
 const labels = { idle: 'Ready to test', permissions: 'Requesting microphone / camera', joining: 'Joining room…', waiting: 'Waiting for the other phone…', connecting: 'Connecting media…', connected: 'Connected', reconnecting: 'Connection interrupted…', ended: 'Call ended', error: 'Unable to continue' };
 
@@ -23,6 +24,7 @@ function CallScreen() {
   const [relay, setRelay] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState('');
+  const [fullScreen, setFullScreen] = useState(false);
   const active = !['idle', 'ended', 'error'].includes(call.phase);
   useEffect(() => {
     const unsubscribe = session.subscribe(setCall);
@@ -84,9 +86,12 @@ function CallScreen() {
           {!call.remote && <Text style={styles.muted}>The other participant will appear here.</Text>}
           {call.local && call.hasCamera && call.cameraEnabled && <RTCView accessibilityLabel="Your camera preview" streamURL={call.local.toURL()} style={styles.local} mirror objectFit="cover" />}
           <Button title={call.muted ? 'Unmute microphone' : 'Mute microphone'} onPress={() => session.mute()} />
-          {call.hasCamera && <><Button title={call.cameraEnabled ? 'Turn camera off' : 'Turn camera on'} onPress={() => session.toggleCamera()} /><Button title="Switch camera" onPress={() => session.switchCamera()} /></>}
+          <Button title={call.quality.cameraIntent ? 'Turn camera off' : 'Turn camera on'} disabled={call.quality.audioOnly || call.quality.peerAudioOnly || call.quality.busy} onPress={() => session.toggleCamera()} />
+          {call.hasCamera && <Button title="Switch camera" onPress={() => session.switchCamera()} />}
+          {!!call.remote && <Button title="Full screen" onPress={() => setFullScreen(true)} />}
           <Button title="Hang up / leave room" color="#ff8791" onPress={() => session.end()} />
         </View>}
+        <View style={styles.card}><QualityControls state={call.quality} active={active} select={p => session.setQuality(p)} limits={(send, receive) => session.setLimits(send, receive)} audioOnly={() => session.toggleAudioOnly()} /></View>
         {call.sessionId && <View style={styles.card}>
           <Text style={styles.label}>Connection details</Text>
           <Text selectable style={styles.mono}>Session: {call.sessionId}</Text>
@@ -94,6 +99,15 @@ function CallScreen() {
           {active && <Button title="Refresh connection details" onPress={() => session.refreshDiagnostics()} />}
         </View>}
       </ScrollView>
+      <Modal visible={fullScreen && active} onRequestClose={() => setFullScreen(false)} animationType="fade">
+        <SafeAreaView style={styles.page}>
+          {call.remote && <RTCView accessibilityLabel="Full screen remote video" streamURL={call.remote.toURL()} style={{ flex: 1 }} objectFit="contain" />}
+          <Text style={styles.muted}>{call.quality.status}</Text>
+          <Button title="Exit full screen" onPress={() => setFullScreen(false)} />
+          <Button title={call.muted ? 'Unmute' : 'Mute'} onPress={() => session.mute()} />
+          <Button title="Hang up" onPress={() => { setFullScreen(false); session.end(); }} />
+        </SafeAreaView>
+      </Modal>
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }

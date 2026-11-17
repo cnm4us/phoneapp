@@ -12,7 +12,8 @@ Review: [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Native foundati
 - Authenticated coturn (`phoneapp-turn.service`) with UDP/TCP/TLS, quotas, bounded relay ports, certificate and renewal hook.
 - EAS project [@mbcollins2/phoneapp](https://expo.dev/accounts/mbcollins2/projects/phoneapp), ID `942392a3-1d9c-4d2c-91b0-0ad939e4e1fd`; both development profiles and app identifiers configured.
 - Pinned dependencies, automated server/core/browser tests, local check/smoke/relay tooling, and [setup/runbook](SETUP.md).
-- Browser companion deployed at `https://phoneapp.bawebtech.com`: invitation creation/copy/share link, audio/video, mute/camera/leave, connected time, playback recovery, and optional connection details. Native protocol unchanged; no new phone build required.
+- Quality iteration: shared policy/stats/controller, native/browser presets and advanced directional caps, audio-only/consent, serialized renegotiation, full screen, and quality/feedback UI. Browser/server deployed; physical native acceptance pending.
+- Browser companion deployed at `https://phoneapp.bawebtech.com`: invitation creation/copy/share link, audio/video, mute/camera/leave, connected time, playback recovery, and optional connection details. Compatible feature negotiation added; no new phone build submitted.
 
 No patient database, recording, transcription, SMS, or billing implementation. Hosted CI is not enabled because available GitHub credentials cannot write workflow files; the template remains available.
 
@@ -24,7 +25,9 @@ Supporting plan: [0002 browser companion](plans/0002-browser-companion.md), impl
 
 Owner subsequently reported the first round is working well. Detailed device/network scenarios and measurements have not been logged, so the formal matrix remains open.
 
-Next implementation plan: [0003 adaptive call quality](plans/0003-adaptive-call-quality.md), ready for implementation at the owner's request. It specifies Auto plus presets through opt-in experimental 4K/60 fps at a 30 Mbps video ceiling, controls down to 240p/audio-only, separate send/receive limits, audio-first adaptation, consent-aware restoration, compatible signaling, relay capacity gates, and an acceptance matrix. These are proposed settings and unimplemented features. Current TURN limits need capacity review before enabling the highest ceilings; no live configuration changed. Exact next development action is step 1: verify installed APIs/device capabilities and implement shared policy/stat foundations. Original M1 physical acceptance remains a separate open action.
+Current quality plan: [0003](plans/0003-adaptive-call-quality.md), implemented with physical acceptance and Ultra capacity gates open. Shared native/browser controls include Auto/High (up to 1080p/60), lower presets through 240p, advanced send/receive caps, measured media/audio feedback, audio-first pause/recovery, two-way audio-only, consent-aware camera restoration, and full screen. Signaling negotiates compatible controls and serializes camera renegotiation. Browser/server changes are deployed; no native dependency/build or live TURN quota changes. Experimental 4K/60 at 30 Mbps remains gated off, including native capability investigation. See [verification](testing/2026-11-17-adaptive-quality.md) and [decision](decisions/0003-adaptive-quality.md).
+
+Exact next action: reload the existing Expo development app from Metro, record both phone models/OS, and run native/browser quality, audio-only/consent, camera restoration, and the original M1 matrix. Keep Ultra disabled and relayed video at the 6 Mbps default until high-ceiling capacity/device gates pass. Physical phones are owner-operated; no remote-control tool is available.
 
 ## Decisions and constraints
 
@@ -47,14 +50,15 @@ Development services follow this checkout; stop or account for them before chang
 
 - Server inspection: 2 vCPUs, 7.6 GiB RAM, approximately 38 GB free disk at project initialization.
 - Git, GitHub CLI authentication, Node 22.21.1, npm 10.9.4, and Python 3 were observed. Docker and `psql` were not found on PATH. Recheck capabilities before depending on them.
-- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 16/16 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
+- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 31/31 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
 - Native configuration generated for both platforms; permissions and iOS scene manifest inspected. iOS/Android JS bundles exported successfully; native compilation is separate.
 - Public HTTPS/WSS room/offer/answer/hangup smoke: passed, with no media exchanged.
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
 - Browser tests: 7/7 on the public HTTPS deployment in Chromium, including actual synthetic audio/video, repeat calls, controls/cleanup, forced relay candidate/media verification, audio-only/video mix, permission/room errors, playback fallback, fragment cleanup, and responsive widths. See [browser report](testing/2026-11-16-browser-companion.md). iPad viewport tests are not Safari/iPad hardware tests.
 - Physical acceptance: owner reports successful initial use; the device pair, network conditions, and structured matrix results have not been captured. M1 is not complete. Prior foundation evidence: [verification report](testing/2026-11-16-poc-foundation.md).
-- Quality planning: expanded plan 0003 and aligned PRD/roadmap/handoff documents; documentation checker and whitespace checks passed. This documentation-only change did not run new media/device tests, deploy changes, or request EAS builds.
+- Quality verification: 31 unit/server/adapter tests and 12 public browser media scenarios pass; both native JS exports pass. Isolated real-UDP shaping passed strong → constrained/loss → severe → recovery with audio counters continuing and gradual video return. See the linked quality report for limits. No new cloud build, WAN capacity claim, perceptual-audio result, or physical-device pass.
+- Documentation and whitespace checks pass; implementation, test evidence, tools, and handoff are updated.
 
 ## Resume prompt
 
-“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, docs/SETUP.md, and plan 0003. Native builds and the browser companion are available. The owner requested a high-ceiling quality implementation plan, which is now ready but unimplemented. For implementation, start with plan 0003 step 1; retain the original plan 0001 physical-device matrix as open and record actual device results when available.”
+“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, docs/SETUP.md, plan 0003, and its verification report. Quality controls are implemented and the browser/server are deployed. Keep experimental Ultra off. Next record actual iPhone/Android quality/audio-only/consent tests and complete original M1 acceptance; do not infer those results from browser tests or bundles.”

@@ -16,4 +16,4 @@ M1 plan: [0001](plans/0001-webrtc-poc.md). Create later plans when their scope i
 
 Supporting [plan 0002](plans/0002-browser-companion.md) adds an initial COM-01 browser participant for solo M1 testing. The browser page is deployed and passes automated media checks; this does not complete the later patient-facing browser/access workflow or replace the original physical-device matrix.
 
-Next planned communications iteration: [0003 adaptive call quality](plans/0003-adaptive-call-quality.md), covering COM-07–09. The implementation plan is ready: opt-in very high ceilings, controls for reducing both outgoing and incoming video, audio-first adaptation, and coordinated audio-only mode. Implementation and quality/device acceptance have not started; original M1 acceptance remains open.
+Communications quality iteration: [0003](plans/0003-adaptive-call-quality.md), COM-07–09. Native/browser controls and adaptation are implemented; browser/server deployed with automated acceptance. Physical native/Safari and experimental Ultra hardware/relay-capacity gates remain open. Original M1 acceptance is unchanged.

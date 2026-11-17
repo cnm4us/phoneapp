@@ -1,4 +1,8 @@
 import { ConnectedClock, invitation, PendingIce } from '../src/call/core';
+import { MediaQuality, initialQuality, type QualityState } from '../src/call/media-quality';
+import { StatsReader, type Reports } from '../src/call/stats';
+import { constraints, VideoDriver, type MediaPeer, type Stream } from '../src/call/video';
+import { intersect, START_LIMIT, type Preset, type VideoLimit } from '../src/call/quality';
 import type {
   Candidate,
   ClientMessage,
@@ -25,6 +29,7 @@ export type State = {
   sessionId: string;
   path: string;
   receivedBytes: number;
+  quality: QualityState;
 };
 const empty = (): State => ({
   phase: 'idle',
@@ -37,6 +42,7 @@ const empty = (): State => ({
   sessionId: '',
   path: 'Not connected',
   receivedBytes: 0,
+  quality: initialQuality(),
 });
 
 export class BrowserCall {
@@ -51,6 +57,11 @@ export class BrowserCall {
   private connectDeadline?: ReturnType<typeof setTimeout>;
   private initiator = false;
   private statsPending = false;
+  private statsReader = new StatsReader();
+  private quality = this.makeQuality();
+  private makeQuality(initial = initialQuality()) {
+    return new MediaQuality(quality => this.update({ quality, camera: quality.applied?.camera ?? this.state.camera }), m => this.send(m, this.epoch), initial);
+  }
   constructor(private changed: (state: State) => void) {}
   private update(patch: Partial<State>) {
     this.state = { ...this.state, ...patch };
@@ -65,6 +76,8 @@ export class BrowserCall {
     this.socket.send(JSON.stringify(message));
   }
   end(error = '') {
+    const preferences = this.quality.state;
+    this.quality.dispose();
     this.epoch++;
     clearInterval(this.tick);
     clearTimeout(this.deadline);
@@ -87,14 +100,20 @@ export class BrowserCall {
       phase: error ? 'error' : 'ended',
       error,
     });
+    this.quality = this.makeQuality(preferences);
+    this.update({ quality: this.quality.state });
   }
   async join(code: string, video: boolean, relay: boolean) {
+    const preferences = this.quality.state;
     this.end();
     const epoch = this.epoch;
     this.clock = new ConnectedClock();
     this.ice = new PendingIce();
     this.statsPending = false;
+    this.statsReader = new StatsReader();
     this.state = empty();
+    this.quality = this.makeQuality({ ...preferences, cameraIntent: video && !preferences.audioOnly });
+    this.update({ quality: this.quality.state });
     let invite: ReturnType<typeof invitation>;
     try {
       invite = invitation(code);
@@ -119,11 +138,10 @@ export class BrowserCall {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: video
+        video: video && !preferences.audioOnly
           ? {
               facingMode: 'user',
-              width: { ideal: 640 },
-              height: { ideal: 480 },
+              ...constraints(intersect(START_LIMIT, preferences.send)),
             }
           : false,
       });
@@ -143,7 +161,7 @@ export class BrowserCall {
       stream.getTracks().forEach((track) => track.stop());
       return;
     }
-    this.update({ local: stream, camera: video, phase: 'joining' });
+    this.update({ local: stream, camera: Boolean(stream.getVideoTracks().length), phase: 'joining' });
     try {
       const socket = new WebSocket(
         `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/signal`,
@@ -162,12 +180,14 @@ export class BrowserCall {
       socket.onmessage = (event) => {
         queue = queue
           .then(async () => {
-            if (epoch === this.epoch)
-              await this.handle(
-                JSON.parse(String(event.data)) as ServerMessage,
-                epoch,
-                relay,
-              );
+            if (epoch !== this.epoch) return;
+            const message = JSON.parse(String(event.data)) as ServerMessage;
+            try { await this.handle(message, epoch, relay); }
+            catch (error) {
+              const changingVideo = message.type === 'negotiate' || ((message.type === 'offer' || message.type === 'answer') && message.negotiationId !== undefined);
+              if (!changingVideo) throw error;
+              this.quality.warn('Video negotiation could not complete. Audio can continue; use a new room if video cannot resume.');
+            }
           })
           .catch(() => {
             if (epoch === this.epoch)
@@ -201,6 +221,10 @@ export class BrowserCall {
     }
   }
   private async handle(message: ServerMessage, epoch: number, relay: boolean) {
+    if (['peer-capabilities', 'media-policy', 'policy-applied', 'request-video'].includes(message.type)) {
+      await this.quality.handle(message as Parameters<MediaQuality['handle']>[0]); return;
+    }
+    if (message.type === 'quality-warning') { this.quality.warn(message.message); return; }
     if (message.type === 'error') {
       this.end(message.message);
       return;
@@ -225,8 +249,13 @@ export class BrowserCall {
       this.state
         .local!.getTracks()
         .forEach((track) => peer.addTrack(track, this.state.local!));
-      if (!this.state.camera)
+      // Only the offerer reserves an empty video m-line. A camera-less answerer
+      // must adopt the offered transceiver, avoiding an extra unmatched sender.
+      if (!this.state.camera && message.initiator)
         peer.addTransceiver('video', { direction: 'recvonly' });
+      this.quality.configure(new VideoDriver(peer as unknown as MediaPeer, this.state.local! as unknown as Stream,
+        async limit => await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', ...constraints(limit) } }) as unknown as Stream,
+        () => this.update({ local: this.state.local })), message);
       peer.onicecandidate = (event) => {
         if (epoch !== this.epoch || !event.candidate) return;
         const c = event.candidate;
@@ -289,7 +318,12 @@ export class BrowserCall {
     }
     const peer = this.peer;
     if (!peer) throw new Error('Missing connection');
-    if (message.type === 'ready') {
+    if (message.type === 'negotiate') {
+      const offer = await peer.createOffer();
+      if (epoch !== this.epoch) return;
+      await peer.setLocalDescription(offer);
+      this.send({ type: 'offer', description: { type: 'offer', sdp: offer.sdp! }, negotiationId: message.negotiationId }, epoch);
+    } else if (message.type === 'ready') {
       this.update({ phase: 'connecting' });
       this.connectDeadline = setTimeout(() => {
         if (epoch === this.epoch)
@@ -318,10 +352,11 @@ export class BrowserCall {
         if (epoch !== this.epoch) return;
         await peer.setLocalDescription(answer);
         this.send(
-          { type: 'answer', description: { type: 'answer', sdp: answer.sdp! } },
+          { type: 'answer', description: { type: 'answer', sdp: answer.sdp! }, ...(message.negotiationId ? { negotiationId: message.negotiationId } : {}) },
           epoch,
         );
       }
+      await this.quality.handledDescription();
     } else if (message.type === 'ice')
       await this.ice.add(message.candidate, (candidate) =>
         peer.addIceCandidate(candidate),
@@ -335,12 +370,11 @@ export class BrowserCall {
     this.update({ muted });
   }
   toggleCamera() {
-    const camera = !this.state.camera;
-    this.state.local?.getVideoTracks().forEach((track) => {
-      track.enabled = camera;
-    });
-    this.update({ camera });
+    this.quality.setCamera(!this.state.quality.cameraIntent);
   }
+  setQuality(preset: Preset) { this.quality.setPreset(preset); }
+  setLimits(send: VideoLimit, receive: VideoLimit) { this.quality.setLimits(send, receive); }
+  toggleAudioOnly() { this.quality.setAudioOnly(!this.state.quality.audioOnly); }
   async refreshStats() {
     if (!this.peer || this.statsPending) return;
     const epoch = this.epoch,
@@ -349,6 +383,8 @@ export class BrowserCall {
     try {
       const reports = await peer.getStats();
       if (epoch !== this.epoch) return;
+      const stats = this.statsReader.read(reports as unknown as Reports);
+      this.quality.sample(stats, performance.now());
       let pair: RTCStats | undefined,
         receivedBytes = 0;
       reports.forEach((report) => {

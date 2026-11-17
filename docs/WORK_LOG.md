@@ -40,3 +40,11 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Inspected installed native sender APIs and TURN template limits. Recorded the current 8 Mbps per-allocation relay ceiling and a capacity-verification gate before enabling Ultra; proposed configuration is clearly distinguished from live settings.
 - Defined unit/protocol/browser/physical tests and isolated transport impairment testing. Updated PRD, roadmap, and continuation state. No runtime, database, infrastructure, deployment, or paid build changes.
 - Verification: `python3 scripts/check_project.py` and `git diff --check` passed. Implementation and device/media acceptance for this plan have not started; next development action is plan 0003 step 1.
+
+## 2026-11-17 UTC Adaptive quality implementation
+
+- Implemented native/browser presets and advanced directional caps, measured video/audio feedback, audio-first degradation/recovery, explicit two-way audio-only, local camera consent, and full screen. Shared runtime adapters preserve audio through unsupported controls and video negotiation failures.
+- Added compatible capability negotiation, validated revisioned policies/acks, and designated-offerer renegotiation. Fixed startup-capacity probing deadlock, paused-stream recovery, delay corroboration, native parameter fallbacks, and camera-less answerer transceiver duplication through tests.
+- Verified TypeScript, 31 unit/server/adapter tests, both native JS exports, and 12 public browser scenarios. Added and ran real UDP bandwidth/loss/recovery tooling using isolated TURN and a disposable namespace/veth; video paused and gradually recovered while audio counters continued. Listening/physical-device evidence remains separate.
+- Deployed only this project's rebuilt browser assets/signaling service after confirming no recently joined rooms. Public health/media checks passed. No DB, new native build, AWS/firewall, or live TURN quota changes. Metro remains available for existing development-client reloads.
+- Experimental 4K/60 remains gated off pending native capability/codec/thermal and relay-capacity verification. Updated plan, PRD, decision, test report, tools, runbook, and continuation state. Next: owner-operated native/Safari quality/consent and original M1 matrix.

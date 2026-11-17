@@ -9,6 +9,8 @@ const server = createSignaling({
   stunUrls: urls(process.env.STUN_URLS ?? 'stun:stun.l.google.com:19302'),
   turnUrls,
   turnSecret: process.env.TURN_SECRET,
+  relayVideoMaxBitrate: Number(process.env.RELAY_VIDEO_MAX_BITRATE ?? 6_000_000),
+  ultraEnabled: process.env.ENABLE_EXPERIMENTAL_ULTRA === 'true',
   webRoot: resolve('web/dist'),
   log: (event) => console.log(JSON.stringify({ at: new Date().toISOString(), ...event })),
 });

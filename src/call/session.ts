@@ -1,6 +1,10 @@
 import { mediaDevices, MediaStream, RTCPeerConnection, RTCIceCandidate, RTCSessionDescription } from 'react-native-webrtc';
 import type { Candidate, ClientMessage, ServerMessage } from '../../shared/protocol';
 import { ConnectedClock, endpoint, invitation, PendingIce } from './core';
+import { MediaQuality, initialQuality, type QualityState } from './media-quality';
+import { StatsReader, type Reports } from './stats';
+import { constraints, VideoDriver, type MediaPeer, type Stream } from './video';
+import { intersect, START_LIMIT, type Preset, type VideoLimit } from './quality';
 
 export type CallState = {
   phase: 'idle' | 'permissions' | 'joining' | 'waiting' | 'connecting' | 'connected' | 'reconnecting' | 'ended' | 'error';
@@ -13,8 +17,9 @@ export type CallState = {
   error?: string;
   sessionId?: string;
   diagnostics: string[];
+  quality: QualityState;
 };
-const initial = (): CallState => ({ phase: 'idle', local: null, remote: null, seconds: 0, muted: false, cameraEnabled: false, hasCamera: false, diagnostics: [] });
+const initial = (): CallState => ({ phase: 'idle', local: null, remote: null, seconds: 0, muted: false, cameraEnabled: false, hasCamera: false, diagnostics: [], quality: initialQuality() });
 
 export class CallSession {
   state = initial();
@@ -28,6 +33,12 @@ export class CallSession {
   private deadline?: ReturnType<typeof setTimeout>;
   private connectionDeadline?: ReturnType<typeof setTimeout>;
   private initiator = false;
+  private statsReader = new StatsReader();
+  private statsPending = false;
+  private quality = this.makeQuality();
+  private makeQuality(initial = initialQuality()) {
+    return new MediaQuality(quality => this.update({ quality, cameraEnabled: quality.applied?.camera ?? this.state.cameraEnabled, hasCamera: quality.applied?.hasCamera ?? this.state.hasCamera }), m => this.send(m, this.epoch), initial);
+  }
   subscribe(listener: (state: CallState) => void) {
     this.subscribers.add(listener);
     return () => { this.subscribers.delete(listener); };
@@ -40,6 +51,7 @@ export class CallSession {
     this.update({ diagnostics: [...this.state.diagnostics.slice(-9), `${new Date().toISOString().slice(11, 19)} ${event}`] });
   }
   private cleanup() {
+    this.quality.dispose();
     this.epoch++;
     clearInterval(this.tick);
     clearTimeout(this.deadline);
@@ -57,8 +69,11 @@ export class CallSession {
     this.update({ local: null, remote: null, seconds: this.clock.seconds(), hasCamera: false });
   }
   end(message?: string) {
+    const preferences = this.quality.state;
     this.cleanup();
     this.update({ phase: message ? 'error' : 'ended', error: message });
+    this.quality = this.makeQuality(preferences);
+    this.update({ quality: this.quality.state });
   }
   private send(message: ClientMessage, epoch: number) {
     if (epoch !== this.epoch) return;
@@ -66,18 +81,21 @@ export class CallSession {
     this.socket.send(JSON.stringify(message));
   }
   async join(base: string, code: string, video: boolean, relay: boolean) {
+    const preferences = this.quality.state;
     this.cleanup();
     const epoch = this.epoch;
     this.clock = new ConnectedClock();
     this.ice = new PendingIce();
     this.state = initial();
-    this.update({ phase: 'permissions' });
+    this.statsReader = new StatsReader(); this.statsPending = false;
+    this.quality = this.makeQuality({ ...preferences, cameraIntent: video && !preferences.audioOnly });
+    this.update({ phase: 'permissions', quality: this.quality.state });
     try {
       const origin = endpoint(base);
       const invite = invitation(code);
-      const stream = await mediaDevices.getUserMedia({ audio: true, video: video ? { facingMode: 'user', width: 640, height: 480, frameRate: 24 } : false });
+      const stream = await mediaDevices.getUserMedia({ audio: true, video: video && !preferences.audioOnly ? { facingMode: 'user', ...constraints(intersect(START_LIMIT, preferences.send)) } : false });
       if (epoch !== this.epoch) { stream.getTracks().forEach((track) => track.stop()); return; }
-      this.update({ local: stream, hasCamera: video, cameraEnabled: video, phase: 'joining' });
+      this.update({ local: stream, hasCamera: Boolean(stream.getVideoTracks().length), cameraEnabled: Boolean(stream.getVideoTracks().length), phase: 'joining' });
       const socket = new WebSocket(`${origin.replace(/^http/, 'ws')}/signal`);
       this.socket = socket;
       this.deadline = setTimeout(() => { if (epoch === this.epoch) this.end('The signaling server did not respond. Check its address and try a new room.'); }, 15_000);
@@ -88,17 +106,27 @@ export class CallSession {
         messages = messages.then(async () => {
           if (epoch !== this.epoch) return;
           const message = JSON.parse(String(event.data)) as ServerMessage;
-          await this.handle(message, epoch, relay);
+          try { await this.handle(message, epoch, relay); }
+          catch (error) {
+            const changingVideo = message.type === 'negotiate' || ((message.type === 'offer' || message.type === 'answer') && message.negotiationId !== undefined);
+            if (!changingVideo) throw error;
+            this.diagnostic('Video negotiation failed; audio may continue. Use a new room to retry video.');
+            this.quality.warn('Video negotiation failed. Audio can continue; use a new room if video cannot resume.');
+          }
         }).catch(() => { if (epoch === this.epoch) this.end('Call setup failed. Check permissions and the server, then create a new room.'); });
       };
       socket.onerror = () => { if (epoch === this.epoch) this.end('Cannot reach the signaling server. Check its HTTPS address and network.'); };
       socket.onclose = () => { if (epoch === this.epoch) this.end('The signaling connection closed. Create a new room to retry.'); };
-      this.tick = setInterval(() => { if (epoch === this.epoch) this.update({ seconds: this.clock.seconds() }); }, 500);
+      this.tick = setInterval(() => { if (epoch === this.epoch) { this.update({ seconds: this.clock.seconds() }); if (this.state.phase === 'connected') void this.mediaStats(epoch); } }, 1_000);
     } catch {
       if (epoch === this.epoch) this.end('Could not start the call. Check the invitation, server address, and microphone/camera permissions in Settings.');
     }
   }
   private async handle(message: ServerMessage, epoch: number, relay: boolean) {
+    if (['peer-capabilities', 'media-policy', 'policy-applied', 'request-video'].includes(message.type)) {
+      await this.quality.handle(message as Parameters<MediaQuality['handle']>[0]); return;
+    }
+    if (message.type === 'quality-warning') { this.quality.warn(message.message); this.diagnostic(message.message); return; }
     if (message.type === 'error') { this.end(message.message); return; }
     if (message.type === 'peer-left') { this.end(); return; }
     if (message.type === 'joined') {
@@ -108,7 +136,10 @@ export class CallSession {
       const pc = new RTCPeerConnection({ iceServers: message.iceServers, iceTransportPolicy: relay ? 'relay' : 'all', bundlePolicy: 'max-bundle' });
       this.pc = pc;
       this.state.local!.getTracks().forEach((track) => pc.addTrack(track, this.state.local!));
-      if (!this.state.hasCamera) pc.addTransceiver('video', { direction: 'recvonly' });
+      if (!this.state.hasCamera && message.initiator) pc.addTransceiver('video', { direction: 'recvonly' });
+      this.quality.configure(new VideoDriver(pc as unknown as MediaPeer, this.state.local! as unknown as Stream,
+        async limit => await mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', ...constraints(limit) } }) as unknown as Stream,
+        () => this.update({ local: this.state.local })), message);
       pc.addEventListener('icecandidate', (event) => {
         if (epoch !== this.epoch || !event.candidate) return;
         const c = event.candidate;
@@ -143,7 +174,12 @@ export class CallSession {
     }
     const pc = this.pc;
     if (!pc) throw new Error('Missing peer connection');
-    if (message.type === 'ready') {
+    if (message.type === 'negotiate') {
+      const offer = await pc.createOffer({});
+      if (epoch !== this.epoch) return;
+      await pc.setLocalDescription(offer);
+      this.send({ type: 'offer', description: { type: 'offer', sdp: offer.sdp! }, negotiationId: message.negotiationId }, epoch);
+    } else if (message.type === 'ready') {
       this.update({ phase: 'connecting' });
       this.connectionDeadline = setTimeout(() => { if (epoch === this.epoch) this.end('Media did not connect within 30 seconds. Check TURN and try a new room.'); }, 30_000);
       if (this.initiator) {
@@ -161,8 +197,9 @@ export class CallSession {
         const answer = await pc.createAnswer();
         if (epoch !== this.epoch) return;
         await pc.setLocalDescription(answer);
-        this.send({ type: 'answer', description: { type: 'answer', sdp: answer.sdp! } }, epoch);
+        this.send({ type: 'answer', description: { type: 'answer', sdp: answer.sdp! }, ...(message.negotiationId ? { negotiationId: message.negotiationId } : {}) }, epoch);
       }
+      await this.quality.handledDescription();
     } else if (message.type === 'ice') {
       await this.ice.add(message.candidate, (candidate) => pc.addIceCandidate(new RTCIceCandidate(candidate)));
     }
@@ -192,9 +229,19 @@ export class CallSession {
     this.update({ muted });
   }
   toggleCamera() {
-    const enabled = !this.state.cameraEnabled;
-    this.state.local?.getVideoTracks().forEach((track) => { track.enabled = enabled; });
-    this.update({ cameraEnabled: enabled });
+    this.quality.setCamera(!this.state.quality.cameraIntent);
+  }
+  setQuality(preset: Preset) { this.quality.setPreset(preset); }
+  setLimits(send: VideoLimit, receive: VideoLimit) { this.quality.setLimits(send, receive); }
+  toggleAudioOnly() { this.quality.setAudioOnly(!this.state.quality.audioOnly); }
+  private async mediaStats(epoch: number) {
+    if (!this.pc || this.statsPending) return;
+    this.statsPending = true;
+    try {
+      const reports = await this.pc.getStats();
+      if (epoch === this.epoch) this.quality.sample(this.statsReader.read(reports as unknown as Reports), performance.now());
+    } catch { /* Statistics failure must not end a usable call. */ }
+    finally { if (epoch === this.epoch) this.statsPending = false; }
   }
   switchCamera() { this.state.local?.getVideoTracks().forEach((track) => track._switchCamera()); }
   refreshDiagnostics() { if (this.pc) void this.candidateSummary(this.pc, this.epoch); }

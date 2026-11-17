@@ -1,6 +1,8 @@
 import { BrowserCall, type State } from './call';
 import { invitation } from '../src/call/core';
 import type { Invitation } from '../shared/protocol';
+import { PRESETS, type Preset, type VideoLimit } from '../src/call/quality';
+import { describeAudio } from '../src/call/stats';
 
 const element = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -11,6 +13,29 @@ const localVideo = element<HTMLVideoElement>('local');
 const remoteVideo = element<HTMLVideoElement>('remote');
 const notice = element('notice');
 const error = element('error');
+const select = (id: string) => element<HTMLSelectElement>(id);
+for (const [key, preset] of Object.entries(PRESETS)) {
+  const option = new Option(preset.label, key); option.disabled = key === 'ultra'; select('quality').add(option);
+}
+const custom = new Option('Custom limits', 'custom'); custom.disabled = true; select('quality').add(custom);
+for (const direction of ['send', 'receive']) {
+  const group = document.createElement('fieldset');
+  const legend = document.createElement('legend'); legend.textContent = direction === 'send' ? 'Outgoing limits' : 'Incoming limits'; group.append(legend);
+  for (const [name, label] of [['resolution', 'Resolution'], ['fps', 'Frame rate'], ['bitrate', 'Video bitrate · Mbps']]) {
+    const id = `${direction}-${name}`;
+    const heading = document.createElement('label'); heading.htmlFor = id; heading.textContent = label; group.append(heading);
+    if (name === 'bitrate') {
+      const field = document.createElement('input'); field.type = 'number'; field.min = '0.15'; field.max = '30'; field.step = '0.05'; field.id = id; group.append(field);
+    } else {
+      const field = document.createElement('select'); field.id = id;
+      if (name === 'fps') for (const fps of [15, 24, 30, 60]) field.add(new Option(`${fps} fps`, String(fps)));
+      else for (const key of ['minimum', 'saver', 'standard', 'hd', 'high', 'ultra'] as const) field.add(new Option(`${PRESETS[key].height}p`, key));
+      group.append(field);
+    }
+  }
+  element('directional-limits').append(group);
+}
+let limitsDirty = false;
 let creating = false;
 let formError = '';
 const labels: Record<State['phase'], string> = {
@@ -68,9 +93,9 @@ function render(state: State) {
   button('mute').querySelector('span')!.textContent = state.muted
     ? 'Unmute'
     : 'Mute';
-  button('camera').disabled = !state.local?.getVideoTracks().length;
+  button('camera').disabled = !state.local || state.quality.audioOnly || state.quality.peerAudioOnly || state.quality.busy;
   button('camera').setAttribute('aria-pressed', String(!state.camera));
-  button('camera').querySelector('span')!.textContent = state.camera
+  button('camera').querySelector('span')!.textContent = state.quality.cameraIntent
     ? 'Camera off'
     : 'Camera on';
   button('refresh').disabled = !inCall;
@@ -86,7 +111,7 @@ function render(state: State) {
     button('play-audio').hidden = true;
     if (state.remote) void playRemote();
   }
-  const remoteVideoPresent = Boolean(state.remote?.getVideoTracks().length);
+  const remoteVideoPresent = Boolean(state.remote?.getVideoTracks().length) && !state.quality.audioOnly && !state.quality.peerAudioOnly;
   remoteVideo.classList.toggle('audio-only', !remoteVideoPresent);
   element('stage-placeholder').hidden = remoteVideoPresent;
   element('stage-title').textContent =
@@ -114,6 +139,35 @@ function render(state: State) {
   element('received').textContent =
     `${state.receivedBytes.toLocaleString()} bytes`;
   element('received').dataset.bytes = String(state.receivedBytes);
+  const q = state.quality;
+  select('quality').value = q.custom ? 'custom' : q.preset;
+  select('quality').querySelector<HTMLOptionElement>('option[value="ultra"]')!.disabled = !q.ultraAvailable;
+  element('ultra-help').hidden = q.ultraAvailable;
+  button('audio-only').setAttribute('aria-pressed', String(q.audioOnly));
+  button('audio-only').textContent = q.audioOnly ? 'Leave audio-only mode' : 'Audio only · both directions';
+  element('quality-status').textContent = q.status + (q.peerAudioOnly ? ' · other participant requests audio only' : '');
+  element('quality-error').textContent = q.error; element('quality-error').hidden = !q.error;
+  element('send-limit').textContent = q.sendDescription; element('receive-limit').textContent = q.receiveDescription;
+  element('sent-quality').textContent = q.sent; element('received-quality').textContent = q.received;
+  element('incoming-audio-quality').textContent = describeAudio(q.stats?.incomingAudio);
+  element('outgoing-audio-quality').textContent = describeAudio(q.stats?.outgoingAudio);
+  element('quality-status').dataset.peerSupported = String(q.peerSupported);
+  element('quality-status').dataset.videoSentBytes = String(q.stats?.sent.bytes ?? 0);
+  element('quality-status').dataset.videoReceivedBytes = String(q.stats?.received.bytes ?? 0);
+  element('quality-status').dataset.audioReceivedBytes = String(q.stats?.audioReceivedBytes ?? 0);
+  element('quality-status').dataset.audioSentBytes = String(q.stats?.audioSentBytes ?? 0);
+  element('quality-status').dataset.appliedHeight = String(q.applied?.applied.height ?? 0);
+  element('quality-status').dataset.appliedBitrate = String(q.applied?.applied.bitrate ?? 0);
+  for (const direction of ['send', 'receive'] as const) {
+    const value = q[direction];
+    select(`${direction}-resolution`).querySelector<HTMLOptionElement>('option[value="ultra"]')!.disabled = !q.ultraAvailable;
+    if (!limitsDirty) {
+      const matching = (['minimum', 'saver', 'standard', 'hd', 'high', 'ultra'] as const).find(k => PRESETS[k].height === value.height) ?? 'high';
+      select(`${direction}-resolution`).value = matching;
+      select(`${direction}-fps`).value = String(value.fps);
+      input(`${direction}-bitrate`).value = String(value.bitrate / 1_000_000);
+    }
+  }
 }
 const call = new BrowserCall(render);
 function mode(create: boolean) {
@@ -195,6 +249,25 @@ button('copy-link').onclick = () => {
 };
 button('mute').onclick = () => call.mute();
 button('camera').onclick = () => call.toggleCamera();
+select('quality').onchange = () => { limitsDirty = false; call.setQuality(select('quality').value as Preset); };
+button('audio-only').onclick = () => call.toggleAudioOnly();
+element('directional-limits').addEventListener('input', () => { limitsDirty = true; });
+button('apply-limits').onclick = () => {
+  const read = (direction: string): VideoLimit => {
+    const resolution = PRESETS[select(`${direction}-resolution`).value as Preset];
+    return { width: resolution.width, height: resolution.height, fps: Number(select(`${direction}-fps`).value), bitrate: Number(input(`${direction}-bitrate`).value) * 1_000_000 };
+  };
+  limitsDirty = false; call.setLimits(read('send'), read('receive'));
+};
+button('fullscreen').onclick = async () => {
+  const stage = element('stage');
+  if (document.fullscreenElement) { await document.exitFullscreen(); return; }
+  if (stage.classList.contains('expanded')) { stage.classList.remove('expanded'); button('fullscreen').textContent = 'Full screen'; return; }
+  try { await stage.requestFullscreen(); }
+  catch { stage.classList.add('expanded'); }
+  button('fullscreen').textContent = 'Exit full screen';
+};
+document.addEventListener('fullscreenchange', () => { button('fullscreen').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 button('hangup').onclick = () => call.end();
 button('play-audio').onclick = () => {
   void playRemote();

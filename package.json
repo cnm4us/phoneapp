@@ -8,7 +8,7 @@
     "start:tunnel": "expo start --dev-client --tunnel",
     "dev:server": "tsx watch --env-file=.env.server server/index.ts",
     "start:server": "tsx --env-file=.env.server server/index.ts",
-    "test": "npm run build:web && tsx --test server/server.test.ts src/call/core.test.ts",
+    "test": "npm run build:web && tsx --test server/server.test.ts src/call/*.test.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p web/tsconfig.json && tsc --noEmit -p web/tests/tsconfig.json",
     "check:docs": "python3 scripts/check_project.py",
     "doctor": "expo-doctor",
@@ -19,7 +19,8 @@
     "bundle:check": "expo export --platform ios --platform android --output-dir artifacts/bundles",
     "build:web": "node scripts/build-web.mjs",
     "test:browser": "npm run build:web && playwright test",
-    "test:browser:live": "node --env-file=.env.server scripts/test-browser-live.mjs"
+    "test:browser:live": "node --env-file=.env.server scripts/test-browser-live.mjs",
+    "test:quality-network": "npm run build:web && tsx scripts/check-quality-network.ts"
   },
   "engines": {
     "node": ">=22.13.0"

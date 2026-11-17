@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 0.3 draft. Updated: 2026-11-17 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.4 draft. Updated: 2026-11-17 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -72,7 +72,7 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 
 Ordinary telephone calls are audio; browser/app video is a separate channel. Calls outside this service, including unrelated personal cellular calls, are not automatically captured. Routing and missed-call handling must set expectations for nonemergency use before production.
 
-COM-07 through COM-09 capture the agreed next iteration; they are not implemented in the first-round POC. Its existing Send video/camera controls affect local video and do not yet provide coordinated two-way audio-only behavior. See [quality implementation plan](plans/0003-adaptive-call-quality.md) for proposed ceilings, staged delivery, and acceptance gates. Numerical settings in that plan are engineering starting values to verify, not guaranteed output on every device.
+COM-07 through COM-09 now have native/browser quality controls, audio-first policy, receive requests, and coordinated audio-only implementation. Browser/server changes are deployed and automated media checks pass; physical-device acceptance remains open. Experimental 4K stays disabled pending device/route verification. The separate Send video/camera controls affect local video; use Audio only for coordinated suppression. See [implementation plan](plans/0003-adaptive-call-quality.md) and [verification](testing/2026-11-17-adaptive-quality.md). Ceilings are limits, not guaranteed output.
 
 ### Time and activity ledger
 

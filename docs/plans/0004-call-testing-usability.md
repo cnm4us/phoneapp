@@ -1,12 +1,12 @@
 # 0004 Call testing usability and full-screen repair
 
-Status: implemented/deployed; physical full-screen and sustained-call confirmation pending. Updated: 2026-11-17. Requirements: POC-01, COM-01, COM-07; follows [plan 0003](0003-adaptive-call-quality.md).
+Status: implemented/deployed; revised full-height/Fill presentation and sustained-call confirmation pending. Updated: 2026-11-17. Requirements: POC-01, COM-01, COM-07; follows [plan 0003](0003-adaptive-call-quality.md).
 
 ## Outcome and evidence
 
 Owner reports native iPhone full screen turns black, requests simpler test invitations and longer calls. A server event matches a 411-second connected call ending when a participant connection closed, at room age 500 seconds versus its configured 1800-second expiry. Both call screens reportedly stayed visible; expiration was not the cause of that disconnect. Existing logs cannot distinguish transport closure from a client leave.
 
-Native full screen currently creates a second remote RTCView inside a Modal while retaining the inline renderer. Replace that transition with one stable renderer whose existing container expands. Verify on the physical phone after JavaScript checks; do not claim the black-screen cause conclusively established by inspection.
+The earlier full-screen path created a second remote RTCView inside a Modal while retaining the inline renderer. It has been replaced with one stable renderer whose existing container expands. Verify on the physical phone after JavaScript checks; do not claim the black-screen cause conclusively established by inspection.
 
 ## Implementation steps
 
@@ -20,7 +20,7 @@ Native full screen currently creates a second remote RTCView inside a Modal whil
 
 | Scenario | Expected | Actual |
 | --- | --- | --- |
-| Phone full-screen toggle | Same video renderer/stream, usable exit, audio/session preserved | Pending physical confirmation |
+| Phone full-screen toggle | Same renderer/stream, full-height layout and optional fill/crop, usable exit | Owner confirms rendering; revised height/fill retest pending |
 | Short invitation | Same eight-digit code on both clients joins the private two-person room | Public short-code browser media tests pass |
 | Legacy invitation | Existing long codes and old clients still work | Existing protocol/parser/server compatibility tests pass |
 | Invalid/guessed codes | Bounded body/attempts, generic rejection, expired/closed rooms inaccessible | HTTP/security tests pass |
@@ -32,3 +32,7 @@ Restore the prior UI if renderer resizing fails; keep server support for legacy 
 ## Handoff
 
 TypeScript, 38 unit/server tests, 13 public browser scenarios, both native JS exports, and nginx validation pass. See [evidence](../testing/2026-11-17-call-usability.md). The owner was asked to reload both clients, create a new short-code room, and check phone full-screen entry/exit without ending the call. That physical confirmation and sustained native call stability remain open. No new EAS build, DB, or TURN quota change.
+
+## Portrait-height follow-up
+
+Owner confirmed full-screen calling works but the video occupied only the top third. The settings ScrollView still inherited `flexGrow: 1`; making it invisible with height/flex zero did not remove that explicit growth. Changed the hidden style to `display: none` and retained the same video renderer. Added optional Fill screen (cover/crop) and Show whole video (contain); inline viewing always contains the whole image. A one-off check using the installed Yoga C++ engine verified the height allocation for phone portrait/landscape and tablet dimensions; TypeScript and both native JS exports pass. Native height/fill retest requested; no backend change/restart or new EAS build.

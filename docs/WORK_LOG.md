@@ -60,3 +60,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Replaced native Modal/duplicate remote renderer with one video stage resized in place; kept exit/mute/camera/switch/hangup and Android back. Added eight-digit random codes with bounded POST resolution, legacy support, and closed-code tombstones; new rooms default to four hours with separate lifetime display and aligned TURN credentials.
 - Added two-miss heartbeat grace and sanitized close cause/code diagnostics. Verified TypeScript, 38 unit/server cases, 13 local/public browser media scenarios, both native JS exports, and nginx syntax. Deployed project-only route plus signaling/browser; no other project, live TURN, DB, dependency, or EAS build changes.
 - Physical iPhone fullscreen/sustained-call retest requested and pending. Updated plan 0004, verification, tools, runbook, and next-thread state; four-hour expiry is simulated/validated, not a claimed four-hour physical call.
+
+## 2026-11-17 Portrait full-screen height and image fit
+
+- Owner confirms full-screen calling now renders video, but it occupies only the top third in portrait. Found the hidden settings ScrollView still inherited explicit flexGrow, competing with the video stage. Removed it from layout with display:none while preserving the renderer.
+- Added optional Fill screen / Show whole video; fill crops edges, inline stays contain. Verified allocation using the installed Yoga C++ engine at phone portrait/landscape and tablet sizes, plus TypeScript and both native JS exports. No media/backend changes or paid build.
+- Owner retest of full-height/Fill requested; model/OS and sustained-call matrix remain open. Recorded Fast Refresh's effect-cleanup caveat for sustained development tests without attributing the earlier disconnect to it.

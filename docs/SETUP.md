@@ -90,7 +90,7 @@ The quality iteration negotiates additive capabilities after the original join, 
 
 ## Adjust call quality
 
-Native full screen expands the existing video stage in place, with exit/mute/camera/switch/hangup controls. It does not open a second renderer or change media/session. Physical iPhone confirmation remains in [the usability report](testing/2026-11-17-call-usability.md); reload the Expo development app for this layout.
+Native full screen expands the existing video stage in place, with exit/mute/camera/switch/hangup controls. It does not open a second renderer or change media/session. Use **Fill screen** to fill the expanded frame by cropping edges; **Show whole video** preserves the full picture with possible black bars. Inline view always shows the whole image. Latest physical evidence remains in [the usability report](testing/2026-11-17-call-usability.md); reload the Expo development app for this layout.
 
 Use **Call quality** before or during a call. Auto begins conservatively below a 1080p/30 ceiling; High allows up to 1080p/60 where devices, receiver limits, and network permit. Standard/Data saver/Minimum reduce video resolution and bitrate. Presets set send/receive preferences together; **Advanced** separates them. Requested ceilings and actual output intentionally differ. **Full screen** changes display size independently of quality.
 
@@ -120,3 +120,5 @@ After authorized server code changes, run checks and then `sudo systemctl restar
 Certbot renews the hostname's certificate. A dedicated deploy hook at `/etc/letsencrypt/renewal-hooks/deploy/phoneapp-turn` copies only this certificate/key into `/etc/phoneapp/tls` with restricted permissions, validates/reloads nginx, and restarts this TURN unit. Do not modify renewal hooks for unrelated sites.
 
 To stop this experiment, stop `phoneapp-signaling` and `phoneapp-turn`, and stop the Metro terminal. To disable the hostname, remove only its nginx symlink after preserving the config and validating nginx. Never reset other services or delete certificates used elsewhere.
+
+For sustained native tests, keep app source unchanged during the call. React Native Fast Refresh can rerun screen cleanup and end the current development call; reload and create a fresh room after updates. This does not affect the four-hour room setting and is not a confirmed cause of the earlier disconnect.

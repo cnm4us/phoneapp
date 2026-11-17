@@ -25,10 +25,20 @@ The reported call ending around 6:50 matches a server connection closure approxi
 | `npm run bundle:check` | iOS/Android export pass; exit 0 | Native JS compilation; no new native binary or physical renderer proof. |
 | nginx configuration | Pass | Only this hostname gains exact `/rooms/resolve` proxy route. |
 | `npm run test:browser:live` | 13/13 pass | Tests deployed HTTPS resolver/nginx route, four-hour room lifetime, and actual media/quality behavior. |
-| Phone full screen / sustained call | Owner retest pending | Four-hour boundaries simulated; no claim of a four-hour physical call. |
+| Phone full screen / sustained call | Owner confirms rendering; revised height/fill retest pending | Four-hour boundaries simulated; no claim of a four-hour physical call. |
 
 ## Deployment and remaining work
 
 Built browser assets, added the project-only nginx route, validated/reloaded nginx, and restarted `phoneapp-signaling` after recent logs showed no joined rooms. TURN, firewall, dependencies, DB, and native binaries unchanged. Existing rooms end on restart; refresh both clients and create a new code. No EAS build or paid service.
 
 Keep [M1 physical acceptance](../plans/0001-webrtc-poc.md) and Ultra gates open. Capture models/OS/browser/network and actual full-screen/long-call results. Diagnose another early disconnect using the new close fields and client error, not an assumption of expiry.
+
+## Portrait height and image fit follow-up
+
+Owner confirmed the black-screen problem no longer occurs and described video filling the phone width but only the top third. Inspection found the settings ScrollView retained its built-in explicit `flexGrow: 1` despite the height/flex-zero/opacity hidden style. Yoga gives explicit flexGrow precedence over the flex shorthand. Hiding the settings with `display: none` removes it from layout without moving or remounting the remote renderer.
+
+A one-off C++ check compiled the installed React Native Yoga sources and reproduced the old layout, then applied the new hidden style. With a sample 150-pixel control area, video height changed 230 → 610 for a 390×760 viewport, 45 → 240 for 760×390, and 330 → 810 for 768×960. Hidden settings consumed zero height after the change. These are layout-engine checks, not measurements from the owner's phone. The temporary check lives in ignored `artifacts/private/fullscreen-yoga-check.cpp`.
+
+Added a full-screen Fill screen toggle using cover (crops edges), with Show whole video returning to contain. Inline view retains contain. The video frame clips overflow so cropped content does not cover controls. Display fit changes no capture, bitrate, signaling, or consent. TypeScript and both native JS exports pass; user confirmation of revised height/fill is pending. No media/backend changes, paid build, or service restart.
+
+For sustained tests, avoid native source edits during the call: React Native [Fast Refresh](https://reactnative.dev/docs/0.86/fast-refresh) reruns effects, and this app's screen cleanup ends its call. Reload before a fresh verification call. This is a development-lifecycle consideration, not an established explanation for the earlier 6:50 disconnect.

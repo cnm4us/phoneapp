@@ -112,7 +112,9 @@ function CallScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#0b1620' }, hidden: { height: 0, flex: 0, opacity: 0 }, content: { padding: 22, gap: 18, paddingBottom: 50 },
+  // ScrollView supplies flexGrow: 1 internally; opacity/height/flex: 0 do not
+  // remove its explicit grow from Yoga layout. Exclude settings from layout.
+  page: { flex: 1, backgroundColor: '#0b1620' }, hidden: { display: 'none' }, content: { padding: 22, gap: 18, paddingBottom: 50 },
   eyebrow: { color: '#5ce1c2', fontSize: 12, letterSpacing: 2, fontWeight: '700' }, title: { color: '#f0f6f7', fontSize: 34, lineHeight: 39, fontWeight: '700' },
   muted: { color: '#a4b5c2', lineHeight: 21 }, text: { color: '#f0f6f7', flexShrink: 1 },
   card: { backgroundColor: '#142532', borderRadius: 18, padding: 18, gap: 12 }, label: { color: '#edf5f7', fontSize: 17, fontWeight: '600' },

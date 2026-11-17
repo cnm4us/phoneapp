@@ -21,7 +21,7 @@ Updated: 2026-11-16. Record verified capabilities separately from proposals. Con
 ## Agent tool capabilities
 
 - Shell/filesystem tools can edit source, run available checks, and manage Git in the checkout.
-- A connected GitHub tool was used to verify repository metadata. Rediscover connector availability in a new session; local Git/`gh` are also available.
+- A connected GitHub tool verified repository metadata, but workflow/PR writes were denied in this session. Authenticated Git/`gh` successfully pushed the feature branch and opened [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Rediscover availability in a new session; ordinary CLI repository writes work, while workflow-write scope is still missing.
 - Browser automation tools were exposed in this session but have not been exercised for this project. They can assist with a future web test harness; they do not control native apps on the two physical phones.
 - No dedicated database connector or native-device test connection has been verified. Add exact capabilities only after an actual connectivity/test run.
 

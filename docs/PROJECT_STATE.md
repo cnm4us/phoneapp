@@ -2,6 +2,8 @@
 
 Updated: 2026-11-16 (client date). M0 complete. **M1 in progress: runtime foundation implemented; native/device acceptance pending.** Branch: `feat/webrtc-poc`.
 
+Review: [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Implementation commit: `4874959`; follow-up documentation may have a newer head. Do not switch the live checkout to `main`, which does not yet include the runtime code.
+
 ## Implemented
 
 - Native audio/video app: expiring rooms, join/share, mute/camera/switch/hangup, connection state, experimental connected time, and redacted connection diagnostics.

@@ -2,7 +2,7 @@
 
 Status: proposed; discussion and requirements only, implementation not started. Updated: 2026-11-17.
 
-Requirements: PAT-01–04, TEAM-01–02, COM-01, COM-05–06, COM-10, TX-01–05, REP-03, OPS-01–03 in [PRD](../PRD.md).
+Requirements: PAT-01–04, TEAM-01–02, COM-01, COM-05–06, COM-10, TX-01–06, REP-03, OPS-01–03 in [PRD](../PRD.md).
 
 ## Outcome and scope
 
@@ -12,7 +12,7 @@ Owner's requested next product slice:
 2. Selecting a patient shows call options. Only **App Audio/Video** is actionable initially. App Audio and Phone #1/#2/#3 are later options; do not invoke a personal SIM dialer or imply Twilio/PSTN is implemented.
 3. Provider taps App Audio/Video; the enrolled patient's phone rings with answer/decline, including native background/locked handling in its own acceptance gate. Manual room codes disappear from this product flow.
 4. Both authorized participants receive a durable call-log entry. With transcription enabled and consented, an attributed transcript appears after the call finishes processing. Live captions and LLM summaries are outside this slice.
-5. Transcription Off permits an ordinary unrecorded call with a call-log entry and no transcription job. Audio archive/playback and retention have not been requested/decided.
+5. Transcription Off permits an ordinary unrecorded call with a call-log entry and no transcription job. Owner subsequently requested playable saved audio in both call logs. Retention duration/deletion and exact recording/transcription toggle behavior still need definition.
 
 Use synthetic accounts/patients/test conversations. Real clinical deployment, HIPAA implementation, Twilio numbers/SMS, clinical summaries, and billing automation remain outside this proposed iteration. This pulls a narrow app-calling/history/transcription slice forward from portions of M2/M3/M5; it does not silently complete those milestones or original M1 device acceptance.
 
@@ -41,10 +41,10 @@ Separate provider/patient navigation and permissions now while sharing calling, 
 
 ## Implementation steps
 
-- [ ] Confirm packaging preference (one binary with roles versus separate app variants), audio playback/retention expectations, consent UX, and exact first-call matrix.
+- [ ] Confirm packaging preference (one binary with roles versus separate app variants), audio retention/deletion expectations, consent UX, and exact first-call matrix.
 - [ ] Select auth/persistence/migration, native incoming-call, media capture/storage, and batch transcription components; document tradeoffs, pricing/access dependencies, and decisions. Do not treat this proposal as provider/spending approval.
 - [ ] Establish a dedicated project dev/test DB with versioned migrations, synthetic seeds, connectivity/schema/test commands, and clean-install/upgrade recovery evidence per [database workflow](../DATABASE.md).
-- [ ] Implement authenticated provider/patient experiences, assigned patient directory, enrollment/device registration, and shared call history. Verify server-side patient isolation and token logout/rotation/reassignment.
+- [ ] Implement authenticated provider/patient experiences, assigned patient directory, enrollment/device registration, and shared call history with private audio playback. Verify server-side patient isolation and token logout/rotation/reassignment.
 - [ ] Implement authenticated foreground patient-addressed calls without room-code entry; use real durable call IDs/outcomes before adding push.
 - [ ] Integrate native incoming-call lifecycle and device delivery; verify locked/background/cold-start, cancellation, duplicate/late delivery, multiple devices, and audio-session/output controls. This is a substantial separate implementation gate and requires new native builds.
 - [ ] Implement consent-aware media capture, processing worker, post-call labeled transcripts, and both authorized views. Exercise Off, partial recording, retry/failure, retention/deletion, and multiple-speaker uncertainty.
@@ -53,7 +53,7 @@ Separate provider/patient navigation and permissions now while sharing calling, 
 
 ## Data and configuration
 
-Proposed entities, not an implemented schema: authenticated users/roles, patients/contact ownership, provider-patient permissions, device registrations, calls/participants/lifecycle events, recording consent intervals, media references, transcription jobs/segments/versions. Use stable IDs, UTC timestamps, integer-second duration, event idempotency, and access-controlled storage. No actual DB/provider/ORM/auth/storage/queue/transcription selection or credentials yet. Follow [database workflow](../DATABASE.md) before migrations; never reuse another EC2 project's DB.
+Proposed entities, not an implemented schema: authenticated users/roles, patients/contact ownership, provider-patient permissions, device registrations, calls/participants/lifecycle events, recording consent intervals, media references, transcription jobs/segments/versions. Use stable IDs, UTC timestamps, integer-second duration, event idempotency, and access-controlled storage. Existing local MariaDB 10.6.22 and administrator read access were verified during discussion; there is no Phoneapp DB/account/configuration yet. MariaDB is an available alternative to the previously proposed PostgreSQL, not a selected engine for this slice. Save audio in private file/object storage and DB metadata/references, with per-call access checks; object storage choice is unresolved. No actual project DB/provider/ORM/auth/storage/queue/transcription selection or credentials yet. Follow [database workflow](../DATABASE.md) before migrations; never reuse another EC2 project's DB.
 
 Future APNs/FCM/auth/STT/storage credentials belong on scoped backend/native build configuration as appropriate; provider secrets never become EXPO_PUBLIC variables. Minimal push payloads and server-authorized media access are required even during synthetic testing. No services, keys, migrations, uploads, recording, or builds are created by this plan.
 
@@ -68,7 +68,7 @@ Future APNs/FCM/auth/STT/storage credentials belong on scoped backend/native bui
 | Media lifecycle | Connected clock/outcomes consistent; native answer/audio activation; routing/private speaker/headsets; video consent and cleanup | Not implemented |
 | Shared durable history | Same call ID/data in both views, restart/reconnect safe, missed/declined/canceled entries, no double durations | Not implemented |
 | Transcription consent | Off produces no captured audio or STT job; stopping mid-call stops subsequent capture; clear partial/status evidence | Not implemented |
-| Post-call transcript | Separate endpoint labels/timestamps, common text/version, processing errors/retries/corrections/retention, role uncertainty visible | Not implemented |
+| Post-call transcript/audio | Separate endpoint labels/timestamps, common text/version, private authorized audio playback, processing errors/retries/corrections/retention, role uncertainty visible | Not implemented |
 | Continuity | No ordinary banner or mocked ringing reported as native hardware acceptance; DB/build/service steps recorded | Proposed tests only |
 
 Use [testing strategy](../TESTING.md) and device reports. Existing compilation/POC tests do not prove any acceptance row above. No tests for this proposed slice have run.
@@ -79,6 +79,6 @@ Background phone behavior is the largest native expansion beyond current POC. De
 
 ## Handoff
 
-User selected post-call transcripts and shared call logs; live captions and summaries are deferred. Architecture/packaging and audio playback/retention are open. Next action is discussion/review of this proposed slice, then a bounded implementation plan with actual stack/access decisions. No implementation or new cloud spend initiated. Existing native speaker/earpiece physical acceptance remains independently open.
+User selected post-call transcripts and shared call logs; live captions and summaries are deferred. Architecture/packaging and audio retention/deletion are open; audio playback is now requested. Next action is discussion/review of this proposed slice, then a bounded implementation plan with actual stack/access decisions. No implementation or new cloud spend initiated. Existing native speaker/earpiece physical acceptance remains independently open.
 
 References: [Apple PushKit/CallKit](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit), [Android Telecom](https://developer.android.com/develop/connectivity/telecom), [FCM priority](https://firebase.google.com/docs/cloud-messaging/android-message-priority), [Android call notifications](https://developer.android.com/develop/ui/compose/notifications/call-style), [Expo app variants](https://docs.expo.dev/build-reference/variants/).

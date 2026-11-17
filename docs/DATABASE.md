@@ -1,6 +1,8 @@
 # Database and migration workflow
 
-Status: no database, schema, migration runner, or database credentials exist for this project. PostgreSQL is proposed for the persistent product; the provider and library/tool choice remain open. M1 can use temporary in-memory signaling state.
+Status: no database, schema, application DB account, migration runner, or DB connection configuration exists for Phoneapp. Existing EC2 MariaDB 10.6.22 is active on loopback port 3306; local Unix-socket administrator access was verified read-only on 2026-11-17 via sudo. No Phoneapp-named schema was found. PostgreSQL was previously proposed; the existing MariaDB is another available option. Project engine/provider/driver/migration choices remain open. M1 still uses temporary in-memory signaling state.
+
+Inspection used only server version/current administrative identity and a count of schema names containing phoneapp; no other application tables or records were read or changed. This administrator connection is for scoped provisioning/migrations, not the future runtime identity. Establish a dedicated Phoneapp dev/test database and least-privilege application/migration accounts before implementation. Audio playback is now requested; private file/object storage should hold recordings while the DB stores authorized call metadata, transcript text/segments, and media references. Storage/retention choices remain open.
 
 ## Ownership and access
 

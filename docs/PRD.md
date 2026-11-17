@@ -98,7 +98,8 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 | TX-02 | Transcribe with timestamps and speaker/role labels. | Attribute the authenticated team endpoint to staff identity/role, and use patient/caregiver/unknown labels for the other endpoint pending confirmation. Separate channels/tracks are preferred when supported. |
 | TX-03 | Correct transcription and attribution errors. | Users can correct text and roles while preserving original/version history. Multiple speakers on one phone remain explicitly uncertain. Transcripts are drafts until reviewed. |
 | TX-04 | Controlled lifecycle and failure handling. | Report processing/failure states; make retention, deletion, storage permissions, and provider coverage explicit before enabling real data. Calls and time entries survive a transcription failure. |
-| TX-05 | Shared post-call transcript linked to call history. | Both authorized participants see the same durable call record and speaker/role-labeled transcript after processing. Show Off, Processing, Ready, Failed, or partial status. Consent/toggle Off prevents recording/upload/transcription for the affected interval; the call and its log still work. Audio playback/retention is a separate unresolved choice. LLM summaries are deferred. |
+| TX-05 | Shared post-call transcript linked to call history. | Both authorized participants see the same durable call record and speaker/role-labeled transcript after processing. Show Off, Processing, Ready, Failed, or partial status. Consent/toggle Off prevents recording/upload/transcription for the affected interval; the call and its log still work. Retained audio is playable under TX-06; retention duration/deletion remains a separate choice. LLM summaries are deferred. |
+| TX-06 | Play saved call audio from the call log. | Both authorized participants can play, pause, and seek a consented retained recording after the call. Access is checked before playback; recordings are private and linked to the call ID. Show unavailable/not-recorded/partial/deleted states honestly. Transcription failure does not erase an otherwise valid call record or playable recording. Retention/deletion policy remains to be selected. |
 
 ### Reporting and product operation
 
@@ -131,7 +132,7 @@ Proposed next app-only slice: provider sees Patient A/B/C, selects a patient and
 ## Open product decisions
 
 - Provider/patient packaging: one authenticated app with role-specific screens for the next prototype, or distinct installable variants sharing core code. Backend permission boundaries are required for either choice.
-- Whether post-call audio itself remains playable/stored, or only the resulting written transcript is retained; consent, retention/deletion, and review behavior must be defined before recording implementation.
+- Audio playback is requested. Recording consent, retention duration/deletion, and review behavior remain to be defined before implementation.
 
 - Practice/team/individual phone-number ownership and call distribution; no-answer/after-hours handling.
 - Preferred browser video provider and whether a managed media service should replace the M1 direct WebRTC path.

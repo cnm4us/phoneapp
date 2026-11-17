@@ -11,7 +11,9 @@ Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals.
 | Node / npm | Node 22.21.1; npm 10.9.4 | Available, but project SDK/runtime compatibility must be checked when scaffolding. |
 | Python | Python 3 installed | Runs documentation check without third-party dependencies. |
 | Docker | Not found on PATH | Disposable container DB testing is unavailable until configured. |
-| PostgreSQL client | `psql` not found on PATH | No database connection has been established. |
+| PostgreSQL client | `psql`/postgres/pg_isready not found on PATH | No project PostgreSQL connection established. |
+| Existing MariaDB | MariaDB 10.6.22 service active; mysql/mariadb clients installed; loopback 3306 | Read-only administrator query via `sudo -n mariadb --protocol=socket` verified. No Phoneapp-named schemas/project DB configuration found. Do not reuse other applications' databases; runtime must use a dedicated account, not root. |
+| SQLite client | sqlite3 available | No Phoneapp SQLite database selected or created. |
 | EAS | CLI 27.10.0; authenticated as `mbcollins2`; project linked | Android and iOS native builds finished successfully. Owner approved iPhone pay-as-you-go; no new build needed for browser companion. |
 | Apple Developer | Owner reports an account | Access credentials remain with the owner; use EAS-supported signing flow. |
 | iPhone / Android | Owner and wife own the devices | Models/OS versions unknown; no remote device-control tool configured. |

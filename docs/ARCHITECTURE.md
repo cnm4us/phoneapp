@@ -1,6 +1,6 @@
 # Architecture direction
 
-Status: proposed implementation, with established user constraints in [decision 0001](decisions/0001-project-direction.md). No runtime components exist yet.
+Status: M1 implementation exists; physical acceptance pending. See [decision 0002](decisions/0002-webrtc-implementation.md) for selected versions and deployment. Later product components remain proposals.
 
 ## First experiment
 
@@ -11,14 +11,25 @@ iPhone native app ---- secure signaling service ---- Android native app
                       direct or via TURN
 ```
 
-- Expo/React Native + TypeScript, `expo-dev-client`, `react-native-webrtc`, and its compatible Expo config plugin.
+- Expo 57.0.33 / React Native 0.86.3 + TypeScript, `expo-dev-client`, `react-native-webrtc` 155.0.1, and Expo config plugin 15.0.2. Native configuration includes scene support for current iOS builds.
 - EAS builds native device clients. The EC2-hosted Expo/Metro server supplies development JavaScript; an Expo tunnel can make Metro reachable remotely.
 - A minimal Node/TypeScript signaling service exchanges offers, answers, ICE candidates, session membership, and leave events. Limit sessions to two participants; use expiring invitations and validate message sizes/types.
 - STUN assists connection discovery; authenticated TURN relays when needed. An Expo development tunnel does not provide signaling or relay media. The signaling endpoint needs its own secure public route; TURN needs appropriately reachable relay transports/ports.
 - Keep short-lived room state in memory for M1, with expiry and cleanup. Restarting the service may end sessions; document that limit. No DB is needed for this experiment.
 - Use actual peer connection state for the duration display. Server observations of signaling alone do not prove that media flowed.
 
-Pin versions after verifying the current compatibility matrix. The direct WebRTC implementation is a learning experiment; do not assume it is the final telephone/video provider architecture.
+The direct WebRTC implementation is a learning experiment; do not assume it is the final telephone/video provider architecture. The plugin's published matrix stops at SDK 56; its declared peer range permits 56 and later. SDK 57 was selected to avoid the SDK 56 Hermes regression. Dependency validation, prebuild, and JS bundles pass; native build/device verification is recorded separately.
+
+## Implemented layout and service boundaries
+
+- `App.tsx` and `src/call/`: native test screen and call lifecycle. SDP processing is serialized; early ICE is queued; connected time uses a monotonic clock; backgrounding ends this foreground-only experiment.
+- `shared/protocol.ts`: wire types shared by app and server.
+- `server/`: Node/TypeScript HTTP/WebSocket service, capability invitations, room bounds/expiry, heartbeat, validation, and coturn credential issuance. Room creation requires a private test access key entered by the creator; the invitation grants room access to the second participant.
+- `deploy/`: project-specific nginx/systemd/coturn templates. nginx terminates HTTPS/WSS; signaling binds `127.0.0.1:8787`; coturn binds the EC2 private IP on 3478 and TLS 5349 with a bounded UDP relay range.
+- `.env.server`: ignored, mode 600, with generated room-creation key and TURN master secret. Clients receive only time-limited TURN credentials after room authorization. No recording or conversation persistence.
+- `scripts/`: configuration bootstrap, public signaling smoke test, and Linux coturn packet-exchange diagnostic.
+
+The live development services follow this checkout. Before switching to a branch without server code or changing dependencies, stop the project services or prepare the replacement. This is a development deployment, not an immutable production release.
 
 ## Later product components
 

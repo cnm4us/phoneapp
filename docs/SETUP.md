@@ -1,0 +1,88 @@
+# WebRTC proof of concept setup
+
+This experiment connects two native development builds in the foreground. Use test conversations only. Public signaling and authenticated TURN UDP/TCP/TLS probes pass; the physical-phone matrix remains unrun.
+
+## Installed components
+
+| Component | Location / endpoint |
+| --- | --- |
+| Native app | Repository root; `App.tsx`, `src/call/`, `app.config.ts` |
+| Signaling | `https://phoneapp.bawebtech.com`; WebSocket path `/signal`; health `/health` |
+| Signaling process | `phoneapp-signaling.service`, bound to `127.0.0.1:8787` |
+| TURN | `phoneapp.bawebtech.com:3478` UDP/TCP; `:5349` TLS/TCP; UDP relay ports 49160-49200 |
+| TURN process | `phoneapp-turn.service`; `/etc/phoneapp/turnserver.conf` |
+| TLS | Let's Encrypt certificate for the dedicated hostname; nginx config `/etc/nginx/sites-available/phoneapp.bawebtech.com` |
+| EAS project | [@mbcollins2/phoneapp](https://expo.dev/accounts/mbcollins2/projects/phoneapp), UUID `942392a3-1d9c-4d2c-91b0-0ad939e4e1fd` |
+
+These ports and paths are specific to this EC2 deployment. Templates under `deploy/` contain this host's addresses and Node path; adapt them before deploying elsewhere. Other nginx sites were not edited. The stock coturn service was disabled after installation; only the project-specific TURN unit is used.
+
+## Credentials and configuration
+
+Private `.env.server` contains `POC_ACCESS_KEY` and `TURN_SECRET`. It is ignored by Git and EAS uploads and has mode 600. Use VS Code Remote SSH to open that file locally when you need the creator key; do not paste it into public documents or chat. The test key is entered on the phone creating an invitation and is kept in memory. The second phone only needs the invitation.
+
+`TURN_SECRET` must match the rendered coturn config under `/etc/phoneapp/`. It is never embedded in the app. Authenticated room members receive HMAC credentials valid for the bounded room lifetime. Invitations and active rooms expire after 30 minutes; leaving ends the room, so create a fresh invitation for another call.
+
+On a fresh checkout, `npm ci` installs pinned app/test dependencies. `npm run init:local` generates a new ignored `.env.server` only if absent; creating that file does not deploy TURN, obtain a certificate, or change firewall rules. Do not run it expecting to rotate an existing deployment's secret. Template configuration files are `.env.example` and `.env.server.example` at the repository root.
+
+## Network setup
+
+DNS resolves to this host at `54.183.144.33`. HTTPS/WSS on 443 works. Inbound TURN rules requested from the owner are:
+
+| Protocol | Ports | Source for the experiment |
+| --- | --- | --- |
+| TCP | 3478, 5349 | IPv4 internet, so both phones can connect from arbitrary networks |
+| UDP | 3478, 49160-49200 | IPv4 internet |
+
+The EC2 role `EC2MediaConvertSubmitter` cannot describe/manage EC2 security groups; no AWS security-group changes were made by the agent. The owner confirmed these rules were added; subsequent public UDP/TCP/TLS probes each received 10/10 test packets. The health response's `turnConfigured: true` means credentials/URLs are set, not that media has been verified on a phone.
+
+Run the real-device forced-relay scenario after installing both apps. This server has no TLS TURN listener on 443, which nginx already uses; networks that allow only outbound 443 may require a later dedicated relay/proxy strategy.
+
+## EAS builds and iPhone registration
+
+EAS CLI 27.10.0 is installed globally on this host, and `eas whoami` verified the owner account. The app is linked and uses IDs `com.bawebtech.phoneapp.poc` on both platforms. The Android keystore was created and is managed by EAS. No signing material was downloaded into Git.
+
+The Android development build finished successfully: [build 2cf8e5a8](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c). That upload used the working-tree implementation before the final documentation commit; the development client loads subsequent JavaScript from Metro.
+
+EAS reported that the account is over its included build credits and charges further builds at pay-as-you-go rates. The owner explicitly approved pay-as-you-go for the iPhone build on 2026-11-16; that build no longer needs spending confirmation. Keep unrelated paid builds outside this authorization.
+
+For the iPhone, noninteractive submission stopped before upload because EAS had no suitable internal-distribution signing credentials. The owner was asked to run `npm run build:ios` in the EC2 project terminal and complete Apple login, team selection, and device/signing prompts. If a separate enrollment step is needed, run `eas device:create` and follow its link on the intended iPhone. Enable iOS Developer Mode. Registering another device or using an unrelated provisioning profile does not prove this iPhone is included.
+
+The current privately tested POC uses standard TLS/WebRTC cryptography and sets `ios.infoPlist.ITSAppUsesNonExemptEncryption: false` explicitly. EAS cannot automatically edit this dynamic config; that stop has been fixed in the file. WebRTC includes third-party cryptography, so re-evaluate declarations for public distribution or new encryption features using [Apple's guidance](https://developer.apple.com/help/app-store-connect/reference/app-information/export-compliance-documentation-for-encryption). The Node experimental TypeScript warning is informational.
+
+Once registration/signing is ready:
+
+```sh
+npm run build:ios
+```
+
+For an authorized Android rebuild, use `npm run build:android`. The `development` profile generates a custom dev client; the `preview` profile can later produce a bundled internal-test app without Metro. Both are cloud builds and can incur charges. This app does not run in Expo Go.
+
+## Run on the two phones
+
+1. Install the successful Android APK from the EAS build page on the wife's Android. Install the eventual iPhone build through its EAS installation link after provisioning.
+2. From the EC2 project, run `npm run start:tunnel` if Metro is not already running. The local `@expo/ngrok` dependency is installed. Only run one Metro process on port 8081. Check its terminal for the current development-client QR/link.
+3. Open the custom Phoneapp POC app, sign into the matching Expo account in its launcher if needed, and open the running development server. The Expo tunnel only serves the development app; signaling/media use their own endpoints.
+4. On the creator phone, leave the signaling address as `https://phoneapp.bawebtech.com`, paste the private test access key, and tap **Create invitation**.
+5. Tap **Share invitation** before joining. Paste that invitation on the second phone. Sharing after joining may background the foreground-only call and end it.
+6. Select **Send video** or audio-only independently on each phone. Tap **Join call** on both, grant microphone/camera access, and keep both apps in the foreground.
+7. Try mute, camera controls, and hangup. Create a new invitation for the next session. For relay testing, enable **Force TURN relay for testing** before joining; use **Refresh connection details** to capture candidate types.
+8. Execute the full [M1 matrix](plans/0001-webrtc-poc.md) and save a sanitized report from [the template](testing/DEVICE_REPORT_TEMPLATE.md). Do not treat connected timer seconds as approved billing time.
+
+## Operate and diagnose the services
+
+```sh
+sudo systemctl status phoneapp-signaling phoneapp-turn --no-pager
+curl --fail https://phoneapp.bawebtech.com/health
+npm run smoke
+python3 scripts/check-turn.py --transport udp
+python3 scripts/check-turn.py --transport tcp
+python3 scripts/check-turn.py --transport tls
+```
+
+Local transport isolation (Linux only): use `--host 172.31.10.226`; for TLS add `--server-name phoneapp.bawebtech.com`. A local pass does not verify public reachability. Raw coturn diagnostics remain in ignored `artifacts/private/` with mode 600; do not copy them into public reports without review. The relay checker returns success only when every packet in its small sample was received.
+
+After authorized server code changes, run checks and then `sudo systemctl restart phoneapp-signaling`. The service reads this development checkout; changing branches/dependencies may affect it. For TURN config changes, update the matching private secret/config and restart `phoneapp-turn`. Test nginx with `sudo nginx -t` before reloading it.
+
+Certbot renews the hostname's certificate. A dedicated deploy hook at `/etc/letsencrypt/renewal-hooks/deploy/phoneapp-turn` copies only this certificate/key into `/etc/phoneapp/tls` with restricted permissions, validates/reloads nginx, and restarts this TURN unit. Do not modify renewal hooks for unrelated sites.
+
+To stop this experiment, stop `phoneapp-signaling` and `phoneapp-turn`, and stop the Metro terminal. To disable the hostname, remove only its nginx symlink after preserving the config and validating nginx. Never reset other services or delete certificates used elsewhere.

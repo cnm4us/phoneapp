@@ -1,0 +1,28 @@
+import type { ExpoConfig } from 'expo/config';
+
+const config: ExpoConfig = {
+  name: 'Phoneapp POC',
+  slug: 'phoneapp',
+  owner: 'mbcollins2',
+  scheme: 'phoneapp',
+  version: '0.1.0',
+  orientation: 'portrait',
+  ios: {
+    supportsTablet: false,
+    bundleIdentifier: 'com.bawebtech.phoneapp.poc',
+    // Current privately tested standard-crypto POC; reassess for public distribution/new crypto features.
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
+  },
+  android: { package: 'com.bawebtech.phoneapp.poc' },
+  plugins: [
+    'expo-dev-client',
+    ['expo-build-properties', { ios: { enableSceneSupport: true } }],
+    ['@config-plugins/react-native-webrtc', {
+      cameraPermission: 'Allow Phoneapp POC to use your camera for test video calls.',
+      microphonePermission: 'Allow Phoneapp POC to use your microphone for test calls.',
+    }],
+  ],
+  ...(process.env.EXPO_OWNER ? { owner: process.env.EXPO_OWNER } : {}),
+  extra: { eas: { projectId: process.env.EAS_PROJECT_ID || '942392a3-1d9c-4d2c-91b0-0ad939e4e1fd' } },
+};
+export default config;

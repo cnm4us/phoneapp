@@ -25,6 +25,9 @@ REQUIRED = (
     "docs/decisions/README.md",
     "docs/decisions/0001-project-direction.md",
     "docs/testing/DEVICE_REPORT_TEMPLATE.md",
+    "docs/SETUP.md",
+    "docs/decisions/0002-webrtc-implementation.md",
+    "docs/testing/2026-11-16-poc-foundation.md",
     ".github/pull_request_template.md",
     "docs/templates/docs-workflow.yml",
 )

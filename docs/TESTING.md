@@ -1,16 +1,22 @@
 # Testing strategy
 
-## Current runnable check
+## Current runnable checks
 
 ```sh
 python3 scripts/check_project.py
+npm run typecheck
+npm test
+npm run doctor
+npm run bundle:check
 ```
 
-This checks required project artifacts, local Markdown file links, requirement references, and Python syntax of the checker. A [GitHub Actions template](templates/docs-workflow.yml) is provided but not enabled because workflow-write permission is unavailable. There is no application test suite yet.
+The Python check validates project artifacts and local Markdown links/references. TypeScript checks app, server, and test logic. Node tests exercise live local signaling and pure call helpers. Expo Doctor checks dependency/configuration health; bundle export compiles both platforms' JavaScript, not native binaries. A [GitHub Actions template](templates/docs-workflow.yml) is provided but not enabled because workflow-write permission is unavailable.
+
+`npm run smoke` loads the private server key from `.env.server` and checks the public HTTPS/WSS path through nginx with two synthetic signaling peers. It does not exchange real media. `python3 scripts/check-turn.py --transport udp` (also `tcp` or `tls`) uses the installed Linux coturn client to send relay test packets. Neither establishes physical-phone acceptance. See [the implementation report](testing/2026-11-16-poc-foundation.md) and [setup](SETUP.md).
 
 ## Implementation checks
 
-Add only tests that verify meaningful behavior. The implementation plan must commit the chosen tools and runnable package scripts, then update [tools/access](TOOLS.md).
+Add only tests that verify meaningful behavior. Keep actual commands and limits in [tools/access](TOOLS.md).
 
 | Layer | Behavior to verify | Limits |
 | --- | --- | --- |

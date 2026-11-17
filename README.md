@@ -2,7 +2,7 @@
 
 A native iOS and Android communications app for capturing care-team work and reviewing patient-level time. The first milestone is a WebRTC proof of concept between the owner's iPhone and his wife's Android phone.
 
-**Status:** documentation foundation only. No app, backend, database, or EAS builds exist yet. Development uses synthetic data; HIPAA implementation is a later milestone.
+**Status:** native app and signaling implementation available; physical-phone acceptance pending. HTTPS/WebSocket signaling is running at `https://phoneapp.bawebtech.com`; authenticated public TURN UDP/TCP/TLS probes pass. The Android native build succeeded; iPhone signing/build setup is in progress. Development uses synthetic data; HIPAA implementation is a later milestone.
 
 ## Start here
 
@@ -14,6 +14,7 @@ A native iOS and Android communications app for capturing care-team work and rev
 - [Tools and access](docs/TOOLS.md): verified capabilities, connection setup, and commands.
 - [Database workflow](docs/DATABASE.md): ownership and migration policy.
 - [Testing strategy](docs/TESTING.md): automated checks and physical-device evidence.
+- [POC setup and operation](docs/SETUP.md): services, builds, test-key location, and two-phone instructions.
 - [Architecture](docs/ARCHITECTURE.md), [decisions](docs/decisions/README.md), and [work log](docs/WORK_LOG.md).
 
 ## Check the documentation
@@ -28,6 +29,16 @@ On Windows, use `py -3 scripts/check_project.py` if `python3` is unavailable. Th
 
 ## Development environment
 
-The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS will compile custom development builds for the physical iPhone and Android phone. Expo Go cannot load the proposed native WebRTC library. The owner already has Expo/EAS and Apple Developer accounts; project linking and device registration remain to be done.
+The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `@mbcollins2/phoneapp` is linked. Expo SDK 57, React Native 0.86.3, and native WebRTC 155 are pinned in the lockfile. Expo Go cannot load this app; use a custom development build. iPhone provisioning and physical-device testing remain outstanding.
+
+```sh
+npm ci
+npm run typecheck
+npm test
+npm run doctor
+npm run bundle:check
+```
+
+For local service configuration, `npm run init:local` creates private `.env.server` only if absent. See the setup guide before starting services: this host already runs `phoneapp-signaling` and `phoneapp-turn`; do not start another server on their port. The POC has no persistent patient database.
 
 Repository: <https://github.com/cnm4us/phoneapp>

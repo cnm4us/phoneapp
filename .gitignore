@@ -22,9 +22,12 @@ __pycache__/
 *.keystore
 google-services.json
 GoogleService-Info.plist
+credentials.json
 
 # Private captures, database dumps, and local reports
-artifacts/private/
+artifacts/
+/ios/
+/android/
 *.sql.gz
 *.dump
 *.ipa

@@ -1,6 +1,6 @@
 # 0001 Two-device WebRTC proof of concept
 
-Status: ready for implementation; not started. Updated: 2026-11-16. Milestone: M1. Requirements: POC-01 through POC-07 in [the PRD](../PRD.md).
+Status: in progress; runtime foundation implemented, physical acceptance pending. Updated: 2026-11-16. Milestone: M1. Requirements: POC-01 through POC-07 in [the PRD](../PRD.md).
 
 ## Outcome and boundaries
 
@@ -18,15 +18,15 @@ Use synthetic labels/conversations. No patient database, Twilio phone number, SM
 
 ## Implementation steps
 
-- [ ] Create a feature branch and verify current upstream Expo/React Native/WebRTC/plugin compatibility. Record exact versions and runtime requirements.
-- [ ] Scaffold a TypeScript Expo app with `expo-dev-client`, native microphone/camera permission descriptions, compatible WebRTC dependencies/plugin, and a committed lockfile. Choose a simple repository layout and document it.
-- [ ] Configure EAS development profiles for installable iPhone and Android device builds. Document public configuration, app identifiers, account linking, signing/device registration, and missing owner actions. Do not place signing credentials in Git.
-- [ ] Implement a minimal Node/TypeScript signaling service: health endpoint, expiring room invitations, two-peer limit, validated messages, offer/answer/ICE relay, bounded state, disconnect/expiry cleanup, and useful redacted logs. No persistent DB.
-- [ ] Add automated session/protocol tests for joining, third-peer rejection, expired/invalid invitations, malformed/oversized messages, offer/answer/ICE routing, departure, and repeated sessions. Verify sender/room authorization rather than trusting client-provided peer IDs.
-- [ ] Implement room join, local preview, remote view, audio-only option, microphone/camera controls, camera switch, hangup, clear connection/error states, and experimental connected-duration display. Queue remote ICE until the remote description is ready; clean up tracks/listeners/peer objects on every exit path.
-- [ ] Configure a secure public signaling route and authenticated TURN. Record actual endpoints/ports/health/start-stop procedures in TOOLS.md; inspect project-specific network changes before applying. Keep provider master credentials server-side and document how clients obtain scoped access.
-- [ ] Add concise connection diagnostics and a development-only forced-relay option. Capture selected candidate type/stats without sharing credentials or raw SDP.
-- [ ] Run type/dependency/lint and signaling checks. Add browser harness tests only if useful for isolating media/signaling failures; do not substitute them for native tests.
+- [x] Create a feature branch and verify current upstream Expo/React Native/WebRTC/plugin compatibility. Record exact versions and runtime requirements.
+- [x] Scaffold a TypeScript Expo app with `expo-dev-client`, native microphone/camera permission descriptions, WebRTC dependencies/plugin, and lockfile. Choose a simple repository layout and document it. Native compatibility remains subject to cloud/device results.
+- [x] Configure EAS development profiles for installable iPhone and Android device builds. Document public configuration, app identifiers, account linking, signing/device registration, and missing owner actions. Do not place signing credentials in Git.
+- [x] Implement a minimal Node/TypeScript signaling service: health endpoint, expiring room invitations, two-peer limit, validated messages, offer/answer/ICE relay, bounded state, disconnect/expiry cleanup, and useful redacted logs. No persistent DB.
+- [x] Add automated session/protocol tests for joining, third-peer rejection, expired/invalid invitations, malformed/oversized messages, offer/answer/ICE routing, departure, and repeated sessions. Verify sender/room authorization rather than trusting client-provided peer IDs.
+- [x] Implement room join, local preview, remote view, audio-only option, microphone/camera controls, camera switch, hangup, clear connection/error states, and experimental connected-duration display. Queue remote ICE until the remote description is ready; clean up tracks/listeners/peer objects on every exit path. Physical behavior remains unverified.
+- [x] Configure a secure public signaling route and authenticated TURN. Record endpoints/ports/health/start-stop procedures in TOOLS.md. Owner added the AWS rules; public HTTPS/WSS and UDP/TCP/TLS relay samples passed. Master credentials stay server-side; clients receive expiring credentials.
+- [x] Add concise connection diagnostics and a development-only forced-relay option. Capture selected candidate type/stats without sharing credentials or raw SDP.
+- [x] Run TypeScript, Expo dependency/doctor, signaling/helper checks, native config generation, and both JS bundles. A separate lint tool/browser harness was not added; physical checks remain required.
 - [ ] Create EAS builds and record build IDs/results. Owners install on the two phones; use Expo's development tunnel if needed for remote Metro access.
 - [ ] Execute the physical-device matrix, record sanitized evidence, resolve failures, and repeat affected scenarios.
 - [ ] Update active plan, state, work log, architecture decisions, tools, and device report. Mark M1 complete only when physical acceptance passes.
@@ -64,4 +64,4 @@ Stop project-specific processes, close sessions, and revoke/expire test credenti
 
 ## Handoff
 
-Next action: select/pin compatible versions and scaffold app plus signaling service. No app code, EAS builds, or media tests have been performed. Record device evidence using [the report template](../testing/DEVICE_REPORT_TEMPLATE.md).
+Versions, commands, and services are in [the implementation report](../testing/2026-11-16-poc-foundation.md), [setup](../SETUP.md), and [current state](../PROJECT_STATE.md). Public signaling and all TURN transports pass server-side checks; Android native build succeeded. Owner approved iPhone pay-as-you-go and is completing its interactive Apple/device flow. iOS native and both physical-device results remain outstanding. Record physical results using [the report template](../testing/DEVICE_REPORT_TEMPLATE.md).

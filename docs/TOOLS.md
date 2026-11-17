@@ -12,9 +12,11 @@ Updated: 2026-11-16. Record verified capabilities separately from proposals. Con
 | Python | Python 3 installed | Runs documentation check without third-party dependencies. |
 | Docker | Not found on PATH | Disposable container DB testing is unavailable until configured. |
 | PostgreSQL client | `psql` not found on PATH | No database connection has been established. |
-| EAS | Owner reports an account | CLI installation, session, project linking, signing, and device registration have not been verified. |
+| EAS | CLI 27.10.0 installed globally; authenticated as `mbcollins2`; project linked | Android build submitted. No suitable iOS internal-distribution credentials found in noninteractive mode. Owner approved iPhone pay-as-you-go. |
 | Apple Developer | Owner reports an account | Access credentials remain with the owner; use EAS-supported signing flow. |
 | iPhone / Android | Owner and wife own the devices | Models/OS versions unknown; no remote device-control tool configured. |
+| nginx / certbot | Installed; dedicated hostname site/certificate deployed | `https://phoneapp.bawebtech.com/health` verified. Other sites were not edited. |
+| coturn | Installed; project-specific unit running | Local/public UDP/TCP/TLS packet exchange verified; physical-phone media pending. Stock coturn unit disabled. |
 
 ## Agent tool capabilities
 
@@ -29,24 +31,29 @@ Run at the repository root:
 
 ```sh
 python3 scripts/check_project.py
+npm run typecheck
+npm test
+npm run doctor
+npm run bundle:check
+npm run smoke
 git status --short --branch
 git diff --check
 ```
 
 The [GitHub Actions template](templates/docs-workflow.yml) can run the same checker on pushes and pull requests. It is **not enabled**: the CLI token lacks `workflow` scope and the connected GitHub integration also rejected workflow creation. Keep the local checker usable. When suitable credentials are available, copy the template to `.github/workflows/docs.yml`, commit/push it, and verify a hosted run. No authentication change is required for ordinary source/documentation pushes.
 
-## Planned implementation tooling
+## Implementation tooling and remaining setup
 
 | Area | Plan | When to mark ready |
 | --- | --- | --- |
-| Native app | Expo CLI, EAS CLI, Expo dependency validation, TypeScript, linting, app logic tests | Project scaffold exists, dependencies installed/pinned, commands run. |
-| Signaling/backend | TypeScript and focused automated protocol/session tests | Actual runner and package scripts are committed and exercised. |
+| Native app | Expo CLI, global EAS CLI 27.10.0, TypeScript, Expo Doctor, native generation and JS bundles available | Native cloud result and physical behavior are separate; see current state/report. No dedicated lint runner configured. |
+| Signaling/backend | Node tests via `tsx`; actual local HTTP/WSS protocol tests and public smoke | 15 tests pass; no media in signaling smoke. |
 | Browser harness | Playwright if a web peer/debug harness is useful | Tests run against a real harness; browser results remain separate from physical-device results. |
 | Native acceptance | Both physical phones, EAS artifacts, sanitized session diagnostics | Owners install builds and execute the matrix in the active plan. |
 | DB access | Dedicated dev/test database and CLI or driver; migration runner selected with persistence stack | Connectivity verified to the recorded target without printing secrets. |
 | DB tests | Disposable or isolated DB, clean install + upgrade checks | Bootstrap and migration commands work and outcomes are recorded. |
 
-Do not invent package scripts while the project has no `package.json`. The first implementation plan must add the actual runnable commands here. Playwright tests web behavior, not native iPhone camera/audio or background ringing.
+See `package.json` for actual scripts. Playwright has not been installed/exercised; it would test web behavior, not native iPhone camera/audio or background ringing. Linux relay diagnostics use `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`) and private `.env.server`. They do not prove physical-phone media.
 
 ## Connection registry
 
@@ -54,11 +61,11 @@ Populate this table as each service is configured. Use aliases and secret refere
 
 | Resource | Environment / alias | Endpoint or ID | Credential location | Verified |
 | --- | --- | --- | --- | --- |
-| EAS project | Development | Not linked | Owner's authenticated CLI session | No |
-| App identifiers | iOS / Android | Not selected | Not applicable | No |
-| Metro | Development | Not running | Not applicable | No |
-| Signaling | Development | Not provisioned | Future ignored env/secret store | No |
-| TURN | Development | Not selected | Server-issued short-lived credentials or approved equivalent | No |
+| EAS project | Development | `@mbcollins2/phoneapp`, UUID `942392a3-1d9c-4d2c-91b0-0ad939e4e1fd` | Authenticated CLI session | Yes |
+| App identifiers | iOS / Android | `com.bawebtech.phoneapp.poc` | Not applicable | Configured; native/device result pending |
+| Metro | Development | Port 8081, `npm run start:tunnel`; ephemeral URL in its terminal | Existing Expo session | Tunnel started; recheck process |
+| Signaling | Development | `https://phoneapp.bawebtech.com`, WSS `/signal`, private listener 8787 | `.env.server` (600), creator key entered in app | Public health/WSS smoke passed |
+| TURN | Development | Host `phoneapp.bawebtech.com`; 3478 UDP/TCP, 5349 TLS, UDP relay 49160-49200 | `.env.server` master secret + `/etc/phoneapp/turnserver.conf`; client HMAC credentials expire | Local/public probes pass; real phones pending |
 | Database | Dev / test | Not provisioned | Future ignored env/secret store | No |
 | Twilio | Future development | Not linked | Backend-only secret store | No |
 
@@ -71,6 +78,16 @@ Before using DB tooling, verify target host/database/environment and intended mi
 - Record setup commands, ports, endpoint purpose, health checks, start/stop procedure, and known failure modes when a service becomes runnable.
 - Before changing AWS security groups or routing, inspect existing rules and record project-specific changes. The host's network configuration has not been verified.
 - Paid-provider setup and app installations may need owner action. Prepare code/configuration first and request only the missing external step.
+
+## Service operation
+
+Full instructions and recovery: [setup/runbook](SETUP.md). `phoneapp-signaling` and `phoneapp-turn` are enabled systemd services. Check with `sudo systemctl status phoneapp-signaling phoneapp-turn --no-pager`; restart only the affected project unit after checks. Their runtime follows this development checkout, so account for running services before changing branches/dependencies. Generated native folders and private artifacts are ignored.
+
+The AWS role cannot describe/manage EC2 security groups. No AWS rules were changed by the agent. Owner confirmed inbound TCP 3478/5349, UDP 3478 and `49160-49200` were added; public relay probes subsequently passed. AWS Console requires an ordinary ASCII hyphen for the range. A configured health flag alone does not prove reachability.
+
+EAS Android build: [2cf8e5a8](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/2cf8e5a8-cb84-44f6-8189-a1faf3e31a9c), finished successfully. iOS noninteractive submission stopped before upload because internal-distribution credentials were missing; owner interaction for Apple signing/device registration remains necessary. Pay-as-you-go for the iPhone build is explicitly authorized.
+
+`npm run start:tunnel` uses installed local ngrok tooling. Keep the Metro terminal running while development clients use it; no persistent Metro systemd service was installed. Do not start duplicate listeners on 8081 or 8787.
 
 ## References
 

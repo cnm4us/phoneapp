@@ -4,6 +4,8 @@ Status: implementation prepared; native builds and physical acceptance pending. 
 
 ## Outcome and scope
 
+Owner clarified the language/use case: **Phone earpiece — private** versus **Speakerphone — share with the room**. Output selection is local to each participant; it never changes the other phone's output or microphone mute. Automatic/headset is a system-routing preference, not a promise of private output.
+
 Add a visible call-screen speaker control and Settings choices for Automatic, Speaker, and Phone earpiece when available. Display the OS-reported current output independently of the requested preference. Automatic returns routing to the system, including connected Bluetooth/wired devices. This is foreground WebRTC audio routing, not CallKit/ConnectionService, background calls, recording, or a full Bluetooth device picker.
 
 ## Current evidence
@@ -43,6 +45,8 @@ No DB, backend, TURN, recording, or patient data. Local module is included in EA
 OS route changes and WebRTC audio-session updates can override preferences; report actual output instead of claiming requested output succeeded. Native compilation and real audio are not established by TypeScript/prebuild. Tablet earpieces, legacy Android, wired/Bluetooth hotplug, and call interruptions require hardware. Existing installed binaries must keep working until rebuilt. Stage changes outside the live checkout while testers call; do not silently interrupt them. Revert native UI/integration between calls if needed; no backend rollback.
 
 ## Handoff
+
+Owner subsequently reports apparently selected Speaker/default Automatic with ineffective taps. EAS build-list recheck shows only the two original binaries; no audio-output build has been submitted. Original apps have only updated JS and no native module, so controls are unavailable. Default Automatic checkmark currently appears even without native support; clarify/hide that inactive selection and show explicit update-required status in the next safe update window. An active room was present during this report; no source edit/reload interrupted it. Build authorization remains pending; do not diagnose this as a failed native routing implementation or claim hardware acceptance.
 
 TypeScript, 50 unit/server cases, and iOS/Android JS exports pass in an isolated checkout. Expo Doctor passes 21/21. Applied after zero active rooms; the live-checkout EAS source archive contains matching native/config sources, excludes .env.server/server files, and has no backend restart. Prebuild with `--no-install` passes. Both platform autolinking resolves list PhoneappAudio's native class/pod; a local EAS archive inspection includes Kotlin/Swift/config files. No native SDK/compiler is configured here; these are not native compilation or audio tests. The browser and backend are unchanged, so public browser scenarios were not repeated as proof of native routing. Current original Android/iOS binaries do not contain this module. Next: authorize new EAS builds, install updates, and test Speaker/Phone/Automatic, accessory hotplug, audio-only/video transitions, permissions/errors, interruption and repeated hangup/rejoin on both devices. Obtain model/OS details when running acceptance. Keep M1 and physical acceptance gates open. No cloud build has been submitted for this increment.
 

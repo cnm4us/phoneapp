@@ -285,6 +285,14 @@
               <button id="refresh" type="button" class="text-button" disabled>
                 Refresh details
               </button>
+              <p class="field-help">Browser sent goes to the phone; browser received comes from the phone. Measurements below describe this browser, including its own encoder.</p>
+              <dl>
+                <div><dt>Incoming video diagnostics</dt><dd id="received-video-details">Waiting for measurements</dd></div>
+                <div><dt>Outgoing video diagnostics</dt><dd id="sent-video-details">Waiting for measurements</dd></div>
+              </dl>
+              <button id="copy-video-diagnostics" type="button" class="button secondary full">Copy video diagnostics</button>
+              <p id="video-diagnostics-notice" class="field-help" role="status"></p>
+              <textarea id="video-diagnostics-output" aria-label="Video diagnostics to copy" rows="8" readonly hidden></textarea>
             </div>
           </details>
         </section>

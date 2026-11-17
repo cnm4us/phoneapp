@@ -3,6 +3,7 @@ import { MediaQuality, initialQuality, type QualityState } from '../src/call/med
 import { StatsReader, type Reports } from '../src/call/stats';
 import { constraints, VideoDriver, type MediaPeer, type Stream } from '../src/call/video';
 import { intersect, START_LIMIT, type Preset, type VideoLimit } from '../src/call/quality';
+import { VideoDiagnosticsReader, type VideoDiagnostics } from './video-diagnostics';
 import type {
   Candidate,
   ClientMessage,
@@ -31,6 +32,7 @@ export type State = {
   receivedBytes: number;
   expiresAt?: number;
   quality: QualityState;
+  videoDiagnostics?: VideoDiagnostics;
 };
 const empty = (): State => ({
   phase: 'idle',
@@ -59,6 +61,8 @@ export class BrowserCall {
   private initiator = false;
   private statsPending = false;
   private statsReader = new StatsReader();
+  private videoReader = new VideoDiagnosticsReader();
+  private videoHistory: ({ seconds: number; path: string } & VideoDiagnostics)[] = [];
   private quality = this.makeQuality();
   private makeQuality(initial = initialQuality()) {
     return new MediaQuality(quality => this.update({ quality, camera: quality.applied?.camera ?? this.state.camera }), m => this.send(m, this.epoch), initial);
@@ -112,6 +116,8 @@ export class BrowserCall {
     this.ice = new PendingIce();
     this.statsPending = false;
     this.statsReader = new StatsReader();
+    this.videoReader = new VideoDiagnosticsReader();
+    this.videoHistory = [];
     this.state = empty();
     this.quality = this.makeQuality({ ...preferences, cameraIntent: video && !preferences.audioOnly });
     this.update({ quality: this.quality.state, phase: 'joining' });
@@ -378,6 +384,14 @@ export class BrowserCall {
   setQuality(preset: Preset) { this.quality.setPreset(preset); }
   setLimits(send: VideoLimit, receive: VideoLimit) { this.quality.setLimits(send, receive); }
   toggleAudioOnly() { this.quality.setAudioOnly(!this.state.quality.audioOnly); }
+  videoDiagnosticsText() {
+    return JSON.stringify({
+      version: 1, capturedAt: new Date().toISOString(),
+      perspective: 'Desktop/browser: sent goes to phone; received comes from phone',
+      sendCeiling: this.state.quality.send, receiveCeiling: this.state.quality.receive,
+      samples: this.videoHistory,
+    }, null, 2);
+  }
   async refreshStats() {
     if (!this.peer || this.statsPending) return;
     const epoch = this.epoch,
@@ -387,6 +401,9 @@ export class BrowserCall {
       const reports = await peer.getStats();
       if (epoch !== this.epoch) return;
       const stats = this.statsReader.read(reports as unknown as Reports);
+      const videoDiagnostics = this.videoReader.read(reports as unknown as Reports);
+      this.videoHistory.push({ seconds: this.clock.seconds(), path: stats.path, ...videoDiagnostics });
+      this.videoHistory = this.videoHistory.slice(-30);
       this.quality.sample(stats, performance.now());
       let pair: RTCStats | undefined,
         receivedBytes = 0;
@@ -416,6 +433,7 @@ export class BrowserCall {
         : undefined;
       this.update({
         receivedBytes,
+        videoDiagnostics,
         path: selected
           ? `${local?.candidateType ?? 'unknown'} → ${remote?.candidateType ?? 'unknown'} · ${local?.protocol ?? 'unknown'}`
           : 'Selected path not available yet',

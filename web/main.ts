@@ -3,6 +3,7 @@ import { invitation, displayInvitation, roomTimeLeft } from '../src/call/core';
 import type { Invitation } from '../shared/protocol';
 import { PRESETS, type Preset, type VideoLimit } from '../src/call/quality';
 import { describeAudio } from '../src/call/stats';
+import { describeVideoDiagnostic } from './video-diagnostics';
 
 const element = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -152,6 +153,8 @@ function render(state: State) {
   element('sent-quality').textContent = q.sent; element('received-quality').textContent = q.received;
   element('incoming-audio-quality').textContent = describeAudio(q.stats?.incomingAudio);
   element('outgoing-audio-quality').textContent = describeAudio(q.stats?.outgoingAudio);
+  element('received-video-details').textContent = describeVideoDiagnostic(state.videoDiagnostics?.received);
+  element('sent-video-details').textContent = describeVideoDiagnostic(state.videoDiagnostics?.sent, false);
   element('quality-status').dataset.peerSupported = String(q.peerSupported);
   element('quality-status').dataset.videoSentBytes = String(q.stats?.sent.bytes ?? 0);
   element('quality-status').dataset.videoReceivedBytes = String(q.stats?.received.bytes ?? 0);
@@ -171,6 +174,18 @@ function render(state: State) {
   }
 }
 const call = new BrowserCall(render);
+button('copy-video-diagnostics').onclick = async () => {
+  const output = element<HTMLTextAreaElement>('video-diagnostics-output');
+  output.value = call.videoDiagnosticsText();
+  output.hidden = false;
+  try {
+    await navigator.clipboard.writeText(output.value);
+    element('video-diagnostics-notice').textContent = 'Last 30 measurements copied.';
+  } catch {
+    output.focus(); output.select();
+    element('video-diagnostics-notice').textContent = 'Select and copy the measurements below.';
+  }
+};
 function mode(create: boolean) {
   button('create-tab').setAttribute('aria-pressed', String(create));
   button('join-tab').setAttribute('aria-pressed', String(!create));

@@ -61,11 +61,17 @@ See `package.json` for actual scripts. Install Chromium once using `npx playwrig
 
 ## Quality verification
 
-Latest usability increment: [plan 0004](plans/0004-call-testing-usability.md) and [evidence](testing/2026-11-17-call-usability.md). Current suites have 39 unit/server/adapter cases and 13 browser scenarios; older counts below describe the quality checkpoint. New rooms default to 240 minutes (`ROOM_TTL_MINUTES`, maximum 480). Short-code resolution uses exact HTTPS `POST /rooms/resolve`, proxied to signaling; codes stay out of URL logs. Native clients load the JavaScript UI/resolver through Metro; no new build submitted.
+Latest usability increment: [plan 0004](plans/0004-call-testing-usability.md) and [evidence](testing/2026-11-17-call-usability.md). Current suites have 43 unit/server/adapter/diagnostic cases and 13 browser scenarios; older counts below describe the quality checkpoint. New rooms default to 240 minutes (`ROOM_TTL_MINUTES`, maximum 480). Short-code resolution uses exact HTTPS `POST /rooms/resolve`, proxied to signaling; codes stay out of URL logs. Native clients load the JavaScript UI/resolver through Metro; no new build submitted.
 
 Quality verification extends `npm test` to 31 cases and browser acceptance to 12 scenarios. Latest evidence: [quality report](testing/2026-11-17-adaptive-quality.md). `npm run test:quality-network` is a Linux-only, roughly two-minute UDP impairment experiment requiring installed `ip`, `tc`, `turnserver`, `socat`, Chromium, and passwordless `sudo` for a disposable network namespace/veth. All were exercised on this EC2 host. The script launches isolated test services on a benchmark subnet, uses synthetic credentials, shapes only its veth pair, and cleans up. It never uses live TURN or shapes the host primary interface. Output stays under ignored `artifacts/private/`; review before publishing. Do not run concurrent copies.
 
 Server flags: `RELAY_VIDEO_MAX_BITRATE` (video payload bits/s; default 6000000) and `ENABLE_EXPERIMENTAL_ULTRA` (default false). Both are nonsecret. Keep the first safely below actual TURN allocation quotas including audio/overhead; keep the latter off until device/route gates pass. See [runbook](SETUP.md). Native development binaries can load these JavaScript changes through Metro; physical behavior remains a separate check.
+
+## Browser video diagnostics
+
+**Connection details → Copy video diagnostics** produces local JSON with up to 30 recent measurements. It distinguishes complete received frames/second from decoded frames/second, drops, interval video packet loss, codec, and average encode/decode time per frame. Outgoing encoder limitation and capture rate describe this browser, not the phone. Unsupported counters remain unknown; complete frames received alone do not establish a cause. Pair with the phone's Actual sent dimensions/fps/Mbps for the iPhone-to-desktop investigation.
+
+Copies omit room credentials, SDP, addresses, raw report IDs, and device labels. No automatic upload, recordings, new credential, or native build. The selectable text fallback works when clipboard permission is unavailable. History resets at each new join and remains available after hangup until the next join/page close. See [current state](PROJECT_STATE.md) and [evidence](testing/2026-11-17-adaptive-quality.md) for deployment/check results.
 
 ## Connection registry
 

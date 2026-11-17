@@ -33,6 +33,8 @@ Latest owner device report: Full screen and Fill screen work on the iPhone. Sele
 
 Latest comparison result: owner now sees the new 30 fps selected indicator and reports the desktop video seems better after lowering only iPhone outgoing FPS to 30 while retaining the 1080p selection. Keep that custom outgoing ceiling for this device pair; the exact encode/network/decode/render bottleneck remains unmeasured. Native advanced resolution/FPS controls now have checked/highlighted accessible choices and explicit selected-value text. TypeScript, 39 unit/server/adapter tests, and both native JS exports pass for this increment; no backend restart or new EAS build. Next: collect Actual sent/received metrics and device/browser/network details during stable tests, then complete sustained-call and original M1 device acceptance. Ultra remains gated. The earlier 6:50 closure was not room expiry; its cause remains unresolved.
 
+Latest frame-rate investigation: owner reports the desktop remote picture is softer/choppier as Actual received falls to 0–5 or around 16 fps, while high rates look sharp/smooth. Reported internet speed test is 700 Mbps down / 80 Mbps up. Which endpoint showed 30 fps sent, paired dimensions/bitrate, codec, route, and packet/decode measurements remain unknown. Browser-only connection details now separate complete received frames from decoded/dropped frames, interval packet loss, codec, and decode/encode time, with a local copyable history of the last 30 measurements. No native/shared media-policy changes, recording, telemetry upload, or EAS build. TypeScript, 43 unit/server/diagnostic tests, and 13 local browser scenarios pass. Owner finished the call; logs confirmed zero joined rooms before project signaling restart to publish browser assets. All 13 public browser checks also pass. Next: obtain a copied diagnostic snapshot during a choppy interval and the phone's paired Actual sent reading. Root cause and physical acceptance remain open.
+
 ## Decisions and constraints
 
 - One native iOS/Android codebase; EAS cloud builds; Windows/VS Code with an EC2 checkout.
@@ -54,7 +56,7 @@ Development services follow this checkout; stop or account for them before chang
 
 - Server inspection: 2 vCPUs, 7.6 GiB RAM, approximately 38 GB free disk at project initialization.
 - Git, GitHub CLI authentication, Node 22.21.1, npm 10.9.4, and Python 3 were observed. Docker and `psql` were not found on PATH. Recheck capabilities before depending on them.
-- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 39/39 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
+- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 43/43 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
 - Native configuration generated for both platforms; permissions and iOS scene manifest inspected. iOS/Android JS bundles exported successfully; native compilation is separate.
 - Public HTTPS/WSS room/offer/answer/hangup smoke: passed, with no media exchanged.
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
@@ -65,4 +67,4 @@ Development services follow this checkout; stop or account for them before chang
 
 ## Resume prompt
 
-“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, plan 0004 and its verification. Eight-digit test codes and four-hour rooms are deployed; native full screen uses one stable renderer. Owner confirms Full/Fill and smooth HD on both devices; High is choppy only in the desktop remote view. Owner reports the iPhone outgoing 1080p/30 selection improves desktop smoothness, with checked controls now visible; keep sustained-call/M1/Ultra gates open. The earlier 6:50 ending was not expiry; inspect new close diagnostics if calls end early.”
+“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, plans 0003/0004 and verification. Owner confirms Full/Fill and smooth HD on both devices; outgoing iPhone 1080p/30 selection improves desktop smoothness, but desktop Actual received can fall to 0–5 or 16 fps with choppy/softer video. Browser connection details now expose copyable frame/loss/decode diagnostics; collect those during the symptom and pair with phone Actual sent before choosing a fix. Check the latest deployment evidence. Sustained/M1/Ultra gates remain open. Earlier 6:50 ending was not expiry; inspect new close diagnostics if it repeats.”

@@ -90,6 +90,16 @@ test('video call receives real synthetic media, controls work, and another call 
         )
         .toBeGreaterThan(0.1);
     }
+    await p.a.locator('.diagnostics > summary').click();
+    await expect(p.a.locator('#received-video-details')).toContainText('fps decoded');
+    await expect(p.a.locator('#received-video-details')).toContainText('complete frames/s received');
+    await p.a.locator('#copy-video-diagnostics').click();
+    const diagnostics = JSON.parse(await p.a.locator('#video-diagnostics-output').inputValue());
+    expect(diagnostics.samples.length).toBeGreaterThan(0);
+    expect(diagnostics.samples.length).toBeLessThanOrEqual(30);
+    expect(diagnostics.samples.at(-1).received.codec).toMatch(/^(VP8|VP9|H264|H265|AV1|AV1X)$/);
+    expect(JSON.stringify(diagnostics)).not.toContain(testKey);
+    expect(JSON.stringify(diagnostics)).not.toMatch(/candidateId|codecId|sdp|address|trackIdentifier/);
     await p.a.locator('#mute').click();
     expect(
       await p.a

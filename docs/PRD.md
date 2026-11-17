@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 0.1 draft. Updated: 2026-11-16. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.2 draft. Updated: 2026-11-16. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -66,8 +66,13 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 | COM-04 | Two-way SMS through service-owned numbers, displayed in the app. | Outgoing status and incoming messages appear in a patient-linked conversation, with failures and unresolved matches visible. No dependence on reading the staff phone's personal SMS inbox. |
 | COM-05 | Track who actually participated. | Caller number, selected patient, staff actor, contact relationship, connection/disconnection, and relevant transfer/participant events are retained. Shared phones do not silently establish a patient identity. |
 | COM-06 | Provider operations are resilient. | Duplicate/reordered callbacks do not duplicate encounters, messages, or time; users can distinguish pending, delivered, failed, missed, and completed states. |
+| COM-07 | Adaptive video with user-selectable quality ceilings. | Auto and simpler quality/data-saver presets work before and during calls. Resolution, frame-rate, and bitrate limits reflect device capability; automatic adaptation can go below the chosen ceiling. A constrained participant can request less incoming video as well as limit outgoing video. Full-screen viewing remains available at every quality; expose actual measured quality separately from requested limits. |
+| COM-08 | Audio-first behavior in every quality mode. | Reduce or pause video to protect intelligible, low-latency speech; use supported media priority controls where available. Coordinate both directions and show when video is paused to protect audio. Recover video gradually after sustained improvement. No guarantee of uninterrupted audio on an inadequate or disconnected network. |
+| COM-09 | Explicit two-way audio-only mode. | A clear in-call action stops sending and requests stopping receipt of video while audio continues. Show the active mode on both clients. Requesting video again never enables another person's camera without that person's permission. Distinguish this from the existing local camera toggle. |
 
 Ordinary telephone calls are audio; browser/app video is a separate channel. Calls outside this service, including unrelated personal cellular calls, are not automatically captured. Routing and missed-call handling must set expectations for nonemergency use before production.
+
+COM-07 through COM-09 capture the agreed next iteration; they are not implemented in the first-round POC. Its existing Send video/camera controls affect local video and do not yet provide coordinated two-way audio-only behavior. See [quality follow-up plan](plans/0003-adaptive-call-quality.md).
 
 ### Time and activity ledger
 

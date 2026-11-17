@@ -11,7 +11,7 @@ Review: [draft PR 1](https://github.com/cnm4us/phoneapp/pull/1). Native foundati
 - Live HTTPS/WSS at `https://phoneapp.bawebtech.com`, dedicated nginx site and `phoneapp-signaling.service`.
 - Authenticated coturn (`phoneapp-turn.service`) with UDP/TCP/TLS, quotas, bounded relay ports, certificate and renewal hook.
 - EAS project [@mbcollins2/phoneapp](https://expo.dev/accounts/mbcollins2/projects/phoneapp), ID `942392a3-1d9c-4d2c-91b0-0ad939e4e1fd`; both development profiles and app identifiers configured.
-- Pinned dependencies, 15 automated tests, local check/smoke/relay tooling, and [setup/runbook](SETUP.md).
+- Pinned dependencies, automated server/core/browser tests, local check/smoke/relay tooling, and [setup/runbook](SETUP.md).
 - Browser companion deployed at `https://phoneapp.bawebtech.com`: invitation creation/copy/share link, audio/video, mute/camera/leave, connected time, playback recovery, and optional connection details. Native protocol unchanged; no new phone build required.
 
 No patient database, recording, transcription, SMS, or billing implementation. Hosted CI is not enabled because available GitHub credentials cannot write workflow files; the template remains available.
@@ -20,7 +20,9 @@ No patient database, recording, transcription, SMS, or billing implementation. H
 
 Active plan: [0001 WebRTC proof of concept](plans/0001-webrtc-poc.md). Keep it open until both physical phones pass its matrix.
 
-Supporting plan: [0002 browser companion](plans/0002-browser-companion.md), implemented/deployed with automated acceptance; manual native/Safari validation remains. Next action: owner opens the browser companion, creates/copies an invitation into the installed iPhone app, and joins on both. Then complete the original iPhone/Android matrix when the wife's phone is available. Both native builds succeeded. Public signaling, TURN, and browser media tests pass.
+Supporting plan: [0002 browser companion](plans/0002-browser-companion.md), implemented/deployed with automated acceptance. Next action: capture the device/network details of the owner's reported successful use and complete the remaining native/Safari and original iPhone/Android matrix when devices are available. Both native builds succeeded. Public signaling, TURN, and browser media tests pass.
+
+Owner subsequently reported the first round is working well. Detailed device/network scenarios and measurements have not been logged, so the formal matrix remains open. Agreed next iteration is captured in [plan 0003](plans/0003-adaptive-call-quality.md): adaptive quality ceilings, audio-first behavior, receive-side requests, and explicit two-way audio-only controls. Those additions are requirements only, not implemented features.
 
 ## Decisions and constraints
 
@@ -48,7 +50,7 @@ Development services follow this checkout; stop or account for them before chang
 - Public HTTPS/WSS room/offer/answer/hangup smoke: passed, with no media exchanged.
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
 - Browser tests: 7/7 on the public HTTPS deployment in Chromium, including actual synthetic audio/video, repeat calls, controls/cleanup, forced relay candidate/media verification, audio-only/video mix, permission/room errors, playback fallback, fragment cleanup, and responsive widths. See [browser report](testing/2026-11-16-browser-companion.md). iPad viewport tests are not Safari/iPad hardware tests.
-- Physical-device tests: **not run**. M1 is not complete. Details: [verification report](testing/2026-11-16-poc-foundation.md).
+- Physical acceptance: owner reports successful initial use; the device pair, network conditions, and structured matrix results have not been captured. M1 is not complete. Prior foundation evidence: [verification report](testing/2026-11-16-poc-foundation.md).
 
 ## Resume prompt
 

@@ -27,3 +27,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Added explicit asset serving and headers; private repository files remain inaccessible. Added esbuild/Playwright tooling and actual synthetic-media tests, including forced relay, mixed audio/video, repeat calls, controls/cleanup, permission/room errors, autoplay recovery, invitation fragments, and responsive widths.
 - Deployed on existing nginx/signaling service; public HTTPS returns the page and all seven browser scenarios passed. Native/core/asset tests: 16/16. Real Safari/iPad and browser-to-native calls remain manual acceptance.
 - Verified iOS native build `0e5beca1` finished successfully; owner reports the app UI is loaded. Updated setup/state/tools with this evidence. M1 remains open for real calls and the original two-phone matrix.
+
+## 2026-11-16 First-round checkpoint
+
+- Confirmed native and browser implementation is already committed/pushed on `feat/webrtc-poc` through `1906d38`, in draft PR 1. The user requested a first-round commit/push checkpoint; no main-branch merge was requested.
+- Owner reports the first round is working well. Formal device/network acceptance remains undocumented; retain that distinction from automated results.
+- Recorded agreed quality ceilings, audio-first behavior, coordinated receive constraints, and explicit two-way audio-only mode as COM-07 through COM-09 and [proposed plan 0003](plans/0003-adaptive-call-quality.md). These are follow-up requirements; no runtime behavior changed for this checkpoint.

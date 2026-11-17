@@ -72,3 +72,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Owner confirms Full screen and Fill screen work. HD 720p/30 selected on phone/desktop works well on both. High 1080p/60 looks good on phone but the desktop's large iPhone video is choppy; desktop self-camera preview remains smooth. Selected ceilings do not prove actual encoded output.
 - Recorded affected iPhone → desktop direction without attributing encoding/network/receiving cause. Requested lowering only phone outgoing FPS to 30 while retaining 1080p, plus available Actual sent/received measurements. Result pending.
 - Documentation/evidence checkpoint only; no source, configuration, service restart, EAS build, or active-call interruption. Full M1/sustained/Ultra gates remain open.
+
+## 2026-11-17 Advanced selection indicators and outgoing FPS comparison
+
+- Owner reported native advanced FPS buttons lacked an ON indicator. Added highlighted/checkmarked radio choices for resolution/FPS, checked accessibility state, and selected-value headings for each direction. Ceilings remain independently configurable and apply immediately.
+- Owner confirms 30 fps now shows checked and the desktop remote picture seems better with the iPhone outgoing ceiling at 1080p/30. This is perceived improvement, not measured output or proof of an encoding/network/decoding cause.
+- TypeScript and both native JS exports pass. Unit/server/adapter suite passes 39 cases, including outgoing 60→30 FPS application while incoming stays at 60 after guard warm-up. No media-policy/default/backend change, service restart, or EAS build. Updated quality evidence and continuation state; M1/sustained/Ultra gates remain open.

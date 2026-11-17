@@ -165,3 +165,22 @@ test('unsupported mandatory sender limits stop video while leaving audio/connect
   assert.equal(result.supported, false); assert.equal(result.paused, true); assert.equal(f.transceiver.sender.track, null);
   f.driver.dispose();
 });
+
+test('changing only outgoing 1080p High FPS from 60 to 30 updates the sender and preserves the incoming ceiling', async t => {
+  const f = cameraFixture(), quality = new MediaQuality(() => {}, () => {}); t.after(() => quality.dispose());
+  quality.configure(f.driver, {}); quality.setPreset('high'); await quality.apply();
+  // Allow stable feedback to lift the conservative startup guard to High.
+  for (let at = 0; at <= 30_000; at += 1000) {
+    quality.sample({
+      sent: { bytes: 1000, packets: 10, bitrate: 2_000_000 }, received: { bytes: 1000, packets: 10, bitrate: 2_000_000 },
+      outgoingAudio: { packets: 50, loss: 0 }, incomingAudio: { packets: 50, loss: 0 }, availableBitrate: 100_000_000,
+      relay: false, path: 'synthetic', receivedBytes: 1000, audioReceivedBytes: 1000, audioSentBytes: 1000, cpu: false,
+    }, at);
+    await quality.apply();
+  }
+  assert.equal(f.transceiver.sender.getParameters().encodings[0].maxFramerate, 60);
+  quality.setLimits({ ...quality.state.send, fps: 30 }, quality.state.receive); await quality.apply();
+  assert.equal(quality.state.send.height, 1080); assert.equal(quality.state.send.fps, 30);
+  assert.equal(quality.state.receive.fps, 60); assert.equal(quality.state.custom, true);
+  assert.equal(f.transceiver.sender.getParameters().encodings[0].maxFramerate, 30);
+});

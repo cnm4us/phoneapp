@@ -31,7 +31,7 @@ Current quality plan: [0003](plans/0003-adaptive-call-quality.md), implemented w
 
 Latest owner device report: Full screen and Fill screen work on the iPhone. Selecting HD (720p/30 ceilings) on desktop/browser and phone works well on both. Selecting High (1080p/60 ceilings) looks good on the phone, but the desktop’s large remote video from the iPhone is choppy; the desktop’s small self-camera preview stays smooth. This narrows the symptom to the iPhone-to-desktop stream, not its cause. Actual transmitted dimensions/fps/bitrate, codec, device/browser versions, route, and network conditions were not supplied. Do not equate selected ceilings with measured output or mark the whole quality/M1 matrix passed.
 
-Exact next diagnostic: keep High selected, change only iPhone Advanced → Outgoing limits → Frame-rate ceiling to 30 fps while retaining 1080p, and compare the desktop remote video. Owner was asked whether this becomes smoother; response pending. Obtain phone Actual sent and desktop Actual received metrics before attributing the choppiness to phone encoding/upload or desktop reception/decoding/rendering. Keep HD as the currently owner-confirmed smooth choice; no runtime changes for this feedback checkpoint. Sustained calls, original M1 device matrix, and Ultra gates remain open. The earlier 6:50 closure was not room expiry; its cause remains unresolved.
+Latest comparison result: owner now sees the new 30 fps selected indicator and reports the desktop video seems better after lowering only iPhone outgoing FPS to 30 while retaining the 1080p selection. Keep that custom outgoing ceiling for this device pair; the exact encode/network/decode/render bottleneck remains unmeasured. Native advanced resolution/FPS controls now have checked/highlighted accessible choices and explicit selected-value text. TypeScript, 39 unit/server/adapter tests, and both native JS exports pass for this increment; no backend restart or new EAS build. Next: collect Actual sent/received metrics and device/browser/network details during stable tests, then complete sustained-call and original M1 device acceptance. Ultra remains gated. The earlier 6:50 closure was not room expiry; its cause remains unresolved.
 
 ## Decisions and constraints
 
@@ -54,7 +54,7 @@ Development services follow this checkout; stop or account for them before chang
 
 - Server inspection: 2 vCPUs, 7.6 GiB RAM, approximately 38 GB free disk at project initialization.
 - Git, GitHub CLI authentication, Node 22.21.1, npm 10.9.4, and Python 3 were observed. Docker and `psql` were not found on PATH. Recheck capabilities before depending on them.
-- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 38/38 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
+- `npm run typecheck`: app/server/browser/browser-test checks pass. `npm test`: 39/39 pass (including asset security/routing). Prior native Expo Doctor: 21/21 pass; no native dependency changes for the companion.
 - Native configuration generated for both platforms; permissions and iOS scene manifest inspected. iOS/Android JS bundles exported successfully; native compilation is separate.
 - Public HTTPS/WSS room/offer/answer/hangup smoke: passed, with no media exchanged.
 - Local and public authenticated TURN UDP/TCP/TLS samples: 10/10 packets received in successful samples. Earlier TLS diagnostics exposed sample loss/parallel-user quota collisions; slower uniquely named probes and bounded quota headroom resolved the diagnostic failures.
@@ -65,4 +65,4 @@ Development services follow this checkout; stop or account for them before chang
 
 ## Resume prompt
 
-“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, plan 0004 and its verification. Eight-digit test codes and four-hour rooms are deployed; native full screen uses one stable renderer. Owner confirms Full/Fill and smooth HD on both devices; High is choppy only in the desktop remote view. An iPhone outgoing 1080p/30 comparison is pending; keep sustained-call/M1/Ultra gates open. The earlier 6:50 ending was not expiry; inspect new close diagnostics if calls end early.”
+“Read AGENTS.md, docs/PROJECT_STATE.md, docs/TOOLS.md, plan 0004 and its verification. Eight-digit test codes and four-hour rooms are deployed; native full screen uses one stable renderer. Owner confirms Full/Fill and smooth HD on both devices; High is choppy only in the desktop remote view. Owner reports the iPhone outgoing 1080p/30 selection improves desktop smoothness, with checked controls now visible; keep sustained-call/M1/Ultra gates open. The earlier 6:50 ending was not expiry; inspect new close diagnostics if calls end early.”

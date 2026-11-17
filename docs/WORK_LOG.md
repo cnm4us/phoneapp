@@ -94,3 +94,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports only 6–10 Mbps upload/download on the Wi-Fi-connected phone, despite the earlier much faster speed test. Asked whether this ran during the call; answer pending, so do not assume idle-link capacity. This strengthens a phone-side network hypothesis without proving it.
 - Verified configured High video ceiling 8 Mbps (6 Mbps relay) and HD 3 Mbps; FPS-only reduction leaves bitrate cap unchanged. Revised next comparison to idle phone Wi-Fi/access-point proximity and HD on both participants, which lowers bitrate as well as resolution/FPS. No runtime changes or call interruption. Documentation/whitespace checks pass; application tests not repeated for evidence-only updates.
+
+## 2026-11-17 Cellular comparison improves both video directions
+
+- Owner identifies weak upstairs office Wi-Fi versus strong downstairs reception. With phone Wi-Fi disabled, cellular speed test is approximately 500 Mbps down / 30 Mbps up; owner then reports sharper, smoother, more stable video and FPS in both directions.
+- Recorded stronger evidence implicating the Wi-Fi path without declaring a specific RF/router/transport cause or full device acceptance. Exact settings, codec/route/RTP metrics, device versions, and duration remain unrecorded. No runtime change, restart, new build, or additional application testing. Documentation/whitespace checks pass. Retain successful cellular observation; use HD on weak Wi-Fi and collect diagnostics for recurrence on a strong connection.

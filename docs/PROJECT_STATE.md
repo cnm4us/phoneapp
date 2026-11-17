@@ -27,6 +27,8 @@ Owner subsequently reported the first round is working well. Detailed device/net
 
 Current quality plan: [0003](plans/0003-adaptive-call-quality.md), implemented with physical acceptance and Ultra capacity gates open. Shared native/browser controls include Auto/High (up to 1080p/60), lower presets through 240p, advanced send/receive caps, measured media/audio feedback, audio-first pause/recovery, two-way audio-only, consent-aware camera restoration, and full screen. Signaling negotiates compatible controls and serializes camera renegotiation. Browser/server changes are deployed; no native dependency/build or live TURN quota changes. Experimental 4K/60 at 30 Mbps remains gated off, including native capability investigation. See [verification](testing/2026-11-17-adaptive-quality.md) and [decision](decisions/0003-adaptive-quality.md).
 
+Latest device report: owner confirmed video works between the iPhone app and browser after leaving coordinated audio-only mode and enabling cameras locally. The initial missing-video report showed “Audio only confirmed both directions”; changing the selected mode resolved it without runtime changes. This is owner-reported restoration evidence, not a completed device/network/quality matrix; phone model/OS and browser/network details remain unrecorded.
+
 Exact next action: reload the existing Expo development app from Metro, record both phone models/OS, and run native/browser quality, audio-only/consent, camera restoration, and the original M1 matrix. Keep Ultra disabled and relayed video at the 6 Mbps default until high-ceiling capacity/device gates pass. Physical phones are owner-operated; no remote-control tool is available.
 
 ## Decisions and constraints

@@ -48,3 +48,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Verified TypeScript, 31 unit/server/adapter tests, both native JS exports, and 12 public browser scenarios. Added and ran real UDP bandwidth/loss/recovery tooling using isolated TURN and a disposable namespace/veth; video paused and gradually recovered while audio counters continued. Listening/physical-device evidence remains separate.
 - Deployed only this project's rebuilt browser assets/signaling service after confirming no recently joined rooms. Public health/media checks passed. No DB, new native build, AWS/firewall, or live TURN quota changes. Metro remains available for existing development-client reloads.
 - Experimental 4K/60 remains gated off pending native capability/codec/thermal and relay-capacity verification. Updated plan, PRD, decision, test report, tools, runbook, and continuation state. Next: owner-operated native/Safari quality/consent and original M1 matrix.
+
+## 2026-11-17 Audio without video diagnosis
+
+- Owner reports iPhone app ↔ browser audio without video. Follow-up status is “Audio only confirmed both directions,” explaining video suppression through the selected manual mode. Instructed leaving audio-only on both participants, then enabling cameras locally. Owner subsequently confirmed “Yes, video works now.” This establishes owner-reported iPhone/browser restoration; detailed hardware/network and the full physical matrix remain open.
+- No runtime/configuration changes. Initial native-bridge investigation did not establish the cause of this report; a tentative test was discarded after the mode was identified. Keep physical acceptance open.

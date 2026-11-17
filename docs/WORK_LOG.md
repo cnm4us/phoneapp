@@ -105,3 +105,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Changed shared High from 1080p/60 to 1080p/30 at the owner's request; HD stays 720p/30. Both directional preferences update together. Kept bitrate ceilings, advanced bounds, and gated Ultra separate from preset simplification.
 - Prepared/checked an isolated checkout while the live call remained active. TypeScript, 43 unit/server/diagnostic tests, 13 local browser scenarios, and iOS/Android JS exports pass. After sanitized logs showed no active rooms, applied the reviewed patch, built browser assets, and restarted only project signaling. All 13 public browser scenarios also pass after deployment.
 - Updated PRD, current plan, runbook, tools, evidence, and continuation state. No dependency/DB/TURN quota changes or paid build. Physical phone selection/behavior remains owner-operated; next action is reload both clients and select High.
+
+## 2026-11-17 Owner accepts High/30 visual quality
+
+- Owner reports the 1080p/30 selection is very sharp, including Fill screen. Recorded visual acceptance without equating preset labels with measured RTP output or completing the sustained/M1 matrix.
+- No runtime, configuration, deployment, or build changes. Documentation and whitespace checks pass; app tests not repeated for evidence-only updates.

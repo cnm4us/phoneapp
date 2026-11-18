@@ -31,7 +31,9 @@ object CallCoordinator {
   ring.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build());ring.enableVibration(true);nm.createNotificationChannel(ring)
   nm.createNotificationChannel(NotificationChannel("phoneapp_active_v1","Active calls",NotificationManager.IMPORTANCE_LOW))
  }
- fun incoming(c:Context,id:String,expires:Long){setup(c);if(current==id||current!=null||expires<=System.currentTimeMillis())return
+ fun incoming(c:Context,id:String,expires:Long){
+  c.sendBroadcast(Intent("com.bawebtech.phoneapp.CALL_AUDIO").setPackage(c.packageName))
+  setup(c);if(current==id||current!=null||expires<=System.currentTimeMillis())return
   runCatching{UUID.fromString(id)}.getOrElse{return};current=id;deadline=expires
   try{c.getSystemService(TelecomManager::class.java).addNewIncomingCall(handle,Bundle().apply{putString("phoneappCallId",id)})}catch(_:Exception){current=null;return}
   handler.post(poll)
@@ -40,6 +42,7 @@ object CallCoordinator {
   if(state in listOf("ended","failed","missed","canceled","declined")){end(id);return}
   if(current==null&&direction=="incoming"&&state=="ringing")incoming(c,id,System.currentTimeMillis()+60000)
   if(current==null&&direction=="outgoing"){
+   c.sendBroadcast(Intent("com.bawebtech.phoneapp.CALL_AUDIO").setPackage(c.packageName))
    current=id;deadline=System.currentTimeMillis()+60000
    runCatching{c.getSystemService(TelecomManager::class.java).placeCall(Uri.parse("sip:phoneapp"),Bundle().apply{putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE,handle);putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,Bundle().apply{putString("phoneappCallId",id)})})}.onFailure{current=null}
    handler.post(poll)

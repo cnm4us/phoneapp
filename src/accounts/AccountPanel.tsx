@@ -1,3 +1,4 @@
+import {AudioMessages} from '../messages/AudioMessages';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AccountClient, type AccountState } from './client';
@@ -39,6 +40,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
           <Text style={styles.note}>App Audio · Coming later{ '\n' }Phone #1 / #2 / #3 · Coming later</Text>
         </View>}
       </View>}
+      <AudioMessages client={client} account={state} selected={selected}/>
       <View style={styles.card}>
         <Text style={styles.heading}>Call history</Text>
         {!state.dashboard?.calls.length && <Text style={styles.note}>Your app calls will appear here.</Text>}

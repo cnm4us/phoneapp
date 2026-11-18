@@ -1,3 +1,4 @@
+import {releaseMessageAudio} from '../messages/focus';
 import type { Account, CallRecord, Dashboard, Enrollment, MediaInvitation, CallAction } from '../../shared/accounts';
 import { terminalCall } from '../../shared/accounts';
 import type { Invitation } from '../../shared/protocol';
@@ -27,7 +28,7 @@ export class AccountClient {
   constructor(readonly origin:string,private media:MediaAdapter,readonly native?:NativeAccounts) {}
   subscribe(listener:(state:AccountState)=>void):()=>void { this.listeners.add(listener); listener(this.state); return ()=>this.listeners.delete(listener); }
   private update(patch:Partial<AccountState>):void { this.state={...this.state,...patch}; for(const listener of this.listeners)listener(this.state); }
-  private async request<T>(path:string,body?:unknown):Promise<T> {
+  async request<T>(path:string,body?:unknown):Promise<T> {
     if(this.native){try{return await this.native.request(path,body) as T;}catch(error){if((error as {code?:string})?.code==='UNAUTHORIZED')this.clear();throw error;}}
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8_000);
     const credential=this.token;
@@ -82,6 +83,7 @@ export class AccountClient {
           const result=await this.request<MediaInvitation>(`/calls/${current.id}/media`,{});
           if(epoch!==this.epoch || this.currentId!==current.id)return;
           this.joinedId=current.id;this.previousConnected=false;
+          await releaseMessageAudio();
           await this.media.join(result.invitation,current.id);
           if(this.nativeMuted!==undefined)this.media.setMuted?.(this.nativeMuted);
           if(epoch===this.epoch && ['ended','error'].includes(this.media.phase()))await this.hangup();
@@ -92,6 +94,7 @@ export class AccountClient {
   }
   async dial(patientId:string):Promise<void> {
     await this.run(async()=>{
+      await releaseMessageAudio();
       this.mediaFailure='';
       if(!this.pendingDial || this.pendingDial.patientId!==patientId)this.pendingDial={patientId,key:`request-${Date.now()}-${Math.random().toString(36).slice(2)}`};
       const result=await this.request<{id:string}>('/calls',{patientId,requestKey:this.pendingDial.key});
@@ -100,6 +103,7 @@ export class AccountClient {
   }
   async act(call:CallRecord,action:CallAction):Promise<void> {
     await this.run(async()=>{
+      if(action==='answer')await releaseMessageAudio();
       if(action==='answer'&&this.native){await this.native.answer(call.id);return;}
       await this.request(`/calls/${call.id}/${action}`,{});
       if(action!=='answer')await this.native?.end(call.id);

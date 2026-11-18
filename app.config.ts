@@ -17,6 +17,7 @@ const config: ExpoConfig = {
   plugins: [
     './plugins/with-phoneapp-calling',
     'expo-dev-client',
+    ['expo-audio',{microphonePermission:'Allow Phoneapp to record your audio messages.',enableBackgroundRecording:false,enableBackgroundPlayback:false}],
     ['expo-build-properties', { ios: { enableSceneSupport: true } }],
     ['@config-plugins/react-native-webrtc', {
       cameraPermission: 'Allow Phoneapp POC to use your camera for test video calls.',

@@ -1,3 +1,4 @@
+import {messagePanel} from './messages';
 import { AccountClient, type AccountState } from '../src/accounts/client';
 import { terminalCall } from '../shared/accounts';
 import type { BrowserCall } from './call';
@@ -44,6 +45,7 @@ export function accountPanel(call:BrowserCall):AccountClient {
     document.body.classList.toggle('account-session',Boolean(state.account));
   }
   client.subscribe(render);
+  const messages=document.createElement('section');messages.id='audio-messages';root.after(messages);messagePanel(client,messages);
   call.subscribe(state=>client.mediaChanged(state.phase));
   window.addEventListener('pagehide',()=>client.dispose());
   return client;

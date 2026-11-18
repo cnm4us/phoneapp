@@ -1,0 +1,33 @@
+import type {Timeline,TimelineEntry,MessageRecord,MediaGrant,MessageContext} from '../../shared/messages';
+export interface AudioAdapter {start():Promise<void>;stop():Promise<void>;hasDraft():boolean;preview():Promise<void>;discard():Promise<void>;upload(origin:string,grant:MediaGrant,signal:AbortSignal):Promise<void>;play(origin:string,grant:MediaGrant,signal:AbortSignal):Promise<void>;pause():void;resume():Promise<void>;seek(seconds:number):Promise<void>;position():{current:number;duration:number;playing:boolean};release():Promise<void>;dispose():void;}
+export type MessageState={enabled:boolean;patients:MessageContext['patients'];selected:string;timeline?:Timeline;busy:boolean;recording:boolean;draft:boolean;error:string;notice:string};
+export class MessageController {
+ state:MessageState={enabled:false,patients:[],selected:'',busy:false,recording:false,draft:false,error:'',notice:''};private listeners=new Set<(s:MessageState)=>void>();private epoch=0;private key='';private poll=false;private abort?:AbortController;private account='';private blocked=false;
+ constructor(readonly origin:string,readonly request:<T>(path:string,body?:unknown)=>Promise<T>,readonly audio:AudioAdapter){}
+ subscribe(fn:(s:MessageState)=>void){this.listeners.add(fn);fn(this.state);return ()=>{this.listeners.delete(fn);};}
+ private update(p:Partial<MessageState>){this.state={...this.state,...p};for(const fn of this.listeners)fn(this.state);}
+ async adopt(account:string,blocked:boolean){const wasBlocked=this.blocked;this.blocked=blocked;if(this.account!==account){this.account=account;const epoch=++this.epoch;this.abort?.abort();this.key='';this.update({enabled:false,patients:[],selected:'',timeline:undefined,draft:false,recording:false,busy:false,error:'',notice:''});await this.audio.discard();if(epoch!==this.epoch)return;}if(blocked&&(!wasBlocked||this.state.recording||this.state.busy))await this.interrupt();if(account)await this.refresh();}
+
+ async refresh(){if(this.poll||!this.account)return;this.poll=true;const epoch=this.epoch;
+  try{const context=await this.request<MessageContext>('/messages/context');if(epoch!==this.epoch)return;const selected=context.patients.some(p=>p.id===this.state.selected)?this.state.selected:context.patients[0]?.id||'';this.update({...context,selected});if(selected){const timeline=await this.request<Timeline>('/messages/history',{patientId:selected});if(epoch===this.epoch&&selected===this.state.selected){const older=this.state.timeline?.next&&this.state.timeline.entries.length>30?this.state.timeline.entries.filter(e=>!timeline.entries.some(r=>r.kind===e.kind&&r.id===e.id)):[];this.update({timeline:older.length?{...timeline,entries:[...timeline.entries,...older],next:this.state.timeline!.next}:timeline});}}}
+  catch(error){if(epoch===this.epoch){await this.interrupt();this.update({timeline:undefined,error:error instanceof Error?error.message:'Messages unavailable.'});}}finally{this.poll=false;}
+ }
+ async select(patient:string){this.abort?.abort();const epoch=++this.epoch;this.key='';this.update({selected:patient,timeline:undefined,draft:false,recording:false,error:'',busy:false});await this.audio.discard();if(epoch===this.epoch)await this.refresh();}
+ private async run(operation:(epoch:number)=>Promise<void>){if(this.state.busy)return;const epoch=this.epoch;this.update({busy:true,error:''});try{await operation(epoch);}catch(error){if(epoch===this.epoch)this.update({error:error instanceof Error?error.message:'Could not complete message action.'});}finally{if(epoch===this.epoch)this.update({busy:false,draft:this.audio.hasDraft()});}}
+ async start(){if(this.blocked)return;await this.run(async epoch=>{await this.audio.discard();this.key='';await this.audio.start();if(epoch!==this.epoch||this.blocked){await this.audio.stop();return;}this.update({recording:true,draft:false,notice:'Recording audio. Stop to preview before sending.'});});}
+ async stop(){await this.run(async()=>{await this.audio.stop();this.update({recording:false,notice:'Preview or send. Unsent drafts may be lost if this app closes.'});});}
+ async interrupt(){const epoch=++this.epoch;this.abort?.abort();await this.audio.release();if(epoch===this.epoch)this.update({busy:false,recording:false,draft:this.audio.hasDraft()});}
+ async discard(){await this.audio.discard();this.key='';this.update({draft:false,recording:false,notice:''});}
+ async preview(){if(!this.blocked)await this.run(()=>this.audio.preview());}
+ async send(recipient?:string){if(this.blocked||!this.audio.hasDraft()||!this.state.selected)return;await this.run(async epoch=>{
+  const patient=this.state.selected;this.key ||= this.uuid();const row=await this.request<MessageRecord>('/messages',{patientId:patient,requestKey:this.key,...(recipient?{recipientStaffId:recipient}:{})});if(epoch!==this.epoch)return;
+  if(['pending','failed'].includes(row.state)){const grant=await this.request<MediaGrant>(`/messages/${row.id}/upload`,{});if(epoch!==this.epoch)return;this.abort=new AbortController();await this.audio.upload(this.origin,grant,this.abort.signal);}
+  else if(row.state==='expired')throw new Error('This draft expired. Discard it and record a new message.');
+  if(epoch!==this.epoch)return;await this.audio.discard();this.key='';this.update({draft:false,notice:'Saved for processing. Available means stored, not listened to.'});await this.refresh();
+ });}
+ async play(id:string){if(this.blocked)return;await this.run(async epoch=>{const grant=await this.request<MediaGrant>(`/messages/${id}/play`,{});if(epoch!==this.epoch)return;this.abort?.abort();this.abort=new AbortController();await this.audio.play(this.origin,grant,this.abort.signal);if(epoch!==this.epoch||this.blocked)await this.audio.release();});}
+ async more(){if(!this.state.timeline?.next)return;await this.run(async epoch=>{const result=await this.request<Timeline>('/messages/history',{patientId:this.state.selected,cursor:this.state.timeline!.next});if(epoch===this.epoch){const entries:TimelineEntry[]=[...this.state.timeline!.entries,...result.entries];this.update({timeline:{...result,entries}});}});}
+ private uuid(){const bytes=new Uint8Array(16);if(globalThis.crypto?.getRandomValues)globalThis.crypto.getRandomValues(bytes);else for(let i=0;i<16;i++)bytes[i]=Math.floor(Math.random()*256); // Request deduplication only, never an access credential.
+bytes[6]=bytes[6]&15|64;bytes[8]=bytes[8]&63|128;const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;}
+ dispose(){this.epoch++;this.account='';this.abort?.abort();this.audio.dispose();this.listeners.clear();}
+}

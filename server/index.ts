@@ -1,3 +1,4 @@
+import {Messages,mediaConfig} from './messages';
 import { createSignaling } from './server';
 import { resolve } from 'node:path';
 import { loadConfiguration,connect } from '../database/connection';
@@ -8,7 +9,7 @@ import { DeviceAuth, SecretBox } from './device-auth';
 import { PushWorker,providerSender } from './push';
 
 async function main() {
-let accounts: AccountsApi | undefined;let push:PushWorker|undefined;
+let accounts: AccountsApi | undefined;let push:PushWorker|undefined;let messages:Messages|undefined;
 
 const urls = (value: string | undefined) => value?.split(',').map((v) => v.trim()).filter(Boolean) ?? [];
 const turnUrls = urls(process.env.TURN_URLS);
@@ -33,7 +34,8 @@ if(process.env.ENABLE_ACCOUNT_CALLS === 'true') {
   try { if((await status(db)).pending.length)throw new Error('Apply database migrations before enabling account calls'); } finally {await db.end();}
   const store=new AccountsStore('dev');
   const devices=process.env.ENABLE_NATIVE_CALLS==='true'?new DeviceAuth(store,new SecretBox(Buffer.from(process.env.PUSH_TOKEN_ENCRYPTION_KEY??'','hex'))):undefined;
-  accounts=new AccountsApi(store,server,()=>console.error(JSON.stringify({event:'account-operation-failed'})),devices);
+  if(process.env.ENABLE_AUDIO_MESSAGES==='true'){messages=new Messages(store,mediaConfig(process.env));await messages.init();messages.start();}
+  accounts=new AccountsApi(store,server,()=>console.error(JSON.stringify({event:'account-operation-failed'})),devices,messages);
   if(devices){push=new PushWorker(store,devices.box,providerSender(process.env));push.start();}
   await accounts.start();
 }
@@ -46,7 +48,7 @@ let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
   if (stopping) return;
   stopping = true;push?.stop();
-  void Promise.resolve(accounts?.stop()).then(()=>server.close()).then(() => process.exit(0)).catch(()=>{console.error(JSON.stringify({event:"shutdown-failed"}));process.exit(1);});
+  void Promise.resolve(messages?.stop()).then(()=>accounts?.stop()).then(()=>server.close()).then(() => process.exit(0)).catch(()=>{console.error(JSON.stringify({event:"shutdown-failed"}));process.exit(1);});
 });
 
 }

@@ -1,6 +1,6 @@
 # 0012 Audio messages and shared patient history
 
-Status: ready for implementation; planning only. Updated: 2026-11-18.
+Status: implementation in progress in isolated stage12; automated/native build and deployment gates being recorded. Updated: 2026-11-18.
 
 ## Outcome and scope
 
@@ -40,6 +40,8 @@ Validate current account status, patient binding/assignment, visibility and asse
 The first version discovers messages through authenticated refresh/polling while the app/page is visible and refresh on foreground return. Add a simple new-message indicator relative to the viewer's last displayed timeline if useful; do not label it a verified read/listened receipt. There is no background message notification in this slice. Never use a VoIP call push or fake incoming call to announce a saved message.
 
 ## Implementation steps
+
+Implementation decision: [ADR 0008](../decisions/0008-audio-messages.md) selects short-lived, session-bound media grants through the existing JSON credential broker instead of extending native binary methods. Transfers run outside the call-control queue. Private filesystem storage and pinned Expo 57 recorder/player are selected for the synthetic POC.
 
 ### 1. Record contracts and compatibility decisions
 

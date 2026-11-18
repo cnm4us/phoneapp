@@ -45,6 +45,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   incoming(id,expires:Date(timeIntervalSince1970:expiry/1000),completion:completion)
  }
  private func incoming(_ id:String,expires:Date,completion:@escaping()->Void){
+  NotificationCenter.default.post(name:Notification.Name("PhoneappCallAudioWillStart"),object:nil)
   guard let uuid=UUID(uuidString:id) else{completion();return}
   // Report before network/JS. Even expired/revoked pushes are reported then promptly ended.
   if current==id {provider.reportNewIncomingCall(with:uuid,update:CXCallUpdate()){_ in completion()};return}
@@ -70,7 +71,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  func answer(_ id:String){guard let uuid=UUID(uuidString:id),current==id else{return};controller.request(CXTransaction(action:CXAnswerCallAction(call:uuid))){_ in}}
  func end(_ id:String){guard current==id,let uuid=UUID(uuidString:id) else{return};provider.reportCall(with:uuid,endedAt:Date(),reason:.remoteEnded);clean(id)}
  private func clean(_ id:String){systemMuted=false;UserDefaults.standard.removeObject(forKey:"phoneapp.callkit.mute.id");if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};ended.insert(id);if ended.count>100{ended=Set(ended.suffix(50))};current=nil;connected=false;deadline=nil;poll?.invalidate();poll=nil;RTCAudioSession.sharedInstance().isAudioEnabled=false;RTCAudioSession.sharedInstance().useManualAudio=false}
- private func prepareAudio(){let audio=RTCAudioSession.sharedInstance();audio.useManualAudio=true;audio.isAudioEnabled=false;try? AVAudioSession.sharedInstance().setCategory(.playAndRecord,mode:.voiceChat,options:[.allowBluetooth])}
+ private func prepareAudio(){NotificationCenter.default.post(name:Notification.Name("PhoneappCallAudioWillStart"),object:nil);let audio=RTCAudioSession.sharedInstance();audio.useManualAudio=true;audio.isAudioEnabled=false;try? AVAudioSession.sharedInstance().setCategory(.playAndRecord,mode:.voiceChat,options:[.allowBluetooth])}
  func provider(_ provider:CXProvider,perform action:CXStartCallAction){prepareAudio();action.fulfill()}
  func provider(_ provider:CXProvider,perform action:CXAnswerCallAction){
   let id=action.callUUID.uuidString.lowercased();guard current==id else{action.fail();return};prepareAudio()

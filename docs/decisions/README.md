@@ -14,3 +14,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0006 Foreground accounts](0006-foreground-accounts.md): synthetic one-time enrollment, authorized role screens, private foreground calls and durable history.
 
 - [0007 Native incoming calls](0007-native-incoming-calls.md): device-bound restoration, native call control, transactional delivery and honest background media observations.
+
+- [0008 Audio messages](0008-audio-messages.md): patient-linked media, short-lived transfer grants, private POC storage and foreground audio ownership.

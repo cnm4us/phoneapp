@@ -17,7 +17,8 @@ artifacts/
 deploy/
 docs/
 server/
-scripts/
+scripts/*
+!scripts/patch-expo-audio.mjs
 web/
 playwright.config.ts
 test-results/

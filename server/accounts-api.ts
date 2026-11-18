@@ -1,3 +1,4 @@
+import {Messages,validId} from './messages';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AccountsStore, Binding } from './accounts-store';
 import { ApiError } from './accounts-store';
@@ -19,7 +20,7 @@ export class AccountsApi {
   private timer?: ReturnType<typeof setInterval>;
   private sweeping = false;
   private stopped = false;
-  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth) {}
+  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth,readonly messages?:Messages) {}
   async start(): Promise<void> {
     // This POC has one signaling process. Old transient rooms cannot survive restart.
     for (const id of await this.store.activeIds()) await this.store.endInternal(id,'failed');
@@ -77,9 +78,19 @@ export class AccountsApi {
         this.json(res,200,await this.store.enroll(body.code,device)); return;
       }
       if(req.method==='POST'&&req.url==='/api/device/refresh'){const b=await this.body(req,['deviceId','refreshToken','requestKey']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!uuid(b.deviceId)||!token(b.refreshToken)||!uuid(b.requestKey))throw new ApiError(400,'Invalid device refresh.');this.json(res,200,await this.devices.refresh(b.deviceId,b.refreshToken,b.requestKey));return;}
+      const mediaRoute=req.url?.match(/^\/api\/message-media\/([a-f0-9-]{36})\/(upload|play)$/);
+      if(mediaRoute){if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');await this.messages.media(req,res,mediaRoute[1],mediaRoute[2]);return;}
       const bearer = req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
       if (!bearer) throw new ApiError(401,'Sign in with an enrollment code.');
       const actor = await this.store.actor(bearer);
+      if(req.url==='/api/messages/context'&&req.method==='GET'){this.json(res,200,this.messages?await this.messages.context(actor):{enabled:false,patients:[]});return;}
+      if(req.url?.startsWith('/api/messages')){
+        if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');
+        if(req.url==='/api/messages/history'&&req.method==='POST'){const b=await this.body(req,['patientId','cursor']);if(!validId(b.patientId)||b.cursor!==undefined&&(typeof b.cursor!=='string'||b.cursor.length>500))throw new ApiError(400,'Invalid history request.');this.json(res,200,await this.messages.timeline(actor,b.patientId,b.cursor as string|undefined));return;}
+        if(req.url==='/api/messages'&&req.method==='POST'){const b=await this.body(req,['patientId','requestKey','recipientStaffId']);if(!validId(b.patientId)||!validId(b.requestKey)||b.recipientStaffId!==undefined&&!validId(b.recipientStaffId))throw new ApiError(400,'Invalid message request.');this.json(res,200,await this.messages.create(actor,b.patientId,b.requestKey,b.recipientStaffId as string|undefined));return;}
+        const grant=req.url.match(/^\/api\/messages\/([a-f0-9-]{36})\/(upload|play)$/);if(grant&&req.method==='POST'){await this.body(req,[]);this.json(res,200,await this.messages.grant(actor,grant[1],grant[2] as 'upload'|'play'));return;}
+        throw new ApiError(404,'Not found.');
+      }
       if(req.method==='POST'&&req.url==='/api/device/push'){const b=await this.body(req,['provider','token','environment']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!['apns_voip','fcm'].includes(String(b.provider))||typeof b.token!=='string'||b.token.length<16||b.token.length>4096||!/^[A-Za-z0-9_:.-]+$/.test(b.token)||!['production','sandbox'].includes(String(b.environment)))throw new ApiError(400,'Invalid push registration.');await this.devices.register(actor,String(b.provider),b.token,String(b.environment));this.json(res,200,{ok:true});return;}
       if (req.method === 'GET' && req.url === '/api/dashboard') { this.json(res,200,await this.store.dashboard(actor)); return; }
       if (req.method === 'POST' && req.url === '/api/logout') {
@@ -112,6 +123,7 @@ export class AccountsApi {
       this.json(res,200,{ ok:true });
     } catch(error) {
       req.resume();
+      if(res.headersSent){res.destroy();return;}
       if (error instanceof ApiError) this.json(res,error.status,{ error:error.message });
       else { this.onError(); this.json(res,503,{ error:'Account service is temporarily unavailable. Try again.' }); }
     } finally { this.inFlight--; }

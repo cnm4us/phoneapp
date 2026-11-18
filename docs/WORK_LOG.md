@@ -248,3 +248,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner supplied `AuthKey_WS664U36TD.p8` as Production. EC P-256 parse and local sign/verify pass; restricted file to mode 600. Updated ignored private status to current key metadata while preserving revoked Sandbox history. Never printed private key contents or made a provider request.
 - No service-account JSON found in private push staging; remaining owner step is FCM sender credential. Updated guide/state/tools/0011; documentation and whitespace checks pass. No native/background runtime, server configuration, service, DB, or EAS build change.
+
+## 2026-11-18 Firebase project ID versus sending authorization
+
+- Owner confirms project `phoneapp-9a5c4` and asks whether ID alone suffices. Verified official FCM authorization docs: sender also requires an authorized identity/access token. JSON key is the selected EC2 POC method; ADC/workload federation are alternatives, not already configured capabilities.
+- Read-only checks found no conventional gcloud ADC/login files, relevant environment names, Google sender settings in `.env.server`, or identity JSON in private push staging. No values printed or cloud/provider changes. Updated guide/state; documentation and whitespace checks pass. Dedicated FCM sender credential remains next owner account step.

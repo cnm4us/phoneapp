@@ -14,6 +14,8 @@ The owner performs account login and credential approval/download. The agent han
 
 Client configuration received and parsed: project `phoneapp-9a5c4`, one matching Android client for `com.bawebtech.phoneapp.poc`, project number and mobile app ID present. This file does not authorize the EC2 server to send messages. A separate FCM server identity is still required.
 
+Owner separately confirmed that project ID. The ID identifies the project; FCM HTTP v1 send requests also need an OAuth access token from an authorized identity. A service-account JSON file is the selected simple EC2 setup, not a universal Firebase requirement: configured Application Default Credentials or AWS-to-Google Workload Identity Federation could supply authentication instead. Inspection found no Google credential environment names, Google sender settings in `.env.server`, conventional local gcloud ADC/login store, or service-account/external-account credential JSON in private push staging. No Google authorization was established by that read-only inspection.
+
 ### Remaining Android account step: server sending credential
 
 For this EC2 proof of concept, use a dedicated service account:

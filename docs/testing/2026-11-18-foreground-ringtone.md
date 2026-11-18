@@ -37,3 +37,7 @@ Repeat decline, caller cancel, no answer/timeout, quick hangup/retry, logout, ba
 ## JavaScript and owner handoff
 
 Applied tested source to canonical checkout after confirming zero active account calls; no backend service restart. Older installed binaries retain visual calls and display update guidance; both completed native builds expose the new API. Generated fresh unused owner codes at `artifacts/private/enrollment-1794987203459.txt` (600). Device installation and listening/haptics remain untested. Browser sound is unchanged.
+
+## Owner feedback after installation
+
+Owner reports the ringtone “works great” with Phoneapp foreground and asks about background/closed-app behavior. This is positive reported foreground sound evidence, not a complete iPhone/Android vibration/silent/DND/headset/timeout matrix. Current foreground-only implementation intentionally does not provide background incoming delivery; upcoming native incoming work needs separate physical acceptance.

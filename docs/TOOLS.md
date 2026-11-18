@@ -241,6 +241,7 @@ npm run test:audio-messages
 npm run smoke:audio-messages
 npm run messages:status
 npm run accounts:enroll -- provider
+npm run accounts:enroll -- patient-a
 ```
 
 The first command runs five pure client cases. `test:audio-messages` combines real isolated MariaDB/media fixtures and Chromium recording/playback UI (eight scenarios, nine Node tests). It clears its two message tables only in `phoneapp_test` under the suite lock. Run sequentially with DB/native/account suites. There is no separate `test:audio-messages:browser` script; that coverage is included. `smoke:audio-messages` explicitly sends one synthetic tone from Provider to Patient C through the public development API and verifies processing/shared history/Range playback. It issues/logs out its own sessions, does not ring phones or send notifications, and leaves a retained synthetic message subject to expiry. Public call smokes can ring registered devices; account for that side effect before running them.
@@ -260,3 +261,5 @@ Expo Audio 57.0.5, FileSystem 57.0.7 and Asset 57.0.21 are pinned. `npm ci` runs
 Private package inspection uses `scripts/check-native-packages.py --audio-messages` with files under `artifacts/private/audio-messages/`. It inspects the iOS stop selector and Android module/action; private Android names are optimized away, so device interruption behavior remains a separate check. New bundled previews supersede older builds; exact current install links/status are in project state. Native phones preserve enrollment; browser reload needs a fresh Provider code from `artifacts/private/enrollment-1795037510560.txt` (600, one-use/24h). Do not expose codes, grant tokens, recordings, signed build logs or backing file paths.
 
 `messages:status` reports aggregate message state/sender-role/failure counts only; no patient IDs, media paths or grant values. Provider-only enrollment issues a new private one-use code without revoking unused codes or touching native sign-in. Latest owner Provider file: `artifacts/private/enrollment-1795038082921.txt`.
+
+`accounts:enroll -- patient-a` issues only Patient A’s code with the same private-file/one-use/24-hour policy. Latest owner-requested Patient A file: `artifacts/private/enrollment-1795039888000.txt`. Issuing a code does not revoke existing sessions or unused codes.

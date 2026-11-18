@@ -317,3 +317,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner confirms provider can play the patient's audio message. Recorded patient -> provider playback in the current iPhone/desktop workflow; no new build/OS/browser specifics inferred.
 - Updated state, active plan and device evidence. Provider -> patient playback/reply and remaining seek/interruption/Android cases remain open. Documentation/whitespace checks pass; no runtime or schema changes and no additional calls/notifications.
+
+## 2026-11-18 Owner confirms two-way audio messages; Patient A code reissued
+
+- Owner confirms the provider reply plays on the iPhone. Basic patient -> provider and provider -> patient recorded-audio exchange is now owner-confirmed. Other controls/interruption/Android checks remain open; no build/OS details inferred.
+- Added a fixed synthetic Patient A-only CLI enrollment option and issued the requested code into private enrollment-1795039888000.txt (600, one-use/24h). No other account/session/code revoked. Actual issuance and docs/whitespace checks pass; no native build, service restart or schema change needed.

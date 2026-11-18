@@ -6,7 +6,7 @@ import { patientUserId, providerId } from '../database/seed';
 import { status } from '../database/migrate';
 
 async function main(): Promise<void> {
-  const args=process.argv.slice(2);if(args.length>1||args[0]&&args[0]!=='provider')throw new Error('Usage: npm run accounts:enroll [-- provider] (development synthetic accounts only)');
+  const args=process.argv.slice(2);if(args.length>1||args[0]&&!['provider','patient-a'].includes(args[0]))throw new Error('Usage: npm run accounts:enroll [-- provider|patient-a] (development synthetic accounts only)');
   loadConfiguration();
   const db=await connect('dev');
   try {
@@ -19,7 +19,7 @@ async function main(): Promise<void> {
       const lines=[`Synthetic test accounts only. Codes expire ${new Date(expires).toISOString()}.`, 'Each code works once. Browser session lasts 12 hours in memory; native sign-in is stored securely on the phone.', 'Treat this file as a credential; do not commit or publish it.', ''];
       await db.beginTransaction();
       try {
-        const subjects=args[0]==='provider'?[['Provider',providerId]]:[['Provider',providerId],...['A','B','C'].map(letter=>[`Patient ${letter}`,patientUserId(letter)])];
+        const subjects=args[0]==='provider'?[['Provider',providerId]]:args[0]==='patient-a'?[['Patient A',patientUserId('A')]]:[['Provider',providerId],...['A','B','C'].map(letter=>[`Patient ${letter}`,patientUserId(letter)])];
         for (const [label,id] of subjects) {
           const [user]=await db.query('SELECT auth_issuer FROM users WHERE id=? FOR UPDATE',[id]);
           if (!user || user.auth_issuer && user.auth_issuer !== 'phoneapp:synthetic-enrollment') throw new Error('Expected synthetic test account only.');

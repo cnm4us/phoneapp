@@ -293,3 +293,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports iPhone calling works well and provider-call ringtone arrives after swiping Phoneapp up. Recorded physical owner feedback with gesture/device/audio/reboot details still unrecorded; did not mark the entire native lifecycle matrix complete.
 - Verified Apple guidance: swiping an app card away quits it; VoIP pushes are a documented exception to the usual force-quit background-launch restriction. No app/server/DB changes, new builds or unsolicited device calls. Documentation/link and whitespace checks pass.
+
+## 2026-11-18 Audio-message and shared-history implementation plan
+
+- Owner requested the next implementation plan after agreeing on short two-way audio messages. Added 0012 covering native/browser compose and playback, permanent patient identity and late-enrollment history, private storage, binary credential transport, atomic publication/retries/processing, retention, migrations, audio-session handoff, deployment/recovery and observable acceptance.
+- Updated PRD to 1.0 draft with PAT-05, COM-12–13 and REP-04, capturing app-first communication, recorded audio/video messages, future patient-to-provider/Twilio routing and history predating enrollment. Updated roadmap, parent plan, agent instructions, state/resume prompt and DB/tool inventory; corrected stale native-signing/table-count notes.
+- Reviewed Expo 57/W3C/FFmpeg primary documentation; local read-only inspection confirms ffmpeg/ffprobe binaries (4.4.2), not codec/security acceptance. Proposed project-private filesystem POC storage avoids assuming new cloud permissions; implementation must verify limits, retention, isolation and backup. No DB/runtime/dependency/storage/EAS changes. `python3 scripts/check_project.py` passes (43 Markdown files, 48 unique PRD requirements); `git diff --check` passes. No runtime/device tests were run for this documentation-only change.

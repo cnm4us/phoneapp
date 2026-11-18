@@ -2,21 +2,21 @@
 
 Status: **development/test persistence and foreground account integration implemented, 2026-11-18**. Existing MariaDB 10.6.22 hosts isolated `phoneapp` (development) and `phoneapp_test` (disposable tests). MariaDB Connector/Node.js 3.5.5 and the versioned SQL runner are selected in [decision 0005](decisions/0005-database-foundation.md); [plan 0008](plans/0008-database-foundation.md) executes the persistence prerequisite of [0007](plans/0007-provider-patient-calls-transcripts.md).
 
-Both targets have 20 domain tables plus `schema_migrations`; development contains three synthetic patients and four disabled synthetic users, with patient-account/care-team bindings. Base seed creates no calls/tokens/recordings/transcripts/login subjects. The optional account workflow now persists enrollment/session hashes, logical calls/events and observed intervals; media rooms and legacy POC rooms remain transient. Synthetic enrollment/redemption and smoke testing can create synthetic auth subjects/call history. No other application's schema or data was changed; no MariaDB service/configuration change was needed.
+Through migration 0004 both targets have 22 domain tables plus `schema_migrations`; the seed defines three synthetic patients and four initially disabled users with patient-account/care-team bindings; redemption activates only the enrolled synthetic users. Base seed creates no calls/tokens/recordings/transcripts/login subjects. The optional account workflow now persists enrollment/session hashes, logical calls/events and observed intervals; media rooms and legacy POC rooms remain transient. Synthetic enrollment/redemption and smoke testing can create synthetic auth subjects/call history. No other application's schema or data was changed; no MariaDB service/configuration change was needed.
 
 ## Implemented schema
 
 | Tables | Purpose / boundaries |
 | --- | --- |
 | `users`, `patients` | App actor and primary role separate from stable patient record. Future external issuer/subject; disabled accounts can be unenrolled. |
-| `patient_accounts`, `patient_assignments` | Patient/caregiver bindings and staff care relationships, with revocation. Future server checks must enforce role and relationship access. |
+| `patient_accounts`, `patient_assignments` | Patient/caregiver bindings and staff care relationships, with revocation. Account APIs enforce current role and relationship access; each future media endpoint must do so as well. |
 | `patient_phone_numbers` | Multiple E.164 contacts, owner/relationship/preference/SMS/contact permission; shared numbers allowed. |
-| `devices` | Installation/platform/app identity, owner, revocation and future encrypted token/hash slots; no encryption/key/push service implemented. |
+| `devices`, `device_credentials`, `push_deliveries` | Native installation ownership, encrypted provider registration, rotating device credentials and transactional call push delivery under 0011. |
 | `calls`, `call_participants`, `call_events` | Logical call, retry identity, outcomes, role snapshots, endpoint relationships and immutable events. Observed connection seconds are not approved/billable time. |
 | `consent_events` | Per-participant recording/transcription decisions, policy version and offsets. Capture service/all-party policy still to implement. |
 | `recording_assets` | Private object references, status/offsets/hash/retention metadata; no audio files, buckets or playback URLs created. |
 | `transcription_jobs`, `transcript_versions`, `transcript_segments` | Retry/job metadata, attributed timestamped draft versions and append-only corrections; no worker/STT provider implemented. |
-| `enrollment_codes`, `auth_sessions` | One-use synthetic enrollment/session hashes, expiry and revocation; tokens remain client-memory only. |
+| `enrollment_codes`, `auth_sessions` | One-use synthetic enrollment/session hashes, expiry and revocation; browser credentials remain in memory; native device credentials use Keychain/Keystore under 0011. |
 | `call_runtime`, `call_presence` | Caller/answering-session ownership, ringing/setup/call deadlines, media report freshness and aggregate measured milliseconds. |
 | `activity_observations`, `activity_reviews` | Original integer seconds plus separate append-only review decisions; no billing allocation/eligibility calculation. |
 
@@ -105,3 +105,7 @@ Before development application, a private `phoneapp-before-0004.sql` single-tran
 Refresh credentials have a fixed 90-day enrollment deadline, rotating one-hour access sessions (browser remains 12 hours). Same request UUID permits a 60-second encrypted response retry; other reuse of a spent token revokes device sessions and push binding. Device revocation does not rely on a client-supplied installation ID. Duration still requires actual media observations; a native system answer or transport keepalive is not connected/billable seconds.
 
 | 2026-11-18 | Test and development | `0004_native_devices_push.sql` | Applied; clean/upgrade/recovery and runtime grants/permissions pass | [Native evidence](testing/2026-11-18-native-background-calls.md); additive migration, private scoped pre-migration snapshot retained. |
+
+## Planned audio-message expansion (not applied)
+
+[0012](plans/0012-audio-messages-shared-history.md) proposes the next additive migration (provisional 0005) for patient-linked messages, message assets and durable processing state. Existing `recording_assets`/transcription tables remain call-scoped; do not weaken their FKs or create fake calls for messages. Verify patient/asset scope, sender/request idempotency, explicit visibility and access before later enrollment, processing/expiry metadata and stable timeline indexes. Runtime grants and clean/v4-upgrade/recovery evidence are required before development rollout. No migration file or schema change was made for this plan. Recording storage and cleanup/backup contracts are in the plan; media bytes are not stored in MariaDB.

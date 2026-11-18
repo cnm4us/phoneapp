@@ -230,3 +230,9 @@ python3 scripts/check-native-packages.py --ios artifacts/private/native-calls/io
 ```
 
 Optional `--expected-team-id` also checks the expected public Apple team ID. The helper verifies physical iOS profile and actual Mach-O signed entitlements, app identity, bundled JS and native handlers; Android checks bundled JS, permissions and native handlers. This is package inspection, not Apple trust-chain validation or handset acceptance. Full EAS status/log metadata contains signed URLs: retain privately, never print wholesale.
+
+## Planned audio messages (0012)
+
+[Plan 0012](plans/0012-audio-messages-shared-history.md) is prepared only. No recorder package, message endpoints, media directory, worker or message-specific test command exists yet. `test:audio-messages` and `test:audio-messages:browser` in the plan are **proposed**, not runnable commands. Continue using the established docs/DB/account/browser/native suites when their scope applies; do not run public call smokes against enrolled devices without accounting for incoming ringing.
+
+Read-only planning inspection found `/usr/bin/ffmpeg` and `/usr/bin/ffprobe`, version 4.4.2. Presence is not a successful decode/security/format check; verify maintenance and bounded processing before enabling uploads. Expo 57 audio is not installed; pin the compatible package during implementation and expect new native preview builds. Proposed local POC media storage is outside the repository/web roots, with separate test directories and explicit retention/capacity/backup. No storage/IAM/credentials provisioning occurred. Document actual chosen paths, feature/config names, maintenance commands and test evidence here once implemented, without media or secret values.

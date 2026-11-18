@@ -1,6 +1,6 @@
 # 0007 Provider/patient app calls, history, and post-call transcripts
 
-Status: staged; database/foreground calls/history and ringtone implemented through 0008–0010; native incoming plan 0011 prepared, implementation and recording/transcription pending. Updated: 2026-11-18.
+Status: staged; database/calls/history/ringtone and native incoming implemented through 0008–0011 with remaining device acceptance. Audio-message foundation planned in 0012; saved media/transcription pending. Updated: 2026-11-18.
 
 Requirements: PAT-01–04, TEAM-01–02, COM-01, COM-05–06, COM-10, TX-01–06, REP-03, OPS-01–03 in [PRD](../PRD.md).
 
@@ -97,3 +97,7 @@ Reboot follow-up: an ordinary reboot is different from Android Settings Force st
 Ordinary push follow-up: a visible alert notification can tell a user “Incoming Phoneapp call — tap to open” while the app is backgrounded/terminated. The OS can display the alert independently of running Phoneapp JS ([Expo notification behavior](https://docs.expo.dev/push-notifications/what-you-need-to-know/), [Apple remote notifications](https://developer.apple.com/documentation/usernotifications/setting-up-a-remote-notification-server)). An interim notification→tap→authenticated call-state check→join-if-live/missed-if-expired flow is feasible, with secure persisted login/device registration first. Use short expiry and no patient/clinical details in the notification. Do not label an ordinary banner/short notification sound as completed CallKit/Telecom incoming ringing acceptance, and do not present it as bypassing Android Force stop, disabled alerts, offline delivery or OS sound policies. This remains discussion, with no notification module/provider/build activated.
 
 Concrete next-stage plan: [0011](0011-native-background-incoming-calls.md) now sequences secure persisted device identity, session-to-device ownership, registration/delivery, iPhone and Android native gates, standalone preview builds and real-device testing. It supersedes discussion-only next-step descriptions as the implementation handoff; ordinary notification-only and recording/transcription proposals remain separate. No migration/provider/native build was initiated by preparing 0011.
+
+## Next recorded-media increment
+
+[0012 audio messages and shared patient history](0012-audio-messages-shared-history.md) is the current prepared implementation plan. It proves private capture/upload/playback and patient-linked history with short audio messages in both directions, including pre-enrollment messages and verified later access. It does not complete live-call recording or TX-06 playback from recorded calls; those need their own capture implementation. Later slices add patient-originated live calls/no-answer messages, message transcription, video messages and Twilio voice/voicemail into the same patient history. Caller ID remains candidate matching, not an enrollment credential. Earlier discussion-only checkpoints above describe historical states; 0011 current evidence and 0012 govern the handoff.

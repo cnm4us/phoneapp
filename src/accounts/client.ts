@@ -43,7 +43,7 @@ export class AccountClient {
   }
   private clear():void {
     if(this.currentId)void this.native?.end(this.currentId);
-    this.epoch++; this.token=''; this.currentId='';this.joinedId='';this.pendingDial=undefined;this.mediaFailure='';
+    this.nativeMuted=undefined;this.epoch++; this.token=''; this.currentId='';this.joinedId='';this.pendingDial=undefined;this.mediaFailure='';
     clearInterval(this.timer);clearInterval(this.reporting); this.media.end();
     this.update({account:undefined,dashboard:undefined,current:undefined,busy:false,updatedAt:undefined});
   }

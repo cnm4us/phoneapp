@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 1.0 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 1.1 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -8,9 +8,9 @@ Capture the small increments of care-team work that are easily missed during chr
 
 The immediate deliverable is a WebRTC experiment using the owner's iPhone and his wife's Android phone. The full care-management product will be developed through separate, testable implementation plans.
 
-Implementation checkpoint: [0008](plans/0008-database-foundation.md) established MariaDB persistence; [0009](plans/0009-authenticated-foreground-calls.md) implements synthetic enrollment, server-assigned provider/patient screens, assigned directory, patient-addressed calls and shared durable call history. [0010](plans/0010-foreground-ringtone.md) adds foreground sound/vibration; [0011](plans/0011-native-background-incoming-calls.md) adds persistent native device identity, encrypted APNs/FCM delivery, PushKit/CallKit and Android Telecom. Both final physical previews compile, iPhone signed Production APNs entitlement is verified, and the owner reports successful iPhone ringing after a described swipe-away. Remaining device acceptance is in [evidence](testing/2026-11-18-native-background-calls.md). Production identity, saved media/playback/transcription and full time review/export remain pending.
+Implementation checkpoint: [0008](plans/0008-database-foundation.md) established MariaDB persistence; [0009](plans/0009-authenticated-foreground-calls.md) implements synthetic enrollment, server-assigned provider/patient screens, assigned directory, patient-addressed calls and shared durable call history. [0010](plans/0010-foreground-ringtone.md) adds foreground sound/vibration; [0011](plans/0011-native-background-incoming-calls.md) adds persistent native device identity, encrypted APNs/FCM delivery, PushKit/CallKit and Android Telecom. Both final physical previews compile, iPhone signed Production APNs entitlement is verified, and the owner reports successful iPhone ringing after a described swipe-away. Remaining device acceptance is in [evidence](testing/2026-11-18-native-background-calls.md). Production identity, live-call recording/transcription and full time review/export remain pending. Audio-message capture/playback is implemented under 0012.
 
-Next planned increment: [0012 audio messages and shared patient history](plans/0012-audio-messages-shared-history.md), planning only. It adds two-way short recorded audio messages, private storage/playback, patient-linked history and late-enrollment access, using synthetic data. Video messages, transcription, patient-initiated live calls, no-answer voicemail and Twilio are subsequent increments.
+Implemented next increment: [0012 audio messages and shared patient history](plans/0012-audio-messages-shared-history.md), deployed to development with physical message acceptance open. It adds two-way short recorded audio messages, private storage/playback, patient-linked history and late-enrollment access, using synthetic data. Video messages, transcription, patient-initiated live calls, no-answer voicemail and Twilio are subsequent increments.
 
 ## Users and context
 

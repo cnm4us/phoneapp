@@ -128,7 +128,7 @@ EAS native builds: [Android 2cf8e5a8](https://expo.dev/accounts/mbcollins2/proje
 
 ## Installation QR artifact
 
-Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the current public APK for native-call build 89e57322. `artifacts/public/ios-install-qr.png` points to the iPhone EAS install page for native-call build 1e392d16. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.
+Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the current audio-message APK for build 8f1f8545. `artifacts/public/ios-install-qr.png` points to the iPhone EAS install page for audio-message build 6f97fb13. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.
 
 ## Database commands
 
@@ -231,8 +231,32 @@ python3 scripts/check-native-packages.py --ios artifacts/private/native-calls/io
 
 Optional `--expected-team-id` also checks the expected public Apple team ID. The helper verifies physical iOS profile and actual Mach-O signed entitlements, app identity, bundled JS and native handlers; Android checks bundled JS, permissions and native handlers. This is package inspection, not Apple trust-chain validation or handset acceptance. Full EAS status/log metadata contains signed URLs: retain privately, never print wholesale.
 
-## Planned audio messages (0012)
+## Audio messages (0012)
 
-[Plan 0012](plans/0012-audio-messages-shared-history.md) is prepared only. No recorder package, message endpoints, media directory, worker or message-specific test command exists yet. `test:audio-messages` and `test:audio-messages:browser` in the plan are **proposed**, not runnable commands. Continue using the established docs/DB/account/browser/native suites when their scope applies; do not run public call smokes against enrolled devices without accounting for incoming ringing.
+[Plan](plans/0012-audio-messages-shared-history.md), [decision](decisions/0008-audio-messages.md), [evidence](testing/2026-11-18-audio-messages.md). Native/browser implementation and development rollout are available; physical message acceptance remains open.
 
-Read-only planning inspection found `/usr/bin/ffmpeg` and `/usr/bin/ffprobe`, version 4.4.2. Presence is not a successful decode/security/format check; verify maintenance and bounded processing before enabling uploads. Expo 57 audio is not installed; pin the compatible package during implementation and expect new native preview builds. Proposed local POC media storage is outside the repository/web roots, with separate test directories and explicit retention/capacity/backup. No storage/IAM/credentials provisioning occurred. Document actual chosen paths, feature/config names, maintenance commands and test evidence here once implemented, without media or secret values.
+```sh
+npm run test:message-client
+npm run test:audio-messages
+npm run smoke:audio-messages
+npm run messages:status
+npm run accounts:enroll -- provider
+```
+
+The first command runs five pure client cases. `test:audio-messages` combines real isolated MariaDB/media fixtures and Chromium recording/playback UI (eight scenarios, nine Node tests). It clears its two message tables only in `phoneapp_test` under the suite lock. Run sequentially with DB/native/account suites. There is no separate `test:audio-messages:browser` script; that coverage is included. `smoke:audio-messages` explicitly sends one synthetic tone from Provider to Patient C through the public development API and verifies processing/shared history/Range playback. It issues/logs out its own sessions, does not ring phones or send notifications, and leaves a retained synthetic message subject to expiry. Public call smokes can ring registered devices; account for that side effect before running them.
+
+Deployed private `.env.server` names: `ENABLE_AUDIO_MESSAGES=true`, `MEDIA_STORAGE_ROOT=/var/lib/phoneapp/media`; optional `FFMPEG_PATH`, `FFPROBE_PATH` default to `/usr/bin/ffmpeg` and `/usr/bin/ffprobe`. Limits are centralized in `server/messages.ts` (180 seconds, 10 MiB input, 7 days audio, 24h incomplete, 100 sends/user/day, 50 MiB accepted input/user/day, 1 GiB total with a 1 GiB free-space floor). Other MEDIA_* names in the original plan are not implemented environment overrides. No new storage credential or public media endpoint exists. Short-lived media grants travel only in Authorization headers and still require current session/device/patient authorization.
+
+Provision the private store before installing/restarting the service on a new host:
+
+```sh
+sudo install -d -o ubuntu -g ubuntu -m 700 /var/lib/phoneapp/media
+```
+
+The service template allows only this root through `ReadWritePaths` while preserving `ProtectSystem=strict`/read-only home/0077 umask. Only Phoneapp nginx `/api/message-media/` gains a streamed 10 MiB/150s route; general API JSON remains 4 KiB. File permissions are not proof of host encryption or production readiness. Preserve DB and media together for restore; private pre-migration snapshot/config/nginx/service/build metadata is under `artifacts/private/audio-messages/`.
+
+Expo Audio 57.0.5, FileSystem 57.0.7 and Asset 57.0.21 are pinned. `npm ci` runs `scripts/patch-expo-audio.mjs`; EAS includes that script explicitly. It guards package version/native anchors and disables automatic message audio restart after native interruption/background. Review on upgrade. FFmpeg/FFprobe 4.4.2 are present; actual supported synthetic input conversion and restricted remote-reference rejection pass. Child decoding has fixed protocol/format limits, one worker, low priority and resource/time bounds. This is not a full OS decoder sandbox or security certification.
+
+Private package inspection uses `scripts/check-native-packages.py --audio-messages` with files under `artifacts/private/audio-messages/`. It inspects the iOS stop selector and Android module/action; private Android names are optimized away, so device interruption behavior remains a separate check. New bundled previews supersede older builds; exact current install links/status are in project state. Native phones preserve enrollment; browser reload needs a fresh Provider code from `artifacts/private/enrollment-1795037510560.txt` (600, one-use/24h). Do not expose codes, grant tokens, recordings, signed build logs or backing file paths.
+
+`messages:status` reports aggregate message state/sender-role/failure counts only; no patient IDs, media paths or grant values. Provider-only enrollment issues a new private one-use code without revoking unused codes or touching native sign-in. Latest owner Provider file: `artifacts/private/enrollment-1795038082921.txt`.

@@ -33,7 +33,7 @@ def signed_entitlements(binary):
     raise AssertionError('Missing signed entitlement metadata')
 
 
-def check_ios(path, expected_team):
+def check_ios(path, expected_team, audio_messages=False):
     with zipfile.ZipFile(path) as package:
         info_path = next(n for n in package.namelist()
                          if n.startswith('Payload/') and n.count('/') == 2
@@ -64,6 +64,8 @@ def check_ios(path, expected_team):
         assert signed.get('application-identifier') == team + '.' + APP_ID
         assert b'PhoneappCallingDelegate' in binary
         assert b'PhoneappMediaObserver' in binary
+        if audio_messages:
+            assert b'phoneappStopMessageAudio' in binary
         return dict(platform='ios', physical_device_build=True,
                     production_push_entitlement=True, app_identifier_matches=True,
                     expected_team_matches=True if expected_team else None,
@@ -73,7 +75,7 @@ def check_ios(path, expected_team):
                     handset_delivery_tested=False)
 
 
-def check_android(path):
+def check_android(path, audio_messages=False):
     with zipfile.ZipFile(path) as package:
         bundles = [n for n in package.namelist() if n.endswith('index.android.bundle')]
         assert bundles and package.getinfo(bundles[0]).file_size > 100_000
@@ -85,6 +87,9 @@ def check_android(path):
         for name in ('PhoneappCallingModule', 'PhoneappMessagingService',
                      'PhoneappConnectionService', 'CallForegroundService'):
             assert name.encode() in dex
+        if audio_messages:
+            assert b'Lexpo/modules/audio/AudioModule;' in dex
+            assert b'com.bawebtech.phoneapp.CALL_AUDIO' in dex
         return dict(platform='android', bundled_javascript=True,
                     native_call_handlers_present=True, handset_delivery_tested=False)
 
@@ -94,15 +99,16 @@ def main():
     parser.add_argument('--ios', type=Path)
     parser.add_argument('--android', type=Path)
     parser.add_argument('--expected-team-id')
+    parser.add_argument('--audio-messages', action='store_true', help='Also inspect message audio module/action or iOS selector.')
     args = parser.parse_args()
     if not args.ios and not args.android:
         parser.error('Supply --ios and/or --android with a local package path.')
     try:
         checks = []
         if args.ios:
-            checks.append(check_ios(args.ios, args.expected_team_id))
+            checks.append(check_ios(args.ios, args.expected_team_id, args.audio_messages))
         if args.android:
-            checks.append(check_android(args.android))
+            checks.append(check_android(args.android, args.audio_messages))
         print(json.dumps(dict(result='PASS', checks=checks)))
         return 0
     except Exception:

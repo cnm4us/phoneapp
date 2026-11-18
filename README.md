@@ -8,7 +8,7 @@ A native iOS and Android communications app for capturing care-team work and rev
 
 - [Product requirements](docs/PRD.md): complete product scope and acceptance criteria.
 - [Current project state](docs/PROJECT_STATE.md): what exists and the next action.
-- [Next implementation plan: audio messages and shared history](docs/plans/0012-audio-messages-shared-history.md): prepared scope, migrations, storage, playback and acceptance.
+- [Next implementation plan: audio messages and shared history](docs/plans/0012-audio-messages-shared-history.md): implemented scope, migrations, private storage/playback and remaining device acceptance.
 - [Roadmap](docs/ROADMAP.md): milestones and dependencies.
 - [First implementation plan](docs/plans/0001-webrtc-poc.md): two-device WebRTC experiment.
 - [Browser companion plan](docs/plans/0002-browser-companion.md): browser UI, synthetic media tests, and deployment evidence.

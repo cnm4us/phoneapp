@@ -50,7 +50,12 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       assert.deepEqual(await migrate(db,{through:'0002_transcripts_activity.sql'}), ['0002_transcripts_activity.sql']);
       const transcript=randomUUID();
       await db.query('INSERT INTO transcript_versions (id,call_id,version_number) VALUES (?,?,1)',[transcript,call]);
-      assert.deepEqual(await migrate(db), ['0003_foreground_accounts.sql','0004_native_devices_push.sql','0005_audio_messages.sql']);
+      assert.deepEqual(await migrate(db,{through:'0004_native_devices_push.sql'}), ['0003_foreground_accounts.sql','0004_native_devices_push.sql']);
+      const installation=randomUUID(),proof='a'.repeat(64);
+      await db.query("INSERT INTO devices(id,user_id,installation_id,platform,app_identifier) VALUES(?,?,?,'ios','synthetic-upgrade')",[installation,providerId,randomUUID()]);
+      await db.query('INSERT INTO device_credentials(token_hash,device_id,expires_at) VALUES(?,?,?)',[proof,installation,'2099-01-01']);
+      assert.deepEqual(await migrate(db), ['0005_audio_messages.sql']);
+      const [credential]=await db.query('SELECT token_hash FROM device_credentials WHERE device_id=?',[installation]);assert.equal(credential.token_hash,proof);
       const [preserved]=await db.query('SELECT id FROM transcript_versions WHERE id=?',[transcript]);
       assert.equal(preserved.id,transcript);
       const [row] = await db.query('SELECT id FROM calls WHERE id=?', [call]);

@@ -48,7 +48,7 @@ export class Messages {
   const target=staff(actor.role)?actor.id:recipient;
   if(!validId(target))throw new ApiError(400,'Choose a care-team recipient.');
   const [assigned]=await db.query("SELECT u.id FROM patient_assignments a JOIN users u ON u.id=a.staff_user_id WHERE a.patient_id=? AND a.staff_user_id=? AND a.revoked_at IS NULL AND u.status='active' AND u.role IN ('practitioner','rn','ma','admin')",[patient,target]);if(!assigned)throw new ApiError(404,'Recipient is unavailable.');
-  const [old]=await db.query('SELECT * FROM audio_messages WHERE sender_id=? AND request_key=?',[actor.id,key]);if(old){if(old.patient_id!==patient||old.recipient_staff_id!==target)throw new ApiError(409,'Send request belongs to a different conversation.');return this.view(old);}
+  const [old]=await db.query('SELECT * FROM audio_messages WHERE sender_id=? AND request_key=?',[actor.id,key]);if(old){if(old.patient_id!==patient||old.recipient_staff_id!==target)throw new ApiError(409,'Send request belongs to a different conversation.');if(old.state==='uploading')throw new ApiError(409,'Upload is still in progress. Keep the draft and try Send again shortly.');return this.view(old);}
   const [quota]=await db.query('SELECT COUNT(*) AS n FROM audio_messages WHERE sender_id=? AND created_at>?',[actor.id,utc(this.now()-86400000)]);if(Number(quota.n)>=100)throw new ApiError(429,'Daily message limit reached.');
   const id=randomUUID();await db.query('INSERT INTO audio_messages(id,patient_id,sender_id,recipient_staff_id,sender_label,sender_role,request_key,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?)',[id,patient,actor.id,target,actor.displayName,actor.role,key,utc(this.now()),utc(this.now()+this.config.uploadTtlMs)]);const [row]=await db.query('SELECT * FROM audio_messages WHERE id=?',[id]);return this.view(row);
  });}
@@ -77,6 +77,7 @@ export class Messages {
    res.writeHead(range?206:200,{'Content-Type':'audio/mp4','Content-Length':end-start+1,'Accept-Ranges':'bytes','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',...(range?{'Content-Range':`bytes ${start}-${end}/${info.size}`}:{})});await pipeline(createReadStream(file,{start,end}),res);
   }else throw new ApiError(405,'Unsupported media request.');
  }
+ private async liveSession(db:Connection,actor:Actor){const [session]=await db.query("SELECT s.id FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND s.user_id=? AND s.revoked_at IS NULL AND s.expires_at>? AND u.status='active' AND (s.device_id IS NULL OR EXISTS(SELECT 1 FROM devices d WHERE d.id=s.device_id AND d.revoked_at IS NULL))",[actor.sessionId,actor.id,utc(this.now())]);if(!session)throw new ApiError(401,'Media session ended. Try again after signing in.');}
  private async upload(req:IncomingMessage,actor:Actor,id:string){
   const declared=Number(req.headers['content-length']||0);if(declared>this.config.maxBytes)throw new ApiError(413,'Recording is too large.');
   const disk=await statfs(this.config.root);if(Number(disk.bavail)*Number(disk.bsize)<this.config.minFree+this.config.maxBytes)throw new ApiError(507,'Recording storage is temporarily full.');
@@ -88,7 +89,7 @@ export class Messages {
    file=await open(this.path(key),'wx',0o600);
    for await(const chunk of req){size+=chunk.length;if(size>this.config.maxBytes)throw new ApiError(413,'Recording is too large.');digest.update(chunk);await file.writeFile(chunk);}
    if(!size)throw new ApiError(400,'Recording is empty.');const checksum=digest.digest('hex');if(previousHash&&previousHash!==checksum)throw new ApiError(409,'Recording changed. Discard and send it as a new message.');await file.sync();
-   await this.accounts.transaction(async db=>{await this.row(db,actor,id,true);const result=await db.query("UPDATE audio_messages SET state='processing',input_key=?,input_hash=?,size_bytes=?,lease_until=NULL WHERE id=? AND lease_key=? AND state='uploading'",[key,checksum,size,id,attempt]);if(!result.affectedRows)throw new ApiError(409,'Upload expired.');});
+   await this.accounts.transaction(async db=>{await this.liveSession(db,actor);await this.row(db,actor,id,true);const result=await db.query("UPDATE audio_messages SET state='processing',input_key=?,input_hash=?,size_bytes=?,lease_until=NULL WHERE id=? AND lease_key=? AND state='uploading'",[key,checksum,size,id,attempt]);if(!result.affectedRows)throw new ApiError(409,'Upload expired.');});
   }catch(error){await unlink(this.path(key)).catch(()=>{});await this.accounts.transaction(db=>db.query("UPDATE audio_messages SET state='failed',lease_until=NULL,failure_code='upload-failed' WHERE id=? AND lease_key=? AND state='uploading'",[id,attempt]));throw error;
   }finally{clearTimeout(timer);await file?.close();}
  }

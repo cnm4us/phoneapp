@@ -12,3 +12,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0005 Database foundation](0005-database-foundation.md): local MariaDB, isolated identities and explicit SQL migrations; replaces tentative PostgreSQL for development.
 
 - [0006 Foreground accounts](0006-foreground-accounts.md): synthetic one-time enrollment, authorized role screens, private foreground calls and durable history.
+
+- [0007 Native incoming calls](0007-native-incoming-calls.md): device-bound restoration, native call control, transactional delivery and honest background media observations.

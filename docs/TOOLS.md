@@ -182,26 +182,43 @@ Current builds from cb10b68: Android 352e0a90-4961-4615-b594-b4a73ca0f911 and iO
 
 Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/43047d0d-f5aa-4f5c-a73d-71fcceaf8e5c), [Android APK](https://expo.dev/artifacts/eas/sJvPjqXqWi3WF4YWFrzquMV1_WkOXp_xDmKTn-4O7kw.apk) (HTTP 200). QR images: ignored `artifacts/public/ios-install-qr.png` and `artifacts/public/android-install-qr.png`, regenerated for these exact builds. Private native build JSON/logs are retained under `artifacts/private/ringtone/` (700/600). Owner codes for the new app launch: `artifacts/private/enrollment-1794987203459.txt` (600), fresh/unused at handoff; generate more with `accounts:enroll` after use/expiry. New native build is required for sound, JS reload alone cannot add the methods. Settings → Incoming calls has device-persisted Ringtone/Vibration switches, both default On. Handset listening/haptics remain owner-operated acceptance.
 
-## Native incoming-call readiness (0011 — planning)
+## Native incoming calls (0011)
 
-[Prepared plan 0011](plans/0011-native-background-incoming-calls.md) is the next handoff. Existing EAS signing/profiles and Apple Developer account remain available; this does not prove APNs VoIP capability/sender access. Inspected only key names in project `.env.server`, `.env.database` and process environment: no APNs/PushKit/FCM/Firebase configuration keys found. Root `google-services.json` / `GoogleService-Info.plist` absent. Remote Apple/EAS keys and any owner Firebase project were not inspected/created; verify/reuse before duplication. No push send, key generation, provider setup, schema change or build occurred.
+[Plan 0011](plans/0011-native-background-incoming-calls.md), [decision 0007](decisions/0007-native-incoming-calls.md), [evidence](testing/2026-11-18-native-background-calls.md). Source prepared in `/home/ubuntu/phoneapp-stage11` / `feat/native-background-calls`; canonical feature checkout is advanced between calls. Keep the worktree until its latest commits/build logs have been reconciled into canonical state.
 
-| Prerequisite | State / next verification |
+| Tool/capability | Verified state / limits |
 | --- | --- |
-| Secure persistent native identity | Not implemented; current account credential is memory-only. Must be available to early native handlers while locked after first unlock. |
-| Device-bound call ownership | Existing ownership uses API session IDs; adapt safely for same-device refresh and first-answer wins. |
-| APNs VoIP sender/app capability | New Production `AuthKey_WS664U36TD.p8` passes local EC P-256 parse/sign/verify, mode 600. Earlier Sandbox key revoked per owner; do not use. Existing EAS team metadata available; type/topic, provider authorization and signed capability/entitlements still pending. |
-| Android Firebase/FCM | Client config and supplied Admin SDK service-account JSON match project/app; local RSA/signature and real Google OAuth (Messaging scope) pass. FCM API/send permission and handset delivery untested. |
-| Native call lifecycle | PushKit/CallKit and FCM/Telecom/services absent; current app ends calls on background. |
-| Standalone cold-start build | `preview` EAS profile exists but not exercised for this stage. Build with bundled JS so ringing/answer does not depend on Metro. |
-| Hardware verification | Need actual models/OS and permission/network/reboot states; this session cannot control the phones. |
+| Persistent native identity | Keychain/Keystore source and native compilation; server/client restore/replay/revocation tests pass. Locked/reboot storage behavior still needs phones. |
+| Device media ownership | Stable authenticated device principal survives refresh; competing devices denied, browser/session path retained. |
+| Database | 0004 applied in dev/test after clean/upgrade/recovery, reviewed grants/permission checks. Snapshot retained privately; do not edit migration history. |
+| APNs VoIP | Production key locally valid and server-configured. Owner completed Apple credential/profile step; physical build e449609b submitted. Real profile signing, VoIP token and APNs delivery must be verified. |
+| FCM | Matching client/service-account configuration; real validate-only API request succeeds HTTP 200. No handset delivery inferred. |
+| Native lifecycle | PushKit/CallKit and self-managed Telecom/FCM/services implemented, default system tones and native audio/output ownership. Physical controls/lifecycle pending. |
+| Media liveness | Native pinned-WebRTC RTP observation avoids JS-only timer credit. Quiet/uncertain media can pause measured seconds; not billable-time evidence. |
+| Builds | `preview` bundles JS for no-Metro acceptance. `ios-simulator` verifies compilation only; never provide simulator artifact as an iPhone install. See evidence/current state for exact latest IDs. |
 
-Keep sender credentials backend-only. Android Firebase client build configuration is distinct from server service-account secrets; review Git/EAS packaging explicitly when implemented. No runnable push-registration/send commands exist yet; do not present proposed names as available tools.
+Commands:
 
-Owner handoff: [push setup guide](PUSH_SETUP.md). Prepared `artifacts/private/push/` with mode 700, ignored by Git and EAS. Read-only EAS menus confirmed signing/provisioning and push-key management access; declined Apple login and selected no key-changing action. No reusable APNs key was verified. Firebase client configuration and separate server send identity remain pending. This inspection supersedes the earlier uninspected-remote status above; no credentials were generated/downloaded/changed.
+```sh
+npm run test:account-client
+npm run test:native-calls
+npm run native:status
+npm run push:check
+eas credentials:configure-build --platform ios --profile preview
+eas build --platform android --profile preview
+eas build --platform ios --profile preview
+```
 
-Subsequent owner handoff: `artifacts/private/push/google-services.json` and `artifacts/private/push/AuthKey_C3W3F7TQ6D.p8` received, restricted to mode 600 and locally validated without displaying key contents. Private `credential-status.json` records paths/project/key metadata, existing EAS team ID and pending authorization/environment checks. Earlier “client config pending” describes the previous checkpoint only. Remaining owner steps and dedicated FCM sender role/download are in the guide; do not copy server private credentials to an EAS build path. No runtime/provider send/build was started.
+Run native/server DB suites sequentially with `test:db`/`test:accounts`; they share the disposable suite lock. `native:status` reports only aggregate active device/provider and delivery state/error counts. `push:check` uses FCM validate-only mode and sends no notification to a phone. No general arbitrary-recipient push CLI is exposed.
 
-Latest Apple handoff: Production key `artifacts/private/push/AuthKey_WS664U36TD.p8` received and validated locally. Private status now selects its metadata and retains revoked Sandbox history separately; this is not APNs authorization/delivery evidence. No service-account JSON found in private push staging. No runtime/service/provider/build change.
+Private inputs (all mode 600, directory 700): `artifacts/private/push/google-services.json` (Android public client metadata), `AuthKey_WS664U36TD.p8` (current Production APNs key), `phoneapp-9a5c4-515f1c967b53.json` (Firebase Admin SDK server credential), and `credential-status.json` (metadata/evidence only). Old Sandbox key is owner-reported revoked. Real key values are not documented or committed.
 
-Latest Firebase server credential: `artifacts/private/push/phoneapp-9a5c4-515f1c967b53.json` (600); use this actual filename, no alias/copy required. Service-account/project/email/token-endpoint and RSA sign/verify checks pass. Google OAuth endpoint accepted the credential for Firebase Messaging scope (HTTP 200); issued token stayed in process memory and was not logged/saved. Private status records actual path and evidence. No FCM send/API-permission check or phone delivery has run, no environment/service wiring changed. The earlier missing-file notes are historical. All three supplied configuration/credential artifacts are present; native integration remains pending.
+Backend `.env.server` now configures `ENABLE_NATIVE_CALLS`, `PUSH_TOKEN_ENCRYPTION_KEY`, `APNS_KEY_PATH`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `FCM_PROJECT_ID`, `FCM_CREDENTIALS_PATH`. Preserve the encryption key with encrypted registrations/backups; do not regenerate it for an existing database. Private before-config/snapshot and EAS JSON/logs are under `artifacts/private/native-calls/`; never print full signed-log metadata or credential files.
+
+Build staging copies only Android client config to ignored `config/google-services.json`. The custom plugin generates Firebase resources from that path. `.easignore` deliberately includes this public client config and native/plugin source, while excluding all server keys/env files/private artifacts. Verify archive exclusion after changing packaging. Never stage the server service-account JSON into the client path.
+
+Earlier owner iPhone signing step was needed because the existing ad hoc profile lacked `aps-environment`/Push Notifications. Run credential configuration from the latest source checkout, log into Apple and allow Phoneapp's capability/profile update; then submit a physical preview. Owner reports this credential step completed; physical preview e449609b is now submitted, so do not ask for the same login again without new evidence. Credentials alone do not prove signaling/media or real OS ringing. Physical models/OS/full lifecycle results remain owner-operated.
+
+Fresh owner enrollment codes for preview testing: `artifacts/private/enrollment-1795028097001.txt` (one-use/24-hour expiry; generated unused at handoff). Use `accounts:enroll` for fresh codes if consumed/expired. Native sign-in persists securely after enrollment; browser sign-in remains memory-only. Grant microphone and Android notification permissions while foreground and confirm incoming registration status before background testing. Native system calling uses OS sound/channel choices; older binaries retain the original app ringtone controls.
+
+Final Android preview `b153aa67-5838-4252-94be-f966afaec5b9` is FINISHED, APK HTTP 200: [install](https://expo.dev/artifacts/eas/_PdhaayvtIIPGLUH-QkxoGvLBrfBQ2LlwNV0dE-hibc.apk). Install over the old app, enroll and check registration status; handset behavior untested. iPhone latest native source compiles in simulator c8f80317; only a physical build can establish device signing/installation.

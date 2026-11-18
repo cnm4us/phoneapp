@@ -67,10 +67,16 @@ All three supplied files are present in `/home/ubuntu/phoneapp/artifacts/private
 | Production APNs sender key | `AuthKey_WS664U36TD.p8` | Local EC P-256 parsing/signature; Production environment is owner-reported |
 | Firebase server credential | `phoneapp-9a5c4-515f1c967b53.json` | Service-account/project/email/token endpoint, RSA signature, real Google OAuth exchange with Firebase Messaging scope (HTTP 200) |
 
-Keep the original Firebase download filename; the proposed `fcm-service-account.json` name in setup instructions is optional. No additional credential download is currently requested. The OAuth token was neither displayed nor saved. Authentication success does not establish FCM API enablement/send permission or actual device delivery. Apple scope/topic, key authorization, app capability and signed push entitlement remain to verify during integration.
+Keep the original Firebase download filename; the proposed `fcm-service-account.json` name in setup instructions is optional. No additional credential download is currently requested. The OAuth token was neither displayed nor saved. A subsequent real FCM validate-only request returned HTTP 200, verifying API authorization without sending a handset notification. Actual device delivery remains untested. Apple scope/topic, key authorization, app capability and signed push entitlement remain to verify during integration.
 
 Earlier Sandbox `AuthKey_C3W3F7TQ6D.p8` is owner-reported revoked; do not use it. Private `credential-status.json` selects current key/file metadata and preserves that revoked history. Existing EAS signing supplies team metadata; key/team ownership remains to verify against APNs.
 
-The staging directory is excluded from Git and EAS uploads. Never ship sender credentials to a phone. Android client config needs an explicit build packaging path during implementation because the staging directory is excluded from EAS. No sender file is wired into the running service yet; no push was sent, native registration/new build/device test performed, or live call interrupted for this handoff.
+The staging directory is excluded from Git and EAS uploads. Never ship sender credentials to a phone. Android client config needs an explicit build packaging path during implementation because the staging directory is excluded from EAS. Sender file references and the native feature flag are now configured in the development service. Native code/build work is under 0011; no real device push or handset test has been performed. The public native API smoke used an ephemeral synthetic device and revoked it afterward.
 
-Next development increment remains plan 0011 secure device-bound restoration and backend contracts, then native PushKit/CallKit and FCM/Telecom integration and real delivery acceptance. Credential receipt alone does not add background ringing.
+Plan 0011 implements restoration/contracts and native integration; current gates are final preview checks, the Push-capable physical iPhone signing profile and real device acceptance. Credential receipt alone does not add background ringing.
+
+## Physical iPhone signing handoff
+
+The earlier ad hoc profile lacks Push Notifications/aps-environment. From the latest source checkout run `eas credentials:configure-build --platform ios --profile preview`, authenticate Apple and allow Phoneapp capability/profile update. Existing Apple cookie was checked and is expired; no password was entered by the agent. Keep passwords/2FA in the EAS terminal prompts, not chat. The agent can then submit and verify the physical preview build.
+
+Owner subsequently confirmed the EAS Apple credential step is done. Physical iPhone preview e449609b is submitted. Continue with that build result rather than requesting the same authentication again; actual signed push entitlement and delivery remain to verify.

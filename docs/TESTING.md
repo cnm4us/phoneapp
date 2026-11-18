@@ -72,3 +72,7 @@ Run `test:accounts` and `test:db` sequentially: both hold `phoneapp:test-suite` 
 ## Foreground ringtone
 
 [0010 evidence](testing/2026-11-18-foreground-ringtone.md): 58 local unit/server/routing/alert cases pass, including eight delayed-start, cancellation, lease, foreground freshness, preference and stop-before-media checks. Account API/Chromium real-media regression and both native JS exports pass. EAS iOS 43047d0d and Android 352e0a90 finished successfully with bundled WAV/native module tasks. Actual audible volume, Silent/DND, vibration, headset/output route and modal/settings interaction remain physical checks; neither mock drivers nor native compilation proves them. No DB reset/migration is needed for this increment.
+
+## Native background calling
+
+[0011 evidence](testing/2026-11-18-native-background-calls.md) records automated/device-auth/delivery, development rollout and native compilation separately from handset ringing. Run `npm run test:account-client` (five pure client race/restoration cases) and `npm run test:native-calls` (seven isolated MariaDB/API scenarios, sequential with other DB suites). `npm run push:check` performs only an FCM validation request; `npm run native:status` reports aggregate registrations/delivery results without tokens. Both commands use private server configuration. Real phones and no-Metro preview binaries remain required for acceptance.

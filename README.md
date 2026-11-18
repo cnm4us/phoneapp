@@ -49,4 +49,4 @@ Repository: <https://github.com/cnm4us/phoneapp>
 
 ## Provider and patient foreground testing
 
-The shared native app and browser now include synthetic enrollment, an assigned patient directory, foreground App Audio/Video and durable shared call history. See [account testing commands](docs/TOOLS.md) and [plan 0009](docs/plans/0009-authenticated-foreground-calls.md). Run `npm run accounts:enroll` for private one-time codes; keep both clients open. Recording/transcription and native locked/background ringing remain future stages.
+The shared native app and browser now include synthetic enrollment, an assigned patient directory, foreground App Audio/Video and durable shared call history. See [account testing commands](docs/TOOLS.md) and [plan 0009](docs/plans/0009-authenticated-foreground-calls.md). Run `npm run accounts:enroll` for private one-time codes; keep both clients open. Native locked/background calling is implemented under [0011](docs/plans/0011-native-background-incoming-calls.md), with updated preview builds/signing and physical acceptance tracked separately. Recording/transcription remain future stages.

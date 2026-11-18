@@ -1,6 +1,6 @@
 # 0011 Native incoming calls while backgrounded or not running
 
-Status: implementation in progress in isolated `/home/ubuntu/phoneapp-stage11`; no live rollout yet. Updated: 2026-11-18.
+Status: implemented/source and development backend deployed; final builds, physical iPhone signing and handset acceptance in progress. Updated: 2026-11-18.
 
 ## Outcome and scope
 
@@ -60,9 +60,9 @@ Preserve shared history/revoked-patient isolation and current quality/output con
 ## Implementation steps and order
 
 - [x] Inspect actual state, credential-key availability and primary native platform requirements; identify session/device/audio/JS-lifecycle gaps.
-- [ ] Implement native credential vault, resumable device enrollment, auth/session-device model and logout/revocation tests; keep UI/browser behavior compatible.
-- [ ] Review/add the next migration(s), runtime grants, synthetic fixtures and encrypted-token format; clean-install and data-preserving upgrade/recovery evidence first.
-- [ ] Implement authorized device registration and durable short-expiry call-delivery outbox with fake-provider isolation/idempotency tests.
+- [x] Implement native credential vault, resumable device enrollment, auth/session-device model and logout/revocation tests; keep UI/browser behavior compatible.
+- [x] Review/add the next migration(s), runtime grants, synthetic fixtures and encrypted-token format; clean-install and data-preserving upgrade/recovery evidence first.
+- [x] Implement authorized device registration and durable short-expiry call-delivery outbox with fake-provider isolation/idempotency tests.
 - [ ] Verify/provision Apple APNs capability/key/topic/environment and Firebase Android configuration/sender credentials using existing accounts/projects where available. No secret upload to chat/Git or unverified credential reuse.
 - [ ] Implement iOS PushKit/CallKit early-launch/answer/cancel and WebRTC audio coordination; verify foreground regression and native build before device delivery testing.
 - [ ] Prove iPhone background/locked/non-running → ring/Answer/audio/hangup/history against real APNs with synthetic calls. Fix lifecycle issues before calling the iOS gate complete.
@@ -126,3 +126,7 @@ Primary references: [PushKit native incoming handling](https://developer.apple.c
 Owner authorized implementation. Added migration 0004 (not yet applied to development), device-bound enrollment/refresh with encrypted idempotent retry and replay revocation, stable media ownership, encrypted provider registration, transactional delivery queue and APNs/FCM senders. Added native Keychain/Keystore identity, early PushKit/CallKit, Android FCM/self-managed Telecom, native RTP observation and conditional native client integration. Browser/legacy remains supported. Native prebuild, autolinking, JS exports, type check, 58 unit cases, DB clean/upgrade/recovery, account/browser-media and six native server scenarios pass. Native compilation/device tests and live rollout remain pending. Build archive contains Firebase client config but excludes server credentials. Current native and provider behavior must not be marked accepted before real builds/devices.
 
 Latest checkpoint: seven native API/store scenarios (8 Node tests including wrapper), development migration/grants/permission check, and all 13 browser checks including TURN pass. Real FCM validate-only request returned HTTP 200, no delivery. iOS first preview build cea655cf failed because existing Ad Hoc profile lacks Push Notifications/aps-environment; owner was asked asynchronously to run EAS credential configuration with Apple login in the isolated worktree. Android b899c8e0 failed Gradle module version metadata, corrected; replacement decf7909 is pending. iOS simulator profile is for independent compile validation while physical signing is pending. No live JS/service rollout yet.
+
+Current handoff: [native evidence](../testing/2026-11-18-native-background-calls.md) supersedes earlier checkpoints. Backend/flags/migration deployed, public legacy/account/native identity smokes and FCM validation pass. iOS native compilation passes in simulator; physical profile update awaits owner Apple authentication (cached session expired). Final Android preview b153aa67 is being checked. No handset ringing/Answer/reboot acceptance is claimed.
+
+Owner completed the requested Apple credential/profile step. Physical iPhone preview e449609b is submitted from 1b6160b; verify outcome before another login request. Final Android b153aa67 finished (APK HTTP 200); latest iOS native code compiles in simulator c8f80317. Real handset acceptance remains pending.

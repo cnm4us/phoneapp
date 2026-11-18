@@ -92,9 +92,9 @@ Use `npm run db:status` (or `npm run db:status -- test`) to validate applied che
 
 Logical calls survive service restarts; transient WebRTC rooms do not. On shutdown/startup, unfinished account calls are retained as Failed, with bounded observed intervals. Foreground ring timeout is 60 seconds, setup timeout 45 seconds, maximum four-hour call; API cleanup runs every five seconds. No down migration is required to disable the feature: set its flag false and restart the project service while preserving all tables/history. Future data-bearing/destructive schema changes still require backup/recovery evidence.
 
-## Next planned native incoming-call schema work
+## Native incoming-call schema work
 
-[0011](plans/0011-native-background-incoming-calls.md) proposes resumable device credentials/rotation/revocation, session-to-device and winning-device call bindings, encrypted APNs/FCM registration metadata and a short-expiry transactional delivery outbox. It must preserve current browser/session paths and first-answer semantics. No new migration exists or was applied by this planning checkpoint; applied history remains 0001–0003. Select exact columns/constraints/credential lifetimes in implementation, append the next numbered migration and run clean/upgrade/recovery/grant/access tests before development application.
+[0011](plans/0011-native-background-incoming-calls.md) now implements the device/session and delivery expansion in immutable migration 0004 below; current applied history is 0001–0004. Keep the original browser/session ownership path and append a new numbered migration for further changes.
 
 ## Native calls migration 0004
 
@@ -103,3 +103,5 @@ Logical calls survive service restarts; transient WebRTC rooms do not. On shutdo
 Before development application, a private `phoneapp-before-0004.sql` single-transaction snapshot was retained under the isolated worktree's `artifacts/private/native-calls/` (600). Migration and grants applied successfully; ledger current. No destructive backfill/down migration. Disable native calling via feature flag without dropping history. Restore is a separately planned operator action; never reset development from the test harness.
 
 Refresh credentials have a fixed 90-day enrollment deadline, rotating one-hour access sessions (browser remains 12 hours). Same request UUID permits a 60-second encrypted response retry; other reuse of a spent token revokes device sessions and push binding. Device revocation does not rely on a client-supplied installation ID. Duration still requires actual media observations; a native system answer or transport keepalive is not connected/billable seconds.
+
+| 2026-11-18 | Test and development | `0004_native_devices_push.sql` | Applied; clean/upgrade/recovery and runtime grants/permissions pass | [Native evidence](testing/2026-11-18-native-background-calls.md); additive migration, private scoped pre-migration snapshot retained. |

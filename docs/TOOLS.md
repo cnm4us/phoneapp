@@ -190,7 +190,7 @@ Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcoll
 | --- | --- |
 | Secure persistent native identity | Not implemented; current account credential is memory-only. Must be available to early native handlers while locked after first unlock. |
 | Device-bound call ownership | Existing ownership uses API session IDs; adapt safely for same-device refresh and first-answer wins. |
-| APNs VoIP sender/app capability | Owner supplied `.p8`; local EC P-256 parse/sign/verify passes. Existing EAS team metadata available. Environment/type/topic, provider authorization, capability/entitlements still pending. |
+| APNs VoIP sender/app capability | Owner supplied `.p8`; local EC P-256 parse/sign/verify passes. Existing EAS team metadata available. Owner confirms Sandbox; current EAS internal/ad hoc workflow requires Production APNs access. Type/topic, provider authorization and signed capability/entitlements still pending. |
 | Android Firebase/FCM | Client config verified for project `phoneapp-9a5c4` and exact Android package. Separate FCM server send identity/API authorization still pending. |
 | Native call lifecycle | PushKit/CallKit and FCM/Telecom/services absent; current app ends calls on background. |
 | Standalone cold-start build | `preview` EAS profile exists but not exercised for this stage. Build with bundled JS so ringing/answer does not depend on Metro. |

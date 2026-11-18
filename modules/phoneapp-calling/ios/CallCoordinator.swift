@@ -98,7 +98,10 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  }
  func setRoute(_ value:String)throws->[String:Any]? {
   guard current != nil else{return nil}
-  // CallKit owns category/activation; only request an output override.
+  // CallKit owns activation. Remove WebRTC's default-speaker option when
+  // the user explicitly selects the receiver; clearing an override alone
+  // can otherwise leave a video call playing on the loudspeaker.
+  if value=="earpiece" {let audio=AVAudioSession.sharedInstance();try audio.setCategory(.playAndRecord,mode:.voiceChat,options:audio.categoryOptions.subtracting(.defaultToSpeaker))}
   try AVAudioSession.sharedInstance().overrideOutputAudioPort(value=="speaker" ? .speaker:.none)
   routePreference=value;return routeSnapshot(routeSession)
  }

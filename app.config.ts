@@ -15,6 +15,7 @@ const config: ExpoConfig = {
   },
   android: { package: 'com.bawebtech.phoneapp.poc' },
   plugins: [
+    './plugins/with-phoneapp-calling',
     'expo-dev-client',
     ['expo-build-properties', { ios: { enableSceneSupport: true } }],
     ['@config-plugins/react-native-webrtc', {

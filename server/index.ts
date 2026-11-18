@@ -4,9 +4,11 @@ import { loadConfiguration,connect } from '../database/connection';
 import { status } from '../database/migrate';
 import { AccountsStore } from './accounts-store';
 import { AccountsApi } from './accounts-api';
+import { DeviceAuth, SecretBox } from './device-auth';
+import { PushWorker,providerSender } from './push';
 
 async function main() {
-let accounts: AccountsApi | undefined;
+let accounts: AccountsApi | undefined;let push:PushWorker|undefined;
 
 const urls = (value: string | undefined) => value?.split(',').map((v) => v.trim()).filter(Boolean) ?? [];
 const turnUrls = urls(process.env.TURN_URLS);
@@ -29,7 +31,10 @@ if(process.env.ENABLE_ACCOUNT_CALLS === 'true') {
   loadConfiguration();
   const db=await connect('dev');
   try { if((await status(db)).pending.length)throw new Error('Apply database migrations before enabling account calls'); } finally {await db.end();}
-  accounts=new AccountsApi(new AccountsStore('dev'),server,()=>console.error(JSON.stringify({event:'account-operation-failed'})));
+  const store=new AccountsStore('dev');
+  const devices=process.env.ENABLE_NATIVE_CALLS==='true'?new DeviceAuth(store,new SecretBox(Buffer.from(process.env.PUSH_TOKEN_ENCRYPTION_KEY??'','hex'))):undefined;
+  accounts=new AccountsApi(store,server,()=>console.error(JSON.stringify({event:'account-operation-failed'})),devices);
+  if(devices){push=new PushWorker(store,devices.box,providerSender(process.env));push.start();}
   await accounts.start();
 }
 const port = Number(process.env.PORT ?? 8787);
@@ -40,7 +45,7 @@ server.http.listen(port, process.env.HOST ?? '127.0.0.1', () => {
 let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
   if (stopping) return;
-  stopping = true;
+  stopping = true;push?.stop();
   void Promise.resolve(accounts?.stop()).then(()=>server.close()).then(() => process.exit(0)).catch(()=>{console.error(JSON.stringify({event:"shutdown-failed"}));process.exit(1);});
 });
 

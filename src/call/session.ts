@@ -31,6 +31,7 @@ export class CallSession {
   private epoch = 0;
   private socket?: WebSocket;
   private pc?: RTCPeerConnection;
+  get nativePeerId():number|undefined{return this.pc?._pcId;}
   private clock = new ConnectedClock();
   private ice = new PendingIce<Candidate>();
   private tick?: ReturnType<typeof setInterval>;

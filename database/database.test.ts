@@ -50,7 +50,7 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       assert.deepEqual(await migrate(db,{through:'0002_transcripts_activity.sql'}), ['0002_transcripts_activity.sql']);
       const transcript=randomUUID();
       await db.query('INSERT INTO transcript_versions (id,call_id,version_number) VALUES (?,?,1)',[transcript,call]);
-      assert.deepEqual(await migrate(db), ['0003_foreground_accounts.sql']);
+      assert.deepEqual(await migrate(db), ['0003_foreground_accounts.sql','0004_native_devices_push.sql']);
       const [preserved]=await db.query('SELECT id FROM transcript_versions WHERE id=?',[transcript]);
       assert.equal(preserved.id,transcript);
       const [row] = await db.query('SELECT id FROM calls WHERE id=?', [call]);
@@ -148,14 +148,14 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       const directory = await mkdtemp(join(tmpdir(), 'phoneapp-migration-'));
       try {
         await cp(migrationDirectory, directory, { recursive: true });
-        await writeFile(join(directory, '0004_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
+        await writeFile(join(directory, '0005_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
         await assert.rejects(migrate(db, { directory }), rejected('ER_PARSE_ERROR'));
         assert.equal((await history(db)).at(-1)?.state, 'failed');
         await assert.rejects(migrate(db, { directory }), /Unfinished migration/);
         const [probe] = await db.query("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='recovery_probe'");
         assert.equal(Number(probe.n), 1, 'DDL was committed before failure');
         await resetDisposable(db);
-        assert.equal((await migrate(db)).length, 3);
+        assert.equal((await migrate(db)).length, 4);
         await seed(db);
         const [counts] = await db.query('SELECT (SELECT COUNT(*) FROM calls) AS calls, (SELECT COUNT(*) FROM transcription_jobs) AS jobs, (SELECT COUNT(*) FROM recording_assets) AS assets');
         assert.deepEqual([counts.calls, counts.jobs, counts.assets].map(Number), [0, 0, 0]);

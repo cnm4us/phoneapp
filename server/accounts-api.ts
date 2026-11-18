@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AccountsStore, Binding } from './accounts-store';
 import { ApiError } from './accounts-store';
 import type { Invitation } from '../shared/protocol';
+import { DeviceAuth,APP_ID,type DeviceInput } from './device-auth';
 
 export interface RoomBridge {
   privateInvitation(callId: string, bindings: Binding[], sessionId: string): Invitation;
@@ -18,7 +19,7 @@ export class AccountsApi {
   private timer?: ReturnType<typeof setInterval>;
   private sweeping = false;
   private stopped = false;
-  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {}) {}
+  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth) {}
   async start(): Promise<void> {
     // This POC has one signaling process. Old transient rooms cannot survive restart.
     for (const id of await this.store.activeIds()) await this.store.endInternal(id,'failed');
@@ -69,13 +70,17 @@ export class AccountsApi {
         const now = this.store.now();
         if (now - this.enrollmentWindow >= 60_000) { this.enrollmentWindow=now; this.enrollmentAttempts=0; }
         if (++this.enrollmentAttempts > 30) throw new ApiError(429,'Too many enrollment attempts. Try again in a minute.');
-        const body = await this.body(req,['code']);
+        const body = await this.body(req,['code','device']);
+        let device:DeviceInput|undefined;
+        if(body.device!==undefined){if(!this.devices)throw new ApiError(503,'Native device enrollment is not enabled.');const d=body.device;if(!object(d)||Object.keys(d).some(k=>!['installationId','platform','appIdentifier'].includes(k))||!uuid(d.installationId)||!['ios','android'].includes(String(d.platform))||d.appIdentifier!==APP_ID)throw new ApiError(400,'Invalid device enrollment.');device=d as DeviceInput;}
         if (!token(body.code)) throw new ApiError(400,'Paste the complete enrollment code.');
-        this.json(res,200,await this.store.enroll(body.code)); return;
+        this.json(res,200,await this.store.enroll(body.code,device)); return;
       }
+      if(req.method==='POST'&&req.url==='/api/device/refresh'){const b=await this.body(req,['deviceId','refreshToken','requestKey']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!uuid(b.deviceId)||!token(b.refreshToken)||!uuid(b.requestKey))throw new ApiError(400,'Invalid device refresh.');this.json(res,200,await this.devices.refresh(b.deviceId,b.refreshToken,b.requestKey));return;}
       const bearer = req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
       if (!bearer) throw new ApiError(401,'Sign in with an enrollment code.');
       const actor = await this.store.actor(bearer);
+      if(req.method==='POST'&&req.url==='/api/device/push'){const b=await this.body(req,['provider','token','environment']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!['apns_voip','fcm'].includes(String(b.provider))||typeof b.token!=='string'||b.token.length<16||b.token.length>4096||!/^[A-Za-z0-9_:.-]+$/.test(b.token)||!['production','sandbox'].includes(String(b.environment)))throw new ApiError(400,'Invalid push registration.');await this.devices.register(actor,String(b.provider),b.token,String(b.environment));this.json(res,200,{ok:true});return;}
       if (req.method === 'GET' && req.url === '/api/dashboard') { this.json(res,200,await this.store.dashboard(actor)); return; }
       if (req.method === 'POST' && req.url === '/api/logout') {
         await this.body(req,[]);
@@ -93,12 +98,12 @@ export class AccountsApi {
       if (action === 'media') {
         await this.body(req,[]);
         const bindings=await this.store.bindings(actor,id);
-        this.json(res,200,{ invitation:this.bridge.privateInvitation(id,bindings,actor.sessionId) }); return;
+        this.json(res,200,{ invitation:this.bridge.privateInvitation(id,bindings,actor.deviceId??actor.sessionId) }); return;
       }
       if (action === 'presence') {
-        const body=await this.body(req,['connected','eventKey']);
+        const body=await this.body(req,['connected','eventKey','source']);
         if (typeof body.connected !== 'boolean' || typeof body.eventKey !== 'string' || !/^[A-Za-z0-9_-]{1,60}$/.test(body.eventKey)) throw new ApiError(400,'Media state and event key required.');
-        await this.store.report(actor,id,body.connected,body.eventKey);
+        await this.store.report(actor,id,body.connected,body.eventKey,body.source==='native-rtp'&&actor.deviceId?'native-rtp':'client-media');
       } else {
         await this.body(req,[]);
         await this.store.action(actor,id,action as 'answer'|'decline'|'cancel'|'end');

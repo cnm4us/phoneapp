@@ -1,0 +1,1 @@
+{"platforms":["apple","android"],"apple":{"modules":["PhoneappCallingModule"],"appDelegateSubscribers":["PhoneappCallingDelegate"]},"android":{"modules":["com.bawebtech.phoneapp.calling.PhoneappCallingModule"]}}

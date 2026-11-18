@@ -10,6 +10,7 @@ import { QualityControls } from './src/call/QualityControls';
 import { CallVideoStage } from './src/call/CallVideoStage';
 import { SettingsPanel } from './src/call/SettingsPanel';
 import { AudioOutputControls } from './src/call/AudioOutputControls';
+import { nativeAccounts,watchNativeMedia,calling } from './src/accounts/native';
 import { AccountClient } from './src/accounts/client';
 import { AccountPanel } from './src/accounts/AccountPanel';
 import { IncomingAlerts } from './src/call/incoming-alert';
@@ -29,7 +30,7 @@ function CallScreen() {
   const [base, setBase] = useState(process.env.EXPO_PUBLIC_SIGNALING_URL || 'https://phoneapp.bawebtech.com');
   const [incomingAlerts] = useState(()=>new IncomingAlerts(nativeIncomingAlertDriver()));
   const [alertState,setAlertState]=useState(incomingAlerts.state);
-  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: async invite => { await incomingAlerts.silence(); await session.join(base,'',true,false,invite); }, end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error }));
+  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: async (invite,id) => { await incomingAlerts.silence(); await session.join(base,'',AppState.currentState==='active',false,invite); }, end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error },nativeAccounts()));
   const [accountState,setAccountState]=useState(accounts.state);
   const [legacy,setLegacy]=useState(false);
   const [key, setKey] = useState('');
@@ -44,17 +45,19 @@ function CallScreen() {
   const active = !['idle', 'ended', 'error'].includes(call.phase);
   useEffect(() => {
     const observeAlert=()=>incomingAlerts.observe({
-      callId: accounts.state.account && !accounts.state.current ? accounts.state.dashboard?.calls.find(row=>row.canAnswer)?.id : undefined,
+      callId: !calling && accounts.state.account && !accounts.state.current ? accounts.state.dashboard?.calls.find(row=>row.canAnswer)?.id : undefined,
       updatedAt:accounts.state.updatedAt,foreground:AppState.currentState==='active',
       mediaActive:!['idle','ended','error'].includes(session.state.phase),busy:accounts.state.busy,
     });
     const alertSubscription=incomingAlerts.subscribe(setAlertState);
-    const unsubscribe = session.subscribe(state=>{setCall(state);accounts.mediaChanged(state.phase);observeAlert();});
-    const accountSubscription=accounts.subscribe(state=>{setAccountState(state);observeAlert();});
+    const unsubscribe = session.subscribe(state=>{setCall(state);accounts.mediaChanged(state.phase);watchNativeMedia(accounts.state.current?.id,session.nativePeerId,state.phase==='connected');observeAlert();});
+    const accountSubscription=accounts.subscribe(state=>{setAccountState(state);watchNativeMedia(state.current?.id,session.nativePeerId,session.state.phase==='connected');observeAlert();});
+    void accounts.restore();
     const listener = AppState.addEventListener('change', (state) => {
       observeAlert();
       // iOS permission prompts briefly make the app inactive; only real backgrounding ends a call.
-      if (state === 'background' && !['idle', 'ended', 'error'].includes(session.state.phase)) session.end('This experiment runs in the foreground. Return to the app and start a new call.');
+      if(state==='background'&&accounts.native&&accounts.state.current){if(session.state.cameraEnabled)session.toggleCamera();}
+      if (state === 'background' && !(accounts.native&&accounts.state.current) && !['idle', 'ended', 'error'].includes(session.state.phase)) session.end('This experiment runs in the foreground. Return to the app and start a new call.');
     });
     return () => { unsubscribe(); accountSubscription(); alertSubscription(); incomingAlerts.dispose(); accounts.dispose(); listener.remove(); session.end(); };
   }, [session,accounts,incomingAlerts]);

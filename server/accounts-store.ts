@@ -4,13 +4,14 @@ import type { Account, CallRecord, Dashboard, Enrollment, CallAction } from '../
 import { terminalCall } from '../shared/accounts';
 import type { Target } from '../database/connection';
 import { connect } from '../database/connection';
+import { enrollDevice, type DeviceInput } from './device-auth';
 
 export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
 export const hash = (value: string): string => createHash('sha256').update(value).digest('hex');
 export const utc = (time: number): string => new Date(time).toISOString().replace('T', ' ').replace('Z', '');
 const millis = (value: string | null): number => value ? Date.parse(value.replace(' ', 'T') + 'Z') : 0;
 const iso = (value: string | null): string | null => value ? new Date(millis(value)).toISOString() : null;
-export type Actor = Account & { sessionId: string };
+export type Actor = Account & { sessionId: string; deviceId?: string | null };
 type Row = Record<string, any>;
 export type Binding = { userId: string; sessionId: string };
 
@@ -22,7 +23,7 @@ export class AccountsStore {
     catch (error) { await db.rollback(); throw error; }
     finally { await db.end(); }
   }
-  async enroll(code: string): Promise<Enrollment> {
+  async enroll(code: string, device?:DeviceInput): Promise<Enrollment & {deviceId?:string;refreshToken?:string}> {
     return this.transaction(async db => {
       const [row] = await db.query(`SELECT e.*,u.display_name,u.role,u.auth_issuer FROM enrollment_codes e JOIN users u ON u.id=e.user_id WHERE e.token_hash=? FOR UPDATE`, [hash(code)]);
       if (!row || row.redeemed_at || row.revoked_at || millis(row.expires_at) <= this.now() || (row.auth_issuer && row.auth_issuer !== 'phoneapp:synthetic-enrollment')) throw new ApiError(401, 'Enrollment code is invalid, used, or expired. Ask the owner for a fresh code.');
@@ -30,13 +31,15 @@ export class AccountsStore {
       const expires = this.now() + 12 * 60 * 60_000;
       await db.query("UPDATE users SET status='active',auth_issuer='phoneapp:synthetic-enrollment',auth_subject=id WHERE id=?", [row.user_id]);
       await db.query('UPDATE enrollment_codes SET redeemed_at=? WHERE id=?', [utc(this.now()), row.id]);
-      await db.query('INSERT INTO auth_sessions (id,user_id,token_hash,expires_at) VALUES (?,?,?,?)', [randomUUID(), row.user_id, hash(token), utc(expires)]);
-      return { token, expiresAt: new Date(expires).toISOString(), account: { id: row.user_id, displayName: row.display_name, role: row.role } };
+      const sessionId=randomUUID();
+      await db.query('INSERT INTO auth_sessions (id,user_id,token_hash,expires_at) VALUES (?,?,?,?)', [sessionId, row.user_id, hash(token), utc(expires)]);
+      const native=device?await enrollDevice(db,row.user_id,sessionId,device,this.now()):{};
+      return { ...native, token, expiresAt: new Date(expires).toISOString(), account: { id: row.user_id, displayName: row.display_name, role: row.role } };
     });
   }
   async actor(token: string): Promise<Actor> {
     return this.transaction(async db => {
-      const [row] = await db.query(`SELECT s.id AS sessionId,u.id,u.display_name AS displayName,u.role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>? AND u.status='active'`, [hash(token), utc(this.now())]);
+      const [row] = await db.query(`SELECT s.id AS sessionId,s.device_id AS deviceId,u.id,u.display_name AS displayName,u.role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>? AND u.status='active' AND (s.device_id IS NULL OR EXISTS(SELECT 1 FROM devices d WHERE d.id=s.device_id AND d.revoked_at IS NULL))`, [hash(token), utc(this.now())]);
       if (!row) throw new ApiError(401, 'Sign in again with a fresh enrollment code.');
       return row;
     });
@@ -46,7 +49,7 @@ export class AccountsStore {
     return Boolean(row);
   }
   private async call(db: Connection, id: string): Promise<Row> {
-    const [row] = await db.query('SELECT c.*,r.caller_session_id,r.answered_session_id,r.ring_expires_at,r.call_expires_at,r.segment_started_at,r.observed_connected_ms FROM calls c JOIN call_runtime r ON r.call_id=c.id WHERE c.id=? FOR UPDATE', [id]);
+    const [row] = await db.query('SELECT c.*,r.caller_session_id,r.answered_session_id,r.caller_device_id,r.answered_device_id,r.ring_expires_at,r.call_expires_at,r.segment_started_at,r.observed_connected_ms FROM calls c JOIN call_runtime r ON r.call_id=c.id WHERE c.id=? FOR UPDATE', [id]);
     if (!row) throw new ApiError(404, 'Call not found.');
     return row;
   }
@@ -64,7 +67,7 @@ export class AccountsStore {
   async dashboard(actor: Actor): Promise<Dashboard> {
     return this.transaction(async db => {
       const patients = await db.query(`SELECT p.id,COALESCE(p.display_name,p.external_identifier,p.id) AS displayName,EXISTS(SELECT 1 FROM patient_accounts a JOIN users u ON u.id=a.user_id WHERE a.patient_id=p.id AND a.relationship='self' AND a.revoked_at IS NULL AND u.status='active' AND u.role='patient') AS enrolled FROM patients p JOIN patient_assignments a ON a.patient_id=p.id WHERE a.staff_user_id=? AND a.revoked_at IS NULL AND p.archived_at IS NULL ORDER BY p.display_name,p.id`, [actor.id]);
-      const rows = await db.query(`SELECT c.*,p.display_name AS patient_name,u.display_name AS caller_name,r.caller_session_id,r.answered_session_id FROM calls c JOIN call_runtime r ON r.call_id=c.id JOIN patients p ON p.id=c.patient_id JOIN users u ON u.id=c.initiated_by_user_id JOIN call_participants cp ON cp.call_id=c.id AND cp.user_id=? ORDER BY c.created_at DESC,c.id DESC LIMIT 100`, [actor.id]);
+      const rows = await db.query(`SELECT c.*,p.display_name AS patient_name,u.display_name AS caller_name,r.caller_session_id,r.answered_session_id,r.caller_device_id,r.answered_device_id FROM calls c JOIN call_runtime r ON r.call_id=c.id JOIN patients p ON p.id=c.patient_id JOIN users u ON u.id=c.initiated_by_user_id JOIN call_participants cp ON cp.call_id=c.id AND cp.user_id=? ORDER BY c.created_at DESC,c.id DESC LIMIT 100`, [actor.id]);
       const calls: CallRecord[] = [];
       for (const row of rows) if (await this.permitted(db, actor.id, row.patient_id)) calls.push(this.view(row, actor));
       return { account: { id: actor.id, displayName: actor.displayName, role: actor.role }, patients: ['practitioner','rn','ma','admin'].includes(actor.role) ? patients.map((p: Row) => ({ ...p, enrolled: Boolean(p.enrolled) })) : [], calls };
@@ -72,8 +75,9 @@ export class AccountsStore {
   }
   private view(row: Row, actor: Actor): CallRecord {
     const outgoing = row.initiated_by_user_id === actor.id;
-    return { id: row.id, patientId: row.patient_id, patientName: row.patient_name || 'Patient', callerName: row.caller_name || 'Care team', direction: outgoing ? 'outgoing' : 'incoming', state: row.state, createdAt: iso(row.created_at)!, endedAt: iso(row.ended_at), observedSeconds: row.observed_connected_seconds, transcriptionStatus: 'off', canAnswer: !outgoing && row.state === 'ringing', ownsMedia: actor.sessionId === (outgoing ? row.caller_session_id : row.answered_session_id) };
+    return { id: row.id, patientId: row.patient_id, patientName: row.patient_name || 'Patient', callerName: row.caller_name || 'Care team', direction: outgoing ? 'outgoing' : 'incoming', state: row.state, createdAt: iso(row.created_at)!, endedAt: iso(row.ended_at), observedSeconds: row.observed_connected_seconds, transcriptionStatus: 'off', canAnswer: !outgoing && row.state === 'ringing', ownsMedia: this.owns(actor,row,outgoing) };
   }
+  private owns(actor:Actor,row:Row,caller:boolean):boolean { const device=caller?row.caller_device_id:row.answered_device_id;return device?actor.deviceId===device:actor.sessionId===(caller?row.caller_session_id:row.answered_session_id); }
   async create(actor: Actor, patientId: string, requestKey: string): Promise<string> {
     return this.transaction(async db => {
       // Serialize concurrent starts by this provider; duplicate request returns its original call.
@@ -90,12 +94,13 @@ export class AccountsStore {
       if(patientBusy)throw new ApiError(409,'Patient already has an active call.');
       const id = randomUUID();
       await db.query("INSERT INTO calls (id,patient_id,initiated_by_user_id,client_request_key,state,created_at) VALUES (?,?,?,?,'ringing',?)", [id, patientId, actor.id, requestKey, utc(this.now())]);
-      await db.query('INSERT INTO call_runtime (call_id,caller_session_id,ring_expires_at,call_expires_at) VALUES (?,?,?,?)', [id, actor.sessionId, utc(this.now() + 60_000), utc(this.now() + 4 * 60 * 60_000)]);
+      await db.query('INSERT INTO call_runtime (call_id,caller_session_id,caller_device_id,ring_expires_at,call_expires_at) VALUES (?,?,?,?,?)', [id, actor.sessionId, actor.deviceId??null, utc(this.now() + 60_000), utc(this.now() + 4 * 60 * 60_000)]);
       for (const user of [actor, { id: targets[0].id, role: targets[0].role, displayName: targets[0].display_name }]) {
         const participant = randomUUID();
         await db.query('INSERT INTO call_participants (id,call_id,user_id,role_snapshot,label_snapshot) VALUES (?,?,?,?,?)', [participant, id, user.id, user.role, user.displayName]);
         await db.query('INSERT INTO call_presence (call_id,participant_id) VALUES (?,?)', [id, participant]);
       }
+      await db.query("INSERT INTO push_deliveries (id,call_id,device_id,available_at,expires_at) SELECT UUID(),?,id,?,? FROM devices WHERE user_id=? AND revoked_at IS NULL AND push_token_hash IS NOT NULL",[id,utc(this.now()),utc(this.now()+60_000),targets[0].id]);
       await this.event(db, id, null, 'created', 'ringing');
       return id;
     });
@@ -107,12 +112,12 @@ export class AccountsStore {
       const caller = row.initiated_by_user_id === actor.id;
       if ((action === 'answer' || action === 'decline') && caller || action === 'cancel' && !caller) throw new ApiError(403, 'This call action belongs to the other participant.');
       if (terminalCall(row.state)) return;
-      if (action === 'end' && row.state !== 'ringing' && actor.sessionId !== (caller ? row.caller_session_id : row.answered_session_id)) throw new ApiError(409,'Call is active on another device.');
+      if (action === 'end' && row.state !== 'ringing' && !this.owns(actor,row,caller)) throw new ApiError(409,'Call is active on another device.');
       if (row.state === 'ringing' && millis(row.ring_expires_at) <= this.now()) { await this.finish(db, row, 'missed'); return; }
       if (action === 'answer') {
-        if (row.state !== 'ringing') { if (row.answered_session_id !== actor.sessionId) throw new ApiError(409, 'This call was answered on another device.'); return; }
+        if (row.state !== 'ringing') { if (!this.owns(actor,row,false)) throw new ApiError(409, 'This call was answered on another device.'); return; }
         await db.query("UPDATE calls SET state='accepted',answered_at=? WHERE id=?", [utc(this.now()), id]);
-        await db.query('UPDATE call_runtime SET answered_session_id=? WHERE call_id=?', [actor.sessionId, id]);
+        await db.query('UPDATE call_runtime SET answered_session_id=?,answered_device_id=? WHERE call_id=?', [actor.sessionId, actor.deviceId??null, id]);
       } else {
         if (action === 'decline' && row.state !== 'ringing') throw new ApiError(409, 'Call is already answered.');
         if (action === 'cancel' && row.state !== 'ringing') throw new ApiError(409, 'Use End for an answered call.');
@@ -143,8 +148,8 @@ export class AccountsStore {
       const row = await this.call(db, id);
       await this.participant(db, actor, row);
       if (!['accepted','connected'].includes(row.state) || millis(row.call_expires_at) <= this.now()) throw new ApiError(409, 'Call is not ready for media.');
-      if (![row.caller_session_id,row.answered_session_id].includes(actor.sessionId)) throw new ApiError(409, 'This call belongs to another device.');
-      const rows = await db.query('SELECT s.id AS sessionId,s.user_id AS userId FROM auth_sessions s WHERE s.id IN (?,?) AND s.revoked_at IS NULL AND s.expires_at>?', [row.caller_session_id,row.answered_session_id,utc(this.now())]);
+      if (!this.owns(actor,row,row.initiated_by_user_id===actor.id)) throw new ApiError(409, 'This call belongs to another device.');
+      const rows = await db.query('SELECT COALESCE(s.device_id,s.id) AS sessionId,s.user_id AS userId FROM auth_sessions s WHERE s.id IN (?,?) AND s.revoked_at IS NULL AND s.expires_at>?', [row.caller_session_id,row.answered_session_id,utc(this.now())]);
       if (rows.length !== 2) throw new ApiError(409, 'A participant needs to sign in again.');
       for (const binding of rows) if (!await this.permitted(db, binding.userId, row.patient_id)) throw new ApiError(403, 'A participant no longer has access.');
       return rows;
@@ -153,21 +158,21 @@ export class AccountsStore {
   async authorizeMedia(sessionId: string, id: string): Promise<boolean> {
     try {
       const actor = await this.transaction(async db => {
-        const [row] = await db.query("SELECT s.id AS sessionId,u.id,u.display_name AS displayName,u.role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND s.revoked_at IS NULL AND s.expires_at>? AND u.status='active'", [sessionId,utc(this.now())]);
+        const [row] = await db.query("SELECT s.id AS sessionId,s.device_id AS deviceId,u.id,u.display_name AS displayName,u.role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE (s.id=? OR s.device_id=?) AND s.revoked_at IS NULL AND s.expires_at>? AND u.status='active' AND (s.device_id IS NULL OR EXISTS(SELECT 1 FROM devices d WHERE d.id=s.device_id AND d.revoked_at IS NULL))", [sessionId,sessionId,utc(this.now())]);
         if (!row) throw new ApiError(401, 'Session ended.');
         return row as Actor;
       });
       await this.bindings(actor, id); return true;
     } catch { return false; }
   }
-  async report(actor: Actor, id: string, connected: boolean, key: string): Promise<void> {
+  async report(actor: Actor, id: string, connected: boolean, key: string, source='client-media'): Promise<void> {
     await this.transaction(async db => {
       const row = await this.call(db, id);
       const participant = await this.participant(db, actor, row);
       if (terminalCall(row.state)) return;
       const expected = row.initiated_by_user_id === actor.id ? row.caller_session_id : row.answered_session_id;
-      if (expected !== actor.sessionId || !['accepted','connected'].includes(row.state)) throw new ApiError(409, 'Call is not active on this device.');
-      if (!await this.event(db, id, participant.id, `${actor.sessionId}:${key}`, connected ? 'client-media-connected' : 'client-media-disconnected')) return;
+      if (!this.owns(actor,row,row.initiated_by_user_id===actor.id) || !['accepted','connected'].includes(row.state)) throw new ApiError(409, 'Call is not active on this device.');
+      if (!await this.event(db, id, participant.id, `${actor.sessionId}:${key}`, `${source}-${connected?'connected':'disconnected'}`)) return;
       await this.accrue(db, row);
       await db.query('UPDATE call_presence SET connected=?,last_report_at=? WHERE call_id=? AND participant_id=?', [connected,utc(this.now()),id,participant.id]);
       const [{ n }] = await db.query('SELECT COUNT(*) AS n FROM call_presence WHERE call_id=? AND connected=1 AND last_report_at>?', [id,utc(this.now() - 20_000)]);
@@ -200,7 +205,8 @@ export class AccountsStore {
   }
   async logout(actor: Actor): Promise<string[]> {
     const ids = await this.transaction(async db => {
-      await db.query('UPDATE auth_sessions SET revoked_at=? WHERE id=?', [utc(this.now()),actor.sessionId]);
+      if(actor.deviceId){await db.query('UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?',[utc(this.now()),actor.deviceId]);await db.query('UPDATE auth_sessions SET revoked_at=? WHERE device_id=?',[utc(this.now()),actor.deviceId]);}
+      else await db.query('UPDATE auth_sessions SET revoked_at=? WHERE id=?', [utc(this.now()),actor.sessionId]);
       return (await db.query("SELECT c.id FROM calls c JOIN call_runtime r ON r.call_id=c.id WHERE c.state IN ('ringing','accepted','connected') AND (r.caller_session_id=? OR r.answered_session_id=?)", [actor.sessionId,actor.sessionId])).map((r: Row) => r.id) as string[];
     });
     for (const id of ids) await this.endInternal(id,'failed');

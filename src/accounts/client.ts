@@ -3,7 +3,11 @@ import { terminalCall } from '../../shared/accounts';
 import type { Invitation } from '../../shared/protocol';
 
 export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string; updatedAt?: number };
-export type MediaAdapter = { join(invitation: Invitation): Promise<void>; end(): void; phase(): string; error?(): string | undefined };
+export type MediaAdapter = { join(invitation: Invitation,callId?:string): Promise<void>; end(): void; phase(): string; error?(): string | undefined };
+export interface NativeAccounts {
+ enroll(code:string):Promise<Enrollment>;restore():Promise<Partial<Enrollment>>;request(path:string,body?:unknown):Promise<unknown>;
+ sync(calls:CallRecord[]):Promise<void>;actions():Promise<{id:string;action:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
+}
 export class AccountClient {
   state: AccountState = { busy:false,error:'' };
   private token='';
@@ -19,10 +23,11 @@ export class AccountClient {
   private previousConnected=false;
   private mediaFailure='';
   private pendingDial?:{patientId:string;key:string};
-  constructor(readonly origin:string,private media:MediaAdapter) {}
+  constructor(readonly origin:string,private media:MediaAdapter,readonly native?:NativeAccounts) {}
   subscribe(listener:(state:AccountState)=>void):()=>void { this.listeners.add(listener); listener(this.state); return ()=>this.listeners.delete(listener); }
   private update(patch:Partial<AccountState>):void { this.state={...this.state,...patch}; for(const listener of this.listeners)listener(this.state); }
   private async request<T>(path:string,body?:unknown):Promise<T> {
+    if(this.native){try{return await this.native.request(path,body) as T;}catch(error){if((error as {code?:string})?.code==='UNAUTHORIZED')this.clear();throw error;}}
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8_000);
     const credential=this.token;
     try {
@@ -42,13 +47,12 @@ export class AccountClient {
   }
   async signIn(code:string):Promise<void> {
     await this.run(async()=>{
-      const result=await this.request<Enrollment>('/enroll',{code:code.trim()});
-      this.token=result.token;this.epoch++;this.update({account:result.account});
-      await this.refresh();
-      this.timer=setInterval(()=>void this.refresh(),2_000);
-      this.reporting=setInterval(()=>{if(this.currentId && this.media.phase()==='connected')void this.report(true);},8_000);
+      const result=this.native?await this.native.enroll(code.trim()):await this.request<Enrollment>('/enroll',{code:code.trim()});
+      await this.adopt(result);
     });
   }
+  private async adopt(result:Enrollment):Promise<void>{this.token=result.token;this.epoch++;this.update({account:result.account});await this.refresh();clearInterval(this.timer);clearInterval(this.reporting);this.timer=setInterval(()=>void this.refresh(),2_000);if(!this.native)this.reporting=setInterval(()=>{if(this.currentId&&this.media.phase()==='connected')void this.report(true);},8_000);}
+  async restore():Promise<void>{if(!this.native)return;await this.run(async()=>{const result=await this.native!.restore();if(result.token&&result.account&&result.expiresAt)await this.adopt(result as Enrollment);});}
   async signOut():Promise<void> {
     await this.run(async()=>{try{if(this.currentId)await this.hangup();await this.request('/logout',{});}finally{this.clear();}});
   }
@@ -62,8 +66,11 @@ export class AccountClient {
     if(!this.token || this.polling)return;
     this.polling=true;const epoch=this.epoch,initialCurrent=this.currentId;
     try{
+      if(this.native){for(const action of await this.native.actions()){if(action.action==='answer')this.currentId=action.id;if(action.action==='end'&&this.currentId===action.id){this.currentId='';this.joinedId='';this.media.end();}}}
       const dashboard=await this.request<Dashboard>('/dashboard');
-      if(epoch!==this.epoch || initialCurrent!==this.currentId)return;
+      if(this.native&&!this.currentId){const resumed=dashboard.calls.find(c=>c.ownsMedia&&['accepted','connected'].includes(c.state));if(resumed)this.currentId=resumed.id;}
+      if(this.native)await this.native.sync(dashboard.calls);
+      if(epoch!==this.epoch || (initialCurrent!==this.currentId&&!this.native))return;
       let current=dashboard.calls.find(call=>call.id===this.currentId);
       if(this.currentId && (!current || terminalCall(current.state))){this.currentId='';this.joinedId='';this.media.end();current=undefined;}
       this.update({dashboard,current,error:this.mediaFailure,updatedAt:performance.now()});
@@ -73,7 +80,7 @@ export class AccountClient {
           const result=await this.request<MediaInvitation>(`/calls/${current.id}/media`,{});
           if(epoch!==this.epoch || this.currentId!==current.id)return;
           this.joinedId=current.id;this.previousConnected=false;
-          await this.media.join(result.invitation);
+          await this.media.join(result.invitation,current.id);
           if(epoch===this.epoch && ['ended','error'].includes(this.media.phase()))await this.hangup();
         }finally{this.joining=false;}
       }
@@ -90,7 +97,9 @@ export class AccountClient {
   }
   async act(call:CallRecord,action:CallAction):Promise<void> {
     await this.run(async()=>{
+      if(action==='answer'&&this.native){await this.native.answer(call.id);return;}
       await this.request(`/calls/${call.id}/${action}`,{});
+      if(action!=='answer')await this.native?.end(call.id);
       if(action==='answer'){this.mediaFailure='';this.currentId=call.id;}
       await this.refresh();
     });
@@ -99,6 +108,7 @@ export class AccountClient {
     const id=this.currentId,mediaError=this.media.error?.() || '';
     if(mediaError)this.mediaFailure=mediaError;
     this.currentId='';this.joinedId='';this.media.end();this.update({current:undefined,...(mediaError?{error:mediaError}:{})});
+    if(id)await this.native?.end(id);
     if(!id || !this.token)return;
     try{await this.request(`/calls/${id}/end`,{});await this.refresh();}
     catch(error){this.update({error:error instanceof Error?error.message:'Call ended locally; could not update history yet.'});}
@@ -110,6 +120,7 @@ export class AccountClient {
     if(connected!==this.previousConnected){this.previousConnected=connected;void this.report(connected);}
   }
   private async report(connected:boolean):Promise<void> {
+    if(this.native)return;
     const id=this.currentId;if(!id || !this.token)return;
     try{await this.request(`/calls/${id}/presence`,{connected,eventKey:`state-${++this.counter}`});}
     catch(error){this.update({error:error instanceof Error?error.message:'Media state report failed.'});}

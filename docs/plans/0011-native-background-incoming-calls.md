@@ -1,6 +1,6 @@
 # 0011 Native incoming calls while backgrounded or not running
 
-Status: prepared implementation plan; no runtime changes started. Updated: 2026-11-18.
+Status: implementation in progress in isolated `/home/ubuntu/phoneapp-stage11`; no live rollout yet. Updated: 2026-11-18.
 
 ## Outcome and scope
 
@@ -120,3 +120,7 @@ Use additive migrations and feature flags; back up/rehearse any data-bearing des
 Next implementation increment is secure resumable device identity plus backend registration/delivery contracts, then iPhone delivery/native call proof, then Android parity. Resolve Apple/Firebase sender setup in parallel with independent code. This plan is a concrete next-stage artifact, not evidence that background ringing is implemented or a request to create unrelated services.
 
 Primary references: [PushKit native incoming handling](https://developer.apple.com/documentation/pushkit/responding-to-voip-notifications-from-pushkit), [iOS after-first-unlock Keychain](https://developer.apple.com/documentation/security/ksecattraccessibleafterfirstunlockthisdeviceonly), [Android Keystore](https://developer.android.com/privacy-and-security/keystore), [Core-Telecom and audio ownership](https://developer.android.com/develop/connectivity/telecom/voip-app/telecom), [FCM authenticated sending](https://firebase.google.com/docs/cloud-messaging/send/v1-api), [Android stopped-state behavior](https://developer.android.com/about/versions/15/behavior-changes-all#stopped-state).
+
+## Implementation checkpoint
+
+Owner authorized implementation. Added migration 0004 (not yet applied to development), device-bound enrollment/refresh with encrypted idempotent retry and replay revocation, stable media ownership, encrypted provider registration, transactional delivery queue and APNs/FCM senders. Added native Keychain/Keystore identity, early PushKit/CallKit, Android FCM/self-managed Telecom, native RTP observation and conditional native client integration. Browser/legacy remains supported. Native prebuild, autolinking, JS exports, type check, 58 unit cases, DB clean/upgrade/recovery, account/browser-media and six native server scenarios pass. Native compilation/device tests and live rollout remain pending. Build archive contains Firebase client config but excludes server credentials. Current native and provider behavior must not be marked accepted before real builds/devices.

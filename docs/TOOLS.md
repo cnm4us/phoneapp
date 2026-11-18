@@ -181,3 +181,19 @@ Historical 0009 owner handoff: `artifacts/private/enrollment-1794963771095.txt`,
 Current builds from cb10b68: Android 352e0a90-4961-4615-b594-b4a73ca0f911 and iOS 43047d0d-f5aa-4f5c-a73d-71fcceaf8e5c both finished with native resource/compilation evidence. Keep complete `eas build:view <id> --json` output/log URLs in ignored artifacts/private, not chat/Git; print only ID/status/error/installation metadata. Verified JS/source has now been applied to the canonical checkout between calls; the temporary build worktree can be removed after private logs/metadata are retained. Fresh unused owner code file: `artifacts/private/enrollment-1794987203459.txt` (600). No local Xcode/Android compiler is established; EAS compilation and physical listening are separate gates.
 
 Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/43047d0d-f5aa-4f5c-a73d-71fcceaf8e5c), [Android APK](https://expo.dev/artifacts/eas/sJvPjqXqWi3WF4YWFrzquMV1_WkOXp_xDmKTn-4O7kw.apk) (HTTP 200). QR images: ignored `artifacts/public/ios-install-qr.png` and `artifacts/public/android-install-qr.png`, regenerated for these exact builds. Private native build JSON/logs are retained under `artifacts/private/ringtone/` (700/600). Owner codes for the new app launch: `artifacts/private/enrollment-1794987203459.txt` (600), fresh/unused at handoff; generate more with `accounts:enroll` after use/expiry. New native build is required for sound, JS reload alone cannot add the methods. Settings → Incoming calls has device-persisted Ringtone/Vibration switches, both default On. Handset listening/haptics remain owner-operated acceptance.
+
+## Native incoming-call readiness (0011 — planning)
+
+[Prepared plan 0011](plans/0011-native-background-incoming-calls.md) is the next handoff. Existing EAS signing/profiles and Apple Developer account remain available; this does not prove APNs VoIP capability/sender access. Inspected only key names in project `.env.server`, `.env.database` and process environment: no APNs/PushKit/FCM/Firebase configuration keys found. Root `google-services.json` / `GoogleService-Info.plist` absent. Remote Apple/EAS keys and any owner Firebase project were not inspected/created; verify/reuse before duplication. No push send, key generation, provider setup, schema change or build occurred.
+
+| Prerequisite | State / next verification |
+| --- | --- |
+| Secure persistent native identity | Not implemented; current account credential is memory-only. Must be available to early native handlers while locked after first unlock. |
+| Device-bound call ownership | Existing ownership uses API session IDs; adapt safely for same-device refresh and first-answer wins. |
+| APNs VoIP sender/app capability | Not configured/verified locally; verify app ID, sender key/team/key ID, environment/topic and native entitlement setup. |
+| Android Firebase/FCM | Project/client config/server sender identity not verified; reuse or create selected project when implementation needs delivery testing. |
+| Native call lifecycle | PushKit/CallKit and FCM/Telecom/services absent; current app ends calls on background. |
+| Standalone cold-start build | `preview` EAS profile exists but not exercised for this stage. Build with bundled JS so ringing/answer does not depend on Metro. |
+| Hardware verification | Need actual models/OS and permission/network/reboot states; this session cannot control the phones. |
+
+Keep sender credentials backend-only. Android Firebase client build configuration is distinct from server service-account secrets; review Git/EAS packaging explicitly when implemented. No runnable push-registration/send commands exist yet; do not present proposed names as available tools.

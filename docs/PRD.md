@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 0.7 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.8 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -9,6 +9,8 @@ Capture the small increments of care-team work that are easily missed during chr
 The immediate deliverable is a WebRTC experiment using the owner's iPhone and his wife's Android phone. The full care-management product will be developed through separate, testable implementation plans.
 
 Implementation checkpoint: [0008](plans/0008-database-foundation.md) established MariaDB persistence; [0009](plans/0009-authenticated-foreground-calls.md) now implements synthetic account enrollment, server-assigned provider/patient screens, assigned directory, patient-addressed foreground App Audio/Video and shared durable call history. This implements portions of PAT-04, TEAM-02, COM-10 and REP-03 under [0007](plans/0007-provider-patient-calls-transcripts.md). Native locked/background ringing, production identity/secure session persistence, consent/media capture/playback/transcription and full time review/export remain pending. Recording/transcript is Off. [0010](plans/0010-foreground-ringtone.md) adds foreground ringtone/vibration and an incoming prompt above settings; updated native binaries are available, with physical sound/haptic acceptance pending.
+
+Next-stage planning: [0011](plans/0011-native-background-incoming-calls.md) concretizes background/locked/non-running incoming calls under PAT-04 and COM-10–11: secure resumable device enrollment, APNs/FCM registration/delivery, native call UI/audio ownership and bundled-JS cold-start testing. Prepared plan only; no new runtime/provider/migration/build initiated. Initial reboot acceptance assumes first unlock; explicit force-stop and pre-unlock cases remain separately documented.
 
 ## Users and context
 

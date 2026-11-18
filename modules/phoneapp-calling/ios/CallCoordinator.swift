@@ -12,6 +12,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  private var registry:PKPushRegistry?
  private var current:String?
  private var connected=false
+ private var outgoing=false
  private var systemMuted=false
  private var routeSession=0
  private var routePreference="automatic"
@@ -53,7 +54,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
     completion()
     guard error==nil else{return}
     if self.current != nil || self.ended.contains(id) || expires<=Date(){self.provider.reportCall(with:uuid,endedAt:Date(),reason:.unanswered);return}
-    self.current=id;self.connected=false;self.beginIncomingTask(id);self.deadline=expires;self.startPolling()
+    self.current=id;self.outgoing=false;self.connected=false;self.beginIncomingTask(id);self.deadline=expires;self.startPolling()
    }
   }
  }
@@ -61,7 +62,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   if ["ended","declined","canceled","missed","failed"].contains(state){end(id);return}
   if direction=="incoming" && state=="ringing" && current==nil {incoming(id,expires:Date().addingTimeInterval(60),completion:{})}
   if direction=="outgoing" && current==nil && !ended.contains(id),let uuid=UUID(uuidString:id){
-   current=id;deadline=Date().addingTimeInterval(60);startPolling()
+   current=id;outgoing=true;deadline=Date().addingTimeInterval(60);startPolling()
    controller.request(CXTransaction(action:CXStartCallAction(call:uuid,handle:CXHandle(type:.generic,value:"Phoneapp")))){error in if error != nil{DispatchQueue.main.async{self.end(id)}}}
   }
  }
@@ -109,7 +110,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   guard backgroundTask == .invalid else{return}
   backgroundTask=UIApplication.shared.beginBackgroundTask(withName:"Phoneapp incoming call") {self.end(id)}
  }
- func mediaState(_ id:String,_ value:Bool){guard id==current else{return};if value && !connected {lastTransport=Date();connected=true;deadline=nil;if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};if let uuid=UUID(uuidString:id){provider.reportOutgoingCall(with:uuid,connectedAt:Date())}}}
+ func mediaState(_ id:String,_ value:Bool){guard id==current else{return};if value && !connected {lastTransport=Date();connected=true;deadline=nil;if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};if outgoing,let uuid=UUID(uuidString:id){provider.reportOutgoingCall(with:uuid,connectedAt:Date())}}}
  private func startPolling(){poll?.invalidate();poll=Timer.scheduledTimer(withTimeInterval:2,repeats:true){[weak self]_ in self?.reconcile()};reconcile()}
  private func reconcile(){
   guard let id=current,!polling else{return}

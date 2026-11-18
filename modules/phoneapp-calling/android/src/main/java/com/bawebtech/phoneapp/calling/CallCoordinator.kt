@@ -25,7 +25,7 @@ object CallCoordinator {
  private val handler=Handler(Looper.getMainLooper())
  private val pending=ConcurrentLinkedQueue<Map<String,String>>()
  private val handle:PhoneAccountHandle get()=PhoneAccountHandle(ComponentName(context!!,PhoneappConnectionService::class.java),"phoneapp")
- fun setup(c:Context){context=c.applicationContext;val telecom=c.getSystemService(TelecomManager::class.java);telecom.registerPhoneAccount(PhoneAccount.builder(handle,"Phoneapp").setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED).build())
+ fun setup(c:Context){context=c.applicationContext;val telecom=c.getSystemService(TelecomManager::class.java);telecom.registerPhoneAccount(PhoneAccount.builder(handle,"Phoneapp").setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED).addSupportedUriScheme(PhoneAccount.SCHEME_SIP).build())
   val nm=c.getSystemService(NotificationManager::class.java)
   val ring=NotificationChannel("phoneapp_incoming_v1","Incoming calls",NotificationManager.IMPORTANCE_HIGH)
   ring.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build());ring.enableVibration(true);nm.createNotificationChannel(ring)
@@ -78,11 +78,11 @@ object CallCoordinator {
   if(Build.VERSION.SDK_INT>=31){val person=Person.Builder().setName("Phoneapp caller").setImportant(true).build();builder.setStyle(if(incoming)Notification.CallStyle.forIncomingCall(person,endIntent(),activityIntent(true)) else Notification.CallStyle.forOngoingCall(person,endIntent()))}
   else{if(incoming)builder.addAction(Notification.Action.Builder(Icon.createWithResource(c,android.R.drawable.sym_action_call),"Answer",activityIntent(true)).build());builder.addAction(Notification.Action.Builder(Icon.createWithResource(c,android.R.drawable.ic_menu_close_clear_cancel),if(incoming)"Decline" else "Hang up",endIntent()).build())}
   if(incoming){builder.setTimeoutAfter(60000);val nm=c.getSystemService(NotificationManager::class.java);if(Build.VERSION.SDK_INT<34||nm.canUseFullScreenIntent())builder.setFullScreenIntent(activityIntent(false),true)}
-  return builder.build()
+  return builder.build().apply{if(incoming)flags=flags or Notification.FLAG_INSISTENT}
  }
  fun notifyCall(incoming:Boolean){val c=context?:return;runCatching{c.getSystemService(NotificationManager::class.java).notify(7811,notification(incoming))};runCatching{c.startForegroundService(Intent(c,CallForegroundService::class.java).putExtra("incoming",incoming))}}
  private val poll=object:Runnable{override fun run(){val id=current?:return;val c=context?:return
-  if(deadline>0&&deadline<System.currentTimeMillis()){localEnd(id);return}
+  if(deadline>0&&deadline<System.currentTimeMillis()){end(id);return}
   if(!polling){polling=true;DeviceIdentity.get(c).queue.execute{val outcome=runCatching{DeviceIdentity.get(c).request("/dashboard",null)};val result=outcome.getOrNull();handler.post{polling=false;if(current==id&&(outcome.exceptionOrNull() as? CallHttpError)?.status==401){end(id);return@post};if(current==id&&result!=null){val calls=result.getJSONArray("calls");val call=(0 until calls.length()).map{calls.getJSONObject(it)}.firstOrNull{it.optString("id")==id};if(call==null||call.optString("state") in listOf("ended","failed","canceled","missed","declined")||(call.optString("state") in listOf("accepted","connected")&&!call.optBoolean("ownsMedia")))end(id)}}}}
   if(current==id)handler.postDelayed(this,2000)
  }}

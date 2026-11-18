@@ -13,6 +13,8 @@ const millis = (value: string | null): number => value ? Date.parse(value.replac
 const iso = (value: string | null): string | null => value ? new Date(millis(value)).toISOString() : null;
 export type Actor = Account & { sessionId: string; deviceId?: string | null };
 type Row = Record<string, any>;
+// Bridge principal: stable device ID for native clients, session ID for browsers.
+// This value is resolved behind a private room capability, never trusted from client input.
 export type Binding = { userId: string; sessionId: string };
 
 export class AccountsStore {

@@ -9,6 +9,12 @@ async function main():Promise<void>{
   const origin=process.env.PHONEAPP_ACCOUNT_URL || 'https://phoneapp.bawebtech.com';
   const parsed=new URL(origin);
   if(parsed.protocol!=='https:' || parsed.origin!==origin)throw new Error('Account smoke requires an HTTPS origin');
+  let ready=false;
+  for(let attempt=0;attempt<10&&!ready;attempt++){
+    try{ready=(await fetch(`${origin}/health`,{signal:AbortSignal.timeout(2_000)})).ok;}catch{}
+    if(!ready)await new Promise(resolve=>setTimeout(resolve,250));
+  }
+  if(!ready)throw new Error('Public account service health is not ready');
   const db=await connect('dev');
   const tokens:string[]=[];let id='';
   const request=async<T>(path:string,token?:string,body?:unknown):Promise<T>=>{

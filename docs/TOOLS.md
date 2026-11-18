@@ -128,7 +128,7 @@ EAS native builds: [Android 2cf8e5a8](https://expo.dev/accounts/mbcollins2/proje
 
 ## Installation QR artifact
 
-Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the current public APK for ringtone build 352e0a90. `artifacts/public/ios-install-qr.png` points to the iPhone EAS install page for 43047d0d. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.
+Android update QR: ignored `artifacts/public/android-install-qr.png` encodes the current public APK for native-call build 89e57322. `artifacts/public/ios-install-qr.png` points to the iPhone EAS install page for native-call build 1e392d16. Generated with `npx --yes --package=qrcode@1.5.4 qrcode -o artifacts/public/android-install-qr.png -w 600 -m 4 APK_URL`, substituting the current verified APK URL from EAS metadata. This uses npm tool cache and does not change project dependencies. The artifact is shared in chat; it is not a new hosted server endpoint. Regenerate for a future APK rather than assuming it tracks later builds.
 
 ## Database commands
 
@@ -191,7 +191,7 @@ Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcoll
 | Persistent native identity | Keychain/Keystore source and native compilation; server/client restore/replay/revocation tests pass. Locked/reboot storage behavior still needs phones. |
 | Device media ownership | Stable authenticated device principal survives refresh; competing devices denied, browser/session path retained. |
 | Database | 0004 applied in dev/test after clean/upgrade/recovery, reviewed grants/permission checks. Snapshot retained privately; do not edit migration history. |
-| APNs VoIP | Production key locally valid and server-configured. Owner completed Apple credential/profile step; physical build e449609b submitted. Real profile signing, VoIP token and APNs delivery must be verified. |
+| APNs VoIP | Production key locally valid and server-configured. Owner completed Apple credential/profile update. Final physical build 1e392d16 has verified signed Production APNs entitlement; real VoIP registration/delivery remains to test. |
 | FCM | Matching client/service-account configuration; real validate-only API request succeeds HTTP 200. No handset delivery inferred. |
 | Native lifecycle | PushKit/CallKit and self-managed Telecom/FCM/services implemented, default system tones and native audio/output ownership. Physical controls/lifecycle pending. |
 | Media liveness | Native pinned-WebRTC RTP observation avoids JS-only timer credit. Quiet/uncertain media can pause measured seconds; not billable-time evidence. |
@@ -217,8 +217,16 @@ Backend `.env.server` now configures `ENABLE_NATIVE_CALLS`, `PUSH_TOKEN_ENCRYPTI
 
 Build staging copies only Android client config to ignored `config/google-services.json`. The custom plugin generates Firebase resources from that path. `.easignore` deliberately includes this public client config and native/plugin source, while excluding all server keys/env files/private artifacts. Verify archive exclusion after changing packaging. Never stage the server service-account JSON into the client path.
 
-Earlier owner iPhone signing step was needed because the existing ad hoc profile lacked `aps-environment`/Push Notifications. Run credential configuration from the latest source checkout, log into Apple and allow Phoneapp's capability/profile update; then submit a physical preview. Owner reports this credential step completed; physical preview e449609b is now submitted, so do not ask for the same login again without new evidence. Credentials alone do not prove signaling/media or real OS ringing. Physical models/OS/full lifecycle results remain owner-operated.
+Earlier owner iPhone signing step was needed because the existing ad hoc profile lacked `aps-environment`/Push Notifications. Run credential configuration from the latest source checkout, log into Apple and allow Phoneapp's capability/profile update; then submit a physical preview. Owner completed this step; final physical preview 1e392d16 finished with signed Production APNs entitlement verified. Do not ask for the same login again without new evidence. Credentials alone do not prove signaling/media or real OS ringing. Physical models/OS/full lifecycle results remain owner-operated.
 
 Fresh owner enrollment codes for preview testing: `artifacts/private/enrollment-1795028097001.txt` (one-use/24-hour expiry; generated unused at handoff). Use `accounts:enroll` for fresh codes if consumed/expired. Native sign-in persists securely after enrollment; browser sign-in remains memory-only. Grant microphone and Android notification permissions while foreground and confirm incoming registration status before background testing. Native system calling uses OS sound/channel choices; older binaries retain the original app ringtone controls.
 
-Final Android preview `b153aa67-5838-4252-94be-f966afaec5b9` is FINISHED, APK HTTP 200: [install](https://expo.dev/artifacts/eas/_PdhaayvtIIPGLUH-QkxoGvLBrfBQ2LlwNV0dE-hibc.apk). Install over the old app, enroll and check registration status; handset behavior untested. iPhone latest native source compiles in simulator c8f80317; only a physical build can establish device signing/installation.
+Final previews from native source `2e7cfce` are FINISHED: [Android 89e57322 APK](https://expo.dev/artifacts/eas/AmHOAAa-W1k50K9_n9jriTIJDPUK6mj1Rstg7Uv57k0.apk) and [iPhone 1e392d16 install](https://expo.dev/accounts/mbcollins2/projects/phoneapp/builds/1e392d16-039b-484b-9a7a-020fee6b20e9). Both bundle JS. Install over the old app, enroll and confirm registration status; hardware acceptance remains pending. QR images point to these final builds.
+
+Inspect downloaded preview packages without displaying profile/device identifiers:
+
+```sh
+python3 scripts/check-native-packages.py --ios artifacts/private/native-calls/ios-preview.ipa --android artifacts/private/native-calls/android-preview.apk
+```
+
+Optional `--expected-team-id` also checks the expected public Apple team ID. The helper verifies physical iOS profile and actual Mach-O signed entitlements, app identity, bundled JS and native handlers; Android checks bundled JS, permissions and native handlers. This is package inspection, not Apple trust-chain validation or handset acceptance. Full EAS status/log metadata contains signed URLs: retain privately, never print wholesale.

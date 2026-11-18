@@ -75,8 +75,8 @@ The staging directory is excluded from Git and EAS uploads. Never ship sender cr
 
 Plan 0011 implements restoration/contracts and native integration; current gates are final preview checks, the Push-capable physical iPhone signing profile and real device acceptance. Credential receipt alone does not add background ringing.
 
-## Physical iPhone signing handoff
+## Physical iPhone signing handoff — resolved
 
-The earlier ad hoc profile lacks Push Notifications/aps-environment. From the latest source checkout run `eas credentials:configure-build --platform ios --profile preview`, authenticate Apple and allow Phoneapp capability/profile update. Existing Apple cookie was checked and is expired; no password was entered by the agent. Keep passwords/2FA in the EAS terminal prompts, not chat. The agent can then submit and verify the physical preview build.
+The owner completed `eas credentials:configure-build --platform ios --profile preview` with Apple login and capability/profile update. Final physical preview `1e392d16-039b-484b-9a7a-020fee6b20e9` is FINISHED. Inspection confirms Production APNs entitlement in both the embedded profile and actual signed binary, matching app/team identity, bundled JS and background calling modes. No repeat login is needed without a new concrete failure.
 
-Owner subsequently confirmed the EAS Apple credential step is done. Physical iPhone preview e449609b is submitted. Continue with that build result rather than requesting the same authentication again; actual signed push entitlement and delivery remain to verify.
+Actual VoIP token registration, APNs provider authorization/delivery and handset ringing/audio remain physical acceptance checks. See [current state](PROJECT_STATE.md) for final installation links and private enrollment instructions.

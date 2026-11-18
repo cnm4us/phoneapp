@@ -1,6 +1,6 @@
 # 0011 Native incoming calls while backgrounded or not running
 
-Status: implemented/source and development backend deployed; final builds, physical iPhone signing and handset acceptance in progress. Updated: 2026-11-18.
+Status: implemented and development backend deployed; both final physical preview builds and signed iPhone push entitlement verified; handset acceptance pending. Updated: 2026-11-18.
 
 ## Outcome and scope
 
@@ -64,12 +64,12 @@ Preserve shared history/revoked-patient isolation and current quality/output con
 - [x] Review/add the next migration(s), runtime grants, synthetic fixtures and encrypted-token format; clean-install and data-preserving upgrade/recovery evidence first.
 - [x] Implement authorized device registration and durable short-expiry call-delivery outbox with fake-provider isolation/idempotency tests.
 - [ ] Verify/provision Apple APNs capability/key/topic/environment and Firebase Android configuration/sender credentials using existing accounts/projects where available. No secret upload to chat/Git or unverified credential reuse.
-- [ ] Implement iOS PushKit/CallKit early-launch/answer/cancel and WebRTC audio coordination; verify foreground regression and native build before device delivery testing.
+- [x] Implement iOS PushKit/CallKit early-launch/answer/cancel and WebRTC audio coordination; automated foreground regression and physical preview compilation pass. Hardware regression remains below.
 - [ ] Prove iPhone background/locked/non-running → ring/Answer/audio/hangup/history against real APNs with synthetic calls. Fix lifecycle issues before calling the iOS gate complete.
 - [ ] Implement Android FCM/Telecom/service/notification/audio ownership with the same backend contracts; prove its own physical-device matrix.
-- [ ] Build internal **preview** binaries with bundled JS for cold-start acceptance; use development builds only for development checks. Confirm no Metro connection is required to ring or answer. Existing `preview` EAS profile is configured but not yet used/verified for this feature.
+- [x] Build internal **preview** binaries with bundled JS for cold-start acceptance; both final packages inspected. Hardware ring/answer with Metro unavailable remains part of physical acceptance.
 - [ ] Verify multi-device first answer, refresh/revocation, caller cancellation, stale delivery, reboot-after-first-unlock and access isolation. Record force-stop/pre-unlock limitations separately.
-- [ ] Roll out tested flags/config/migrations in development, record exact EAS IDs/device OS/network evidence and update all continuity artifacts.
+- [x] Roll out tested flags/config/migrations in development; record final EAS IDs and update continuity artifacts. Device OS/network evidence remains in the physical gate.
 
 ## Data and configuration
 
@@ -130,3 +130,5 @@ Latest checkpoint: seven native API/store scenarios (8 Node tests including wrap
 Current handoff: [native evidence](../testing/2026-11-18-native-background-calls.md) supersedes earlier checkpoints. Backend/flags/migration deployed, public legacy/account/native identity smokes and FCM validation pass. iOS native compilation passes in simulator; physical profile update awaits owner Apple authentication (cached session expired). Final Android preview b153aa67 is being checked. No handset ringing/Answer/reboot acceptance is claimed.
 
 Owner completed the requested Apple credential/profile step. Physical iPhone preview e449609b is submitted from 1b6160b; verify outcome before another login request. Final Android b153aa67 finished (APK HTTP 200); latest iOS native code compiles in simulator c8f80317. Real handset acceptance remains pending.
+
+Final handoff supersedes preceding build checkpoints: native source `2e7cfce`; Android `89e57322-abc9-4042-9071-892c466239d8` and physical iPhone `1e392d16-039b-484b-9a7a-020fee6b20e9` both FINISHED. Actual signed/profile Production APNs entitlement, app/team identity, bundled JS and native handlers pass package inspection. Apple authentication dependency is resolved. Canonical checkout contains final source; stage11 is retained for build audit. Latest install links, QR and enrollment instructions are in [current state](../PROJECT_STATE.md). Remaining unchecked combined steps include real APNs delivery and handset lifecycle/control matrix; source implementation and compilation alone do not complete them.

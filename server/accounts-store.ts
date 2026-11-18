@@ -46,6 +46,16 @@ export class AccountsStore {
       return row;
     });
   }
+  async browserSession(token:string,extend=false):Promise<Enrollment>{
+    const actor=await this.actor(token);
+    return this.transaction(async db=>{
+      const [row]=await db.query("SELECT id,expires_at FROM auth_sessions WHERE token_hash=? AND device_id IS NULL AND revoked_at IS NULL AND expires_at>? FOR UPDATE",[hash(token),utc(this.now())]);
+      if(!row)throw new ApiError(401,'Browser sign-in expired. Enroll again.');
+      const expires=extend?this.now()+30*86400000:millis(row.expires_at);
+      if(extend)await db.query('UPDATE auth_sessions SET expires_at=? WHERE id=?',[utc(expires),row.id]);
+      return {token:'browser-session',expiresAt:new Date(expires).toISOString(),account:{id:actor.id,displayName:actor.displayName,role:actor.role}};
+    });
+  }
   async permitted(db: Connection, userId: string, patientId: string): Promise<boolean> {
     const [row] = await db.query(`SELECT p.id FROM patients p JOIN users u ON u.id=? AND u.status='active' WHERE p.id=? AND p.archived_at IS NULL AND ((u.role IN ('practitioner','rn','ma','admin') AND EXISTS(SELECT 1 FROM patient_assignments a WHERE a.patient_id=p.id AND a.staff_user_id=u.id AND a.revoked_at IS NULL)) OR (u.role IN ('patient','caregiver') AND EXISTS(SELECT 1 FROM patient_accounts a WHERE a.patient_id=p.id AND a.user_id=u.id AND a.revoked_at IS NULL)))`, [userId, patientId]);
     return Boolean(row);

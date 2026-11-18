@@ -16,3 +16,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0007 Native incoming calls](0007-native-incoming-calls.md): device-bound restoration, native call control, transactional delivery and honest background media observations.
 
 - [0008 Audio messages](0008-audio-messages.md): patient-linked media, short-lived transfer grants, private POC storage and foreground audio ownership.
+
+- [0009 Browser sessions](0009-browser-sessions.md): host-only HttpOnly cookies, fixed expiry, guarded restore/logout and open-tab migration.

@@ -322,3 +322,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner confirms the provider reply plays on the iPhone. Basic patient -> provider and provider -> patient recorded-audio exchange is now owner-confirmed. Other controls/interruption/Android checks remain open; no build/OS details inferred.
 - Added a fixed synthetic Patient A-only CLI enrollment option and issued the requested code into private enrollment-1795039888000.txt (600, one-use/24h). No other account/session/code revoked. Actual issuance and docs/whitespace checks pass; no native build, service restart or schema change needed.
+
+## 2026-11-18 Persistent browser sign-in implementation
+
+- Owner asked to keep browser sign-in across reloads. Implemented isolated plan 0013/ADR 0009: host-only Secure/HttpOnly/SameSite=Strict cookie, fixed 30-day revocable session, guarded restore/logout, stale-account protection and open-tab bearer adoption. Enrollment codes remain one-use; no token/code is stored in Web Storage. Native/CLI bearer contracts and current DB schema are retained.
+- Real HTTPS Chromium/isolated MariaDB session suite passes four scenarios (5 Node tests), including reload/new-tab/profile restore, cookie flags/JS invisibility, signout/revocation, fixed expiry, hostile Origin/missing guard/wrong-account rejection and legacy adoption. Seven client tests, existing account/message/native/unit and 13 local browser call cases pass. No native build or migration needed. Deployment/public confirmation follows between calls.

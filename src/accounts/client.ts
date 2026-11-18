@@ -25,19 +25,19 @@ export class AccountClient {
   private nativeMuted?:boolean;
   private mediaFailure='';
   private pendingDial?:{patientId:string;key:string};
-  constructor(readonly origin:string,private media:MediaAdapter,readonly native?:NativeAccounts) {}
+  constructor(readonly origin:string,private media:MediaAdapter,readonly native?:NativeAccounts,readonly browserSession=false) {}
   subscribe(listener:(state:AccountState)=>void):()=>void { this.listeners.add(listener); listener(this.state); return ()=>this.listeners.delete(listener); }
   private update(patch:Partial<AccountState>):void { this.state={...this.state,...patch}; for(const listener of this.listeners)listener(this.state); }
   async request<T>(path:string,body?:unknown):Promise<T> {
     if(this.native){try{return await this.native.request(path,body) as T;}catch(error){if((error as {code?:string})?.code==='UNAUTHORIZED')this.clear();throw error;}}
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8_000);
-    const credential=this.token;
+    const credential=this.token,requestEpoch=this.epoch;
     try {
-      const response=await fetch(`${this.origin}/api${path}`,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(credential?{Authorization:`Bearer ${credential}`}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal});
-      const value=await response.json() as T & {error?:string};
+      const response=await fetch(`${this.origin}/api${path}`,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(this.browserSession?{'X-Phoneapp-Browser':'1',...(this.state.account?{'X-Phoneapp-Account':this.state.account.id}:{})}:credential?{Authorization:`Bearer ${credential}`}:{})},body:body===undefined?undefined:JSON.stringify(body),credentials:this.browserSession?'same-origin':'omit',keepalive:this.browserSession&&(path.endsWith('/end')||path==='/logout'),signal:controller.signal});
+      const value=await response.json() as T & {error?:string;code?:string};
       if(!response.ok){
-        if(response.status===401 && credential && credential===this.token)this.clear();
-        throw new Error(value.error || 'Could not complete request.');
+        if(requestEpoch===this.epoch&&((response.status===401&&(this.browserSession||credential&&credential===this.token))||value.code==='SESSION_CHANGED'))this.clear();
+        throw Object.assign(new Error(value.error || 'Could not complete request.'),{status:response.status});
       }
       return value;
     } finally {clearTimeout(timeout);}
@@ -50,14 +50,14 @@ export class AccountClient {
   }
   async signIn(code:string):Promise<void> {
     await this.run(async()=>{
-      const result=this.native?await this.native.enroll(code.trim()):await this.request<Enrollment>('/enroll',{code:code.trim()});
+      const result=this.native?await this.native.enroll(code.trim()):await this.request<Enrollment>(this.browserSession?'/browser/enroll':'/enroll',{code:code.trim()});
       await this.adopt(result);
     });
   }
-  private async adopt(result:Enrollment):Promise<void>{this.token=result.token;this.epoch++;this.update({account:result.account});await this.refresh();clearInterval(this.timer);clearInterval(this.reporting);this.timer=setInterval(()=>void this.refresh(),2_000);if(!this.native)this.reporting=setInterval(()=>{if(this.currentId&&this.media.phase()==='connected')void this.report(true);},8_000);}
-  async restore():Promise<void>{if(!this.native)return;await this.run(async()=>{const result=await this.native!.restore();if(result.token&&result.account&&result.expiresAt)await this.adopt(result as Enrollment);});}
+  private async adopt(result:Enrollment):Promise<void>{this.token=result.token;const epoch=++this.epoch;this.update({account:result.account});await this.refresh();if(epoch!==this.epoch||!this.state.account)return;clearInterval(this.timer);clearInterval(this.reporting);this.timer=setInterval(()=>void this.refresh(),2_000);if(!this.native)this.reporting=setInterval(()=>{if(this.currentId&&this.media.phase()==='connected')void this.report(true);},8_000);}
+  async restore():Promise<void>{if(!this.native&&!this.browserSession)return;await this.run(async()=>{try{const result=this.native?await this.native.restore():await this.request<Enrollment>('/browser/session');if(result.token&&result.account&&result.expiresAt)await this.adopt(result as Enrollment);}catch(error){if(this.native||(error as {status?:number})?.status!==401)throw error;}});}
   async signOut():Promise<void> {
-    await this.run(async()=>{try{if(this.currentId)await this.hangup();await this.request('/logout',{});}finally{this.clear();}});
+    await this.run(async()=>{try{if(this.currentId)await this.hangup();await this.request('/logout',{});this.clear();}catch(error){if(!this.browserSession)this.clear();throw new Error(this.browserSession?'Could not sign out. Reconnect and try again.':error instanceof Error?error.message:'Could not sign out.');}});
   }
   private async run(operation:()=>Promise<void>):Promise<void> {
     if(this.state.busy)return;

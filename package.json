@@ -40,7 +40,8 @@
     "postinstall": "node scripts/patch-expo-audio.mjs",
     "test:message-client": "tsx --test src/messages/controller.test.ts",
     "smoke:audio-messages": "tsx scripts/smoke-messages.ts",
-    "messages:status": "tsx --env-file=.env.server scripts/message-status.ts"
+    "messages:status": "tsx --env-file=.env.server scripts/message-status.ts",
+    "test:browser-session": "npm run build:web && tsx --test server/browser-session.test.ts"
   },
   "engines": {
     "node": ">=22.13.0"

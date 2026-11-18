@@ -1,3 +1,4 @@
+import {BrowserSessions} from './browser-session';
 import {Messages,validId} from './messages';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AccountsStore, Binding } from './accounts-store';
@@ -20,7 +21,7 @@ export class AccountsApi {
   private timer?: ReturnType<typeof setInterval>;
   private sweeping = false;
   private stopped = false;
-  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth,readonly messages?:Messages) {}
+  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth,readonly messages?:Messages,readonly browser=new BrowserSessions(store)) {}
   async start(): Promise<void> {
     // This POC has one signaling process. Old transient rooms cannot survive restart.
     for (const id of await this.store.activeIds()) await this.store.endInternal(id,'failed');
@@ -67,22 +68,30 @@ export class AccountsApi {
     if(this.stopped){req.resume();this.json(res,503,{error:'Account service is restarting. Try again shortly.'});return;}
     if (++this.inFlight > 32) { this.inFlight--; req.resume(); this.json(res,429,{ error:'Too many requests. Try again shortly.' }); return; }
     try {
-      if (req.method === 'POST' && req.url === '/api/enroll') {
+      const browserEnroll=req.url==='/api/browser/enroll';
+      if(browserEnroll||req.url==='/api/browser/session')this.browser.guard(req);
+      if (req.method === 'POST' && (req.url === '/api/enroll'||browserEnroll)) {
         const now = this.store.now();
         if (now - this.enrollmentWindow >= 60_000) { this.enrollmentWindow=now; this.enrollmentAttempts=0; }
         if (++this.enrollmentAttempts > 30) throw new ApiError(429,'Too many enrollment attempts. Try again in a minute.');
-        const body = await this.body(req,['code','device']);
+        const body = await this.body(req,browserEnroll?['code']:['code','device']);
         let device:DeviceInput|undefined;
         if(body.device!==undefined){if(!this.devices)throw new ApiError(503,'Native device enrollment is not enabled.');const d=body.device;if(!object(d)||Object.keys(d).some(k=>!['installationId','platform','appIdentifier'].includes(k))||!uuid(d.installationId)||!['ios','android'].includes(String(d.platform))||d.appIdentifier!==APP_ID)throw new ApiError(400,'Invalid device enrollment.');device=d as DeviceInput;}
         if (!token(body.code)) throw new ApiError(400,'Paste the complete enrollment code.');
-        this.json(res,200,await this.store.enroll(body.code,device)); return;
+        const result=await this.store.enroll(body.code,device);
+        if(browserEnroll){const session=await this.store.browserSession(result.token,true);this.browser.set(res,result.token,session.expiresAt);this.json(res,200,session);}else this.json(res,200,result);return;
       }
       if(req.method==='POST'&&req.url==='/api/device/refresh'){const b=await this.body(req,['deviceId','refreshToken','requestKey']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!uuid(b.deviceId)||!token(b.refreshToken)||!uuid(b.requestKey))throw new ApiError(400,'Invalid device refresh.');this.json(res,200,await this.devices.refresh(b.deviceId,b.refreshToken,b.requestKey));return;}
       const mediaRoute=req.url?.match(/^\/api\/message-media\/([a-f0-9-]{36})\/(upload|play)$/);
       if(mediaRoute){if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');await this.messages.media(req,res,mediaRoute[1],mediaRoute[2]);return;}
-      const bearer = req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
-      if (!bearer) throw new ApiError(401,'Sign in with an enrollment code.');
+      const cookieMode=this.browser.mode(req);
+      if(cookieMode)this.browser.guard(req);
+      const bearer=cookieMode?this.browser.token(req):req.headers.authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
+      if (!bearer)throw new ApiError(401,'Sign in with an enrollment code.');
       const actor = await this.store.actor(bearer);
+      if(cookieMode&&req.headers['x-phoneapp-account']&&req.headers['x-phoneapp-account']!==actor.id){this.json(res,409,{error:'Browser sign-in changed in another tab. Reload to continue.',code:'SESSION_CHANGED'});return;}
+      if(req.url==='/api/browser/session'&&req.method==='GET'){this.json(res,200,await this.store.browserSession(bearer));return;}
+      if(!cookieMode&&!actor.deviceId)await this.browser.legacy(req,res,bearer);
       if(req.url==='/api/messages/context'&&req.method==='GET'){this.json(res,200,this.messages?await this.messages.context(actor):{enabled:false,patients:[]});return;}
       if(req.url?.startsWith('/api/messages')){
         if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');
@@ -96,6 +105,7 @@ export class AccountsApi {
       if (req.method === 'POST' && req.url === '/api/logout') {
         await this.body(req,[]);
         for (const id of await this.store.logout(actor)) this.bridge.closePrivateRoom(id);
+        if(cookieMode)this.browser.clear(res);
         this.json(res,200,{ ok:true }); return;
       }
       if (req.method === 'POST' && req.url === '/api/calls') {
@@ -124,7 +134,7 @@ export class AccountsApi {
     } catch(error) {
       req.resume();
       if(res.headersSent){res.destroy();return;}
-      if (error instanceof ApiError) this.json(res,error.status,{ error:error.message });
+      if (error instanceof ApiError)this.json(res,error.status,{ error:error.message });
       else { this.onError(); this.json(res,503,{ error:'Account service is temporarily unavailable. Try again.' }); }
     } finally { this.inFlight--; }
   }

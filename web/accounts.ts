@@ -5,7 +5,7 @@ import type { BrowserCall } from './call';
 
 export function accountPanel(call:BrowserCall):AccountClient {
   const root=document.getElementById('accounts')!;
-  const client=new AccountClient(location.origin,{join:invite=>call.join('',true,false,invite),end:()=>call.end(),phase:()=>call.state.phase,error:()=>call.state.error});
+  const client=new AccountClient(location.origin,{join:invite=>call.join('',true,false,invite),end:()=>call.end(),phase:()=>call.state.phase,error:()=>call.state.error},undefined,true);
   let selected='';let enrollment='';
   const node=(tag:string,text?:string):HTMLElement=>{const element=document.createElement(tag);if(text)element.textContent=text;return element;};
   const button=(text:string,action:()=>void,disabled=false):HTMLButtonElement=>{const result=document.createElement('button');result.type='button';result.textContent=text;result.className='button secondary';result.disabled=disabled;result.onclick=action;return result;};
@@ -18,9 +18,9 @@ export function accountPanel(call:BrowserCall):AccountClient {
       const label=node('label','One-time enrollment code');label.setAttribute('for','enrollment-code');
       const input=document.createElement('input');input.id='enrollment-code';input.type='password';input.autocomplete='off';input.placeholder='Paste the owner-issued code';input.value=enrollment;input.oninput=()=>{enrollment=input.value;};
       const signIn=button(state.busy?'Signing in…':'Sign in',()=>{const code=enrollment;enrollment='';void client.signIn(code);},state.busy);signIn.type='submit';
-      form.onsubmit=event=>{event.preventDefault();};form.append(label,input,signIn);root.append(form);
+      form.onsubmit=event=>{event.preventDefault();};form.append(label,input,signIn,button('Restore saved sign-in',()=>void client.restore(),state.busy));root.append(form);
     }else{
-      root.append(node('p',`${state.account.role==='patient'?'Patient':'Care team'} account · Session ends on reload or expiry`),button('Sign out',()=>void client.signOut(),state.busy||Boolean(state.current)));
+      root.append(node('p',`${state.account.role==='patient'?'Patient':'Care team'} account · Sign-in saved in this browser for up to 30 days`),button('Sign out',()=>void client.signOut(),state.busy||Boolean(state.current)));
       const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
       if(incoming&&!state.current){const box=node('div');box.className='account-card';box.setAttribute('role','status');box.append(node('h3','Incoming app call'),node('p',incoming.callerName),button('Answer with audio/video',()=>void client.act(incoming,'answer'),state.busy),button('Decline',()=>void client.act(incoming,'decline'),state.busy));root.append(box);}
       if(state.current){const box=node('div');box.className='account-card';box.append(node('h3',state.current.state==='ringing'?'Calling…':'App call'),node('p',`${state.current.patientName} · ${state.current.state}`),button(state.current.state==='ringing'?'Cancel call':'End app call',()=>void client.hangup()));root.append(box);}
@@ -46,6 +46,7 @@ export function accountPanel(call:BrowserCall):AccountClient {
   }
   client.subscribe(render);
   const messages=document.createElement('section');messages.id='audio-messages';root.after(messages);messagePanel(client,messages);
+  void client.restore();
   call.subscribe(state=>client.mediaChanged(state.phase));
   window.addEventListener('pagehide',()=>client.dispose());
   return client;

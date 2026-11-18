@@ -18,3 +18,17 @@ test('a late dashboard after sign-out cannot restore a call or sign-in',async()=
 test('a system mute queued before native Answer finishes survives media startup',async()=>{const f=fixture();try{f.actions.push({id:call.id,action:'answer'},{id:call.id,action:'mute',muted:'true'} as any);f.setCalls([call]);await f.client.restore();assert.equal(f.joins(),1);assert.equal(f.muted(),true);}finally{f.client.dispose();}});
 
 test('sign-out clears a prior system mute before a new call',async()=>{const f=fixture();try{f.actions.push({id:call.id,action:'answer'},{id:call.id,action:'mute',muted:'true'} as any);f.setCalls([call]);await f.client.restore();await f.client.signOut();f.setCalls([{...call,id:'another-call'}]);await f.client.restore();assert.equal(f.joins(),2);assert.equal(f.muted(),false);}finally{f.client.dispose();}});
+
+test('browser cookie transport restores without a bearer and an offline sign-out remains visibly signed in',async()=>{
+ const original=globalThis.fetch;let offline=false;const seen:RequestInit[]=[];
+ const client=new AccountClient('https://browser.invalid',{join:async()=>{},end:()=>{},phase:()=> 'idle'},undefined,true);
+ globalThis.fetch=async(input,options)=>{seen.push(options||{});if(String(input).endsWith('/logout')&&offline)throw new TypeError('Offline');return new Response(JSON.stringify(String(input).endsWith('/browser/session')?{...enrolled,token:'browser-session'}:String(input).endsWith('/dashboard')?{account:enrolled.account,patients:[],calls:[]}:{ok:true}),{status:200,headers:{'Content-Type':'application/json'}});};
+ try{await client.restore();assert.equal(client.state.account?.id,enrolled.account.id);assert(seen.every(r=>r.credentials==='same-origin'&&new Headers(r.headers).get('X-Phoneapp-Browser')==='1'&&!new Headers(r.headers).has('Authorization')));offline=true;await client.signOut();assert.equal(client.state.account?.id,enrolled.account.id);assert.match(client.state.error,/Could not sign out/);offline=false;await client.signOut();assert.equal(client.state.account,undefined);}finally{client.dispose();globalThis.fetch=original;}
+});
+
+test('a stale browser 401 cannot clear a more recently restored account',async()=>{
+ const original=globalThis.fetch;let complete!:(r:Response)=>void;
+ const client=new AccountClient('https://browser.invalid',{join:async()=>{},end:()=>{},phase:()=> 'idle'},undefined,true);
+ globalThis.fetch=async input=>String(input).endsWith('/pending')?new Promise(r=>complete=r):new Response(JSON.stringify(String(input).endsWith('/browser/session')?{...enrolled,token:'browser-session'}:String(input).endsWith('/dashboard')?{account:enrolled.account,patients:[],calls:[]}:{ok:true}),{status:200});
+ try{await client.restore();const pending=client.request('/pending');await client.signOut();await client.restore();complete(new Response(JSON.stringify({error:'Old session revoked'}),{status:401}));await assert.rejects(pending);assert.equal(client.state.account?.id,enrolled.account.id);}finally{client.dispose();globalThis.fetch=original;}
+});

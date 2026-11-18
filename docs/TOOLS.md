@@ -197,3 +197,5 @@ Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcoll
 | Hardware verification | Need actual models/OS and permission/network/reboot states; this session cannot control the phones. |
 
 Keep sender credentials backend-only. Android Firebase client build configuration is distinct from server service-account secrets; review Git/EAS packaging explicitly when implemented. No runnable push-registration/send commands exist yet; do not present proposed names as available tools.
+
+Owner handoff: [push setup guide](PUSH_SETUP.md). Prepared `artifacts/private/push/` with mode 700, ignored by Git and EAS. Read-only EAS menus confirmed signing/provisioning and push-key management access; declined Apple login and selected no key-changing action. No reusable APNs key was verified. Firebase client configuration and separate server send identity remain pending. This inspection supersedes the earlier uninspected-remote status above; no credentials were generated/downloaded/changed.

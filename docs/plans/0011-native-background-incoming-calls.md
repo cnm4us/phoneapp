@@ -81,6 +81,8 @@ Native configuration: real app IDs, correct APNs topic/environment/entitlements 
 
 ## External setup to resolve
 
+Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Read-only EAS menus confirmed signing but did not verify a reusable push key; no provider credentials were created or changed. Firebase project/client config and separate server identity remain pending.
+
 | Item | Current evidence | Needed to complete delivery tests |
 | --- | --- | --- |
 | Apple Developer / EAS signing | Existing account and native builds verified | Enable/verify push support for this app ID; APNs sender key/ID/team and matching VoIP environment/topic, without creating duplicate signing assets unnecessarily. |

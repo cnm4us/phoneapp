@@ -83,13 +83,14 @@ export class Messages {
   const names=await readdir(this.config.root);let total=0;for(const n of names)if(/\.(input|part|m4a)$/.test(n))total+=(await stat(join(this.config.root,n))).size;if(total+this.config.maxBytes>this.config.maxStorage)throw new ApiError(507,'Recording storage limit reached.');
   const attempt=randomUUID(),key=attempt+'.input';let previousHash:string|null=null;
   await this.accounts.transaction(async db=>{const r=await this.row(db,actor,id,true);if(!['pending','failed'].includes(r.state))throw new ApiError(409,'Upload already started.');const [q]=await db.query('SELECT COALESCE(SUM(size_bytes),0) AS bytes FROM audio_messages WHERE sender_id=? AND created_at>?',[actor.id,utc(this.now()-86400000)]);if(Number(q.bytes)+this.config.maxBytes>this.config.dailyBytes)throw new ApiError(429,'Daily upload limit reached.');previousHash=r.input_hash;await db.query("UPDATE audio_messages SET state='uploading',lease_key=?,lease_until=?,failure_code=NULL WHERE id=?",[attempt,utc(this.now()+130000),id]);});
-  let size=0;const digest=createHash('sha256');const file=await open(this.path(key),'wx',0o600);const timer=setTimeout(()=>req.destroy(),120000);
+  let size=0;const digest=createHash('sha256');let file:Awaited<ReturnType<typeof open>>|undefined;const timer=setTimeout(()=>req.destroy(),120000);
   try{
+   file=await open(this.path(key),'wx',0o600);
    for await(const chunk of req){size+=chunk.length;if(size>this.config.maxBytes)throw new ApiError(413,'Recording is too large.');digest.update(chunk);await file.writeFile(chunk);}
    if(!size)throw new ApiError(400,'Recording is empty.');const checksum=digest.digest('hex');if(previousHash&&previousHash!==checksum)throw new ApiError(409,'Recording changed. Discard and send it as a new message.');await file.sync();
    await this.accounts.transaction(async db=>{await this.row(db,actor,id,true);const result=await db.query("UPDATE audio_messages SET state='processing',input_key=?,input_hash=?,size_bytes=?,lease_until=NULL WHERE id=? AND lease_key=? AND state='uploading'",[key,checksum,size,id,attempt]);if(!result.affectedRows)throw new ApiError(409,'Upload expired.');});
   }catch(error){await unlink(this.path(key)).catch(()=>{});await this.accounts.transaction(db=>db.query("UPDATE audio_messages SET state='failed',lease_until=NULL,failure_code='upload-failed' WHERE id=? AND lease_key=? AND state='uploading'",[id,attempt]));throw error;
-  }finally{clearTimeout(timer);await file.close();}
+  }finally{clearTimeout(timer);await file?.close();}
  }
  async tick(){if(this.working||this.stopped)return;this.working=true;
   try{

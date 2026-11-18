@@ -4,5 +4,5 @@
     "strict": true, "noEmit": true, "esModuleInterop": true,
     "skipLibCheck": true, "types": ["node"]
   },
-  "include": ["./**/*.ts", "../shared/**/*.ts", "../src/accounts/client*.ts", "../scripts/check-push.ts", "../scripts/native-status.ts", "../src/call/core*.ts", "../src/call/quality*.ts", "../src/call/stats.ts", "../src/call/video.ts", "../src/call/media-quality.ts", "../scripts/smoke.ts", "../scripts/enrollment.ts", "../scripts/smoke-accounts.ts", "../scripts/browser-test-server.ts", "../scripts/check-quality-network.ts"]
+  "include": ["./**/*.ts", "../shared/**/*.ts", "../src/accounts/client*.ts", "../scripts/check-push.ts", "../scripts/smoke-messages.ts", "../scripts/native-status.ts", "../src/call/core*.ts", "../src/call/quality*.ts", "../src/call/stats.ts", "../src/call/video.ts", "../src/call/media-quality.ts", "../scripts/smoke.ts", "../scripts/enrollment.ts", "../scripts/smoke-accounts.ts", "../scripts/browser-test-server.ts", "../scripts/check-quality-network.ts"]
 }

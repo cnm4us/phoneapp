@@ -38,7 +38,8 @@
     "smoke:accounts": "tsx scripts/smoke-accounts.ts",
     "test:audio-messages": "npm run build:web && tsx --test server/messages.test.ts",
     "postinstall": "node scripts/patch-expo-audio.mjs",
-    "test:message-client": "tsx --test src/messages/controller.test.ts"
+    "test:message-client": "tsx --test src/messages/controller.test.ts",
+    "smoke:audio-messages": "tsx scripts/smoke-messages.ts"
   },
   "engines": {
     "node": ">=22.13.0"

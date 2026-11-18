@@ -15,6 +15,7 @@ public class PhoneappCallingModule: Module {
   AsyncFunction("request"){(path:String,body:String?,promise:Promise) in
    DeviceIdentity.shared.queue.async {do {let parsed=body.flatMap{$0.data(using:.utf8)}.flatMap{try? JSONSerialization.jsonObject(with:$0)} as? [String:Any];promise.resolve(try DeviceIdentity.shared.request(path,parsed))}catch{promise.reject((error as NSError).code==401 ? "UNAUTHORIZED":"REQUEST_FAILED",error.localizedDescription)}}
   }
+  AsyncFunction("status"){(promise:Promise) in DeviceIdentity.shared.queue.async{promise.resolve(DeviceIdentity.shared.status())}}
   AsyncFunction("syncCall"){(id:String,state:String,direction:String) in CallCoordinator.shared.sync(id,state,direction)}.runOnQueue(.main)
   AsyncFunction("actions"){CallCoordinator.shared.actions()}.runOnQueue(.main)
   AsyncFunction("answer"){(id:String) in CallCoordinator.shared.answer(id)}.runOnQueue(.main)

@@ -51,7 +51,7 @@ object CallCoordinator {
  }}
  fun localEnd(id:String){pending.add(mapOf("id" to id,"action" to "end"));val c=context?:return;end(id);DeviceIdentity.get(c).queue.execute{runCatching{DeviceIdentity.get(c).request("/calls/$id/end",JSONObject())}}}
  fun end(id:String){if(current!=id)return;connection?.setDisconnected(DisconnectCause(DisconnectCause.REMOTE));connection?.destroy();connection=null;endpoints=emptyList();endpoint=null;audioState=null;routePreference="automatic";current=null;deadline=0;handler.removeCallbacks(poll);context?.getSystemService(NotificationManager::class.java)?.cancel(7811);context?.stopService(Intent(context,CallForegroundService::class.java))}
- fun mediaState(id:String,connected:Boolean){if(current==id&&connected){deadline=0;connection?.setActive();notifyCall(false)}}
+ fun mediaState(id:String,connected:Boolean){if(current==id&&connected&&deadline!=0L){deadline=0;connection?.setActive();notifyCall(false)}}
  fun attach(value:Connection,id:String){if(current==id)connection=value else value.destroy()}
  fun routeSnapshot(session:Int):Map<String,Any>? {
   if(current==null)return null
@@ -83,7 +83,7 @@ object CallCoordinator {
  fun notifyCall(incoming:Boolean){val c=context?:return;runCatching{c.getSystemService(NotificationManager::class.java).notify(7811,notification(incoming))};runCatching{c.startForegroundService(Intent(c,CallForegroundService::class.java).putExtra("incoming",incoming))}}
  private val poll=object:Runnable{override fun run(){val id=current?:return;val c=context?:return
   if(deadline>0&&deadline<System.currentTimeMillis()){localEnd(id);return}
-  if(!polling){polling=true;DeviceIdentity.get(c).queue.execute{val result=runCatching{DeviceIdentity.get(c).request("/dashboard",null)}.getOrNull();handler.post{polling=false;if(current==id&&result!=null){val calls=result.getJSONArray("calls");val call=(0 until calls.length()).map{calls.getJSONObject(it)}.firstOrNull{it.optString("id")==id};if(call==null||call.optString("state") in listOf("ended","failed","canceled","missed","declined")||(call.optString("state") in listOf("accepted","connected")&&!call.optBoolean("ownsMedia")))end(id)}}}}
+  if(!polling){polling=true;DeviceIdentity.get(c).queue.execute{val outcome=runCatching{DeviceIdentity.get(c).request("/dashboard",null)};val result=outcome.getOrNull();handler.post{polling=false;if(current==id&&(outcome.exceptionOrNull() as? CallHttpError)?.status==401){end(id);return@post};if(current==id&&result!=null){val calls=result.getJSONArray("calls");val call=(0 until calls.length()).map{calls.getJSONObject(it)}.firstOrNull{it.optString("id")==id};if(call==null||call.optString("state") in listOf("ended","failed","canceled","missed","declined")||(call.optString("state") in listOf("accepted","connected")&&!call.optBoolean("ownsMedia")))end(id)}}}}
   if(current==id)handler.postDelayed(this,2000)
  }}
 }

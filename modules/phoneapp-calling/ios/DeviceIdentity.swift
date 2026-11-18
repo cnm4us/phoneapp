@@ -81,6 +81,7 @@ final class DeviceIdentity {
    throw error
   }
  }
- func pushToken(_ value:String){state["pushToken"]=value;try? persist();registerPush()}
- func registerPush(){guard let token=state["pushToken"] as? String,state["refreshToken"] != nil else {return};_ = try? request("/device/push",["provider":"apns_voip","token":token,"environment":"production"])}
+ func pushToken(_ value:String){state["pushToken"]=value;state["pushRegistered"]=false;try? persist();registerPush()}
+ func status()->[String:Any]{["registered":state["pushRegistered"] as? Bool ?? false,"enrolled":state["refreshToken"] != nil]}
+ func registerPush(){guard let token=state["pushToken"] as? String,!token.isEmpty,state["refreshToken"] != nil else {return};do{_=try request("/device/push",["provider":"apns_voip","token":token,"environment":"production"]);state["pushRegistered"]=true}catch{state["pushRegistered"]=false};try? persist()}
 }

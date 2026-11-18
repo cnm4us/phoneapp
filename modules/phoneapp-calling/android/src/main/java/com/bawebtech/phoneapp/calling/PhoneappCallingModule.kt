@@ -38,6 +38,7 @@ class PhoneappCallingModule:Module(){
   AsyncFunction("enroll"){code:String,promise:Promise->operation(promise){identity().enroll(code)}}
   AsyncFunction("restore"){promise:Promise->operation(promise){val result=identity().restore();identity().registerPush();result}}
   AsyncFunction("request"){path:String,body:String?,promise:Promise->operation(promise){identity().request(path,body?.let{JSONObject(it)})}}
+  AsyncFunction("status"){promise:Promise->operation(promise){identity().status()}}
   AsyncFunction("syncCall"){id:String,state:String,direction:String->CallCoordinator.sync(context(),id,state,direction)}.runOnQueue(Queues.MAIN)
   AsyncFunction("actions"){CallCoordinator.actions()}.runOnQueue(Queues.MAIN)
   AsyncFunction("answer"){id:String->CallCoordinator.answer(id)}.runOnQueue(Queues.MAIN)

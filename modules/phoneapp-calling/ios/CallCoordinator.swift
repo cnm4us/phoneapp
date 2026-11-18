@@ -98,7 +98,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   guard backgroundTask == .invalid else{return}
   backgroundTask=UIApplication.shared.beginBackgroundTask(withName:"Phoneapp incoming call") {self.end(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])}}
  }
- func mediaState(_ id:String,_ value:Bool){guard id==current else{return};if value {if !connected{lastTransport=Date()};connected=true;deadline=nil;if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};if let uuid=UUID(uuidString:id){provider.reportOutgoingCall(with:uuid,connectedAt:Date())}}}
+ func mediaState(_ id:String,_ value:Bool){guard id==current else{return};if value && !connected {lastTransport=Date();connected=true;deadline=nil;if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};if let uuid=UUID(uuidString:id){provider.reportOutgoingCall(with:uuid,connectedAt:Date())}}}
  private func startPolling(){poll?.invalidate();poll=Timer.scheduledTimer(withTimeInterval:2,repeats:true){[weak self]_ in self?.reconcile()};reconcile()}
  private func reconcile(){
   guard let id=current,!polling else{return}
@@ -106,8 +106,9 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   if let deadline,deadline<Date(){end(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])};return}
   polling=true
   DeviceIdentity.shared.queue.async {
-   let result=try? DeviceIdentity.shared.request("/dashboard",nil)
-   DispatchQueue.main.async{self.polling=false;guard self.current==id else{return};if let calls=result?["calls"] as? [[String:Any]],let call=calls.first(where:{$0["id"] as? String==id}) {if ["ended","declined","canceled","missed","failed"].contains(call["state"] as? String ?? "") || (["accepted","connected"].contains(call["state"] as? String ?? "") && call["ownsMedia"] as? Bool != true){self.end(id)}}else if result != nil{self.end(id)}}
+   var result:[String:Any]?;var unauthorized=false
+   do{result=try DeviceIdentity.shared.request("/dashboard",nil)}catch{unauthorized=(error as NSError).code==401}
+   DispatchQueue.main.async{self.polling=false;guard self.current==id else{return};if unauthorized{self.end(id);return};if let calls=result?["calls"] as? [[String:Any]],let call=calls.first(where:{$0["id"] as? String==id}) {if ["ended","declined","canceled","missed","failed"].contains(call["state"] as? String ?? "") || (["accepted","connected"].contains(call["state"] as? String ?? "") && call["ownsMedia"] as? Bool != true){self.end(id)}}else if result != nil{self.end(id)}}
   }
  }
 }

@@ -78,6 +78,7 @@ class DeviceIdentity private constructor(private val context:Context) {
    val result=http(path,body,state.getString("token"));if(path=="/logout")clearEnrollment();return result
   }catch(e:Exception){if(path=="/logout")clearEnrollment(previous.takeIf{it.has("refreshToken")})else if(e is CallHttpError&&e.status==401)clearEnrollment();throw e}
  }
- fun pushToken(token:String){state.put("pushToken",token);save();registerPush()}
- fun registerPush(){val token=state.optString("pushToken");if(token.isNotEmpty()&&state.has("refreshToken"))runCatching{request("/device/push",JSONObject().put("provider","fcm").put("token",token).put("environment","production"))}}
+ fun pushToken(token:String){state.put("pushToken",token).put("pushRegistered",false);save();registerPush()}
+ fun status():JSONObject=JSONObject().put("registered",state.optBoolean("pushRegistered")).put("enrolled",state.has("refreshToken"))
+ fun registerPush(){val token=state.optString("pushToken");if(token.isNotEmpty()&&state.has("refreshToken")){val result=runCatching{request("/device/push",JSONObject().put("provider","fcm").put("token",token).put("environment","production"))};state.put("pushRegistered",result.isSuccess);save()}}
 }

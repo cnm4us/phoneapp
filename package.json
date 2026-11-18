@@ -30,6 +30,7 @@
     "test:db": "tsx --test database/database.test.ts",
     "test:db:permissions": "tsx --test database/permissions.test.ts",
     "accounts:enroll": "tsx scripts/enrollment.ts",
+    "native:status": "tsx --env-file=.env.server scripts/native-status.ts",
     "push:check": "tsx --env-file=.env.server scripts/check-push.ts",
     "test:account-client": "tsx --test src/accounts/client.test.ts",
     "test:native-calls": "tsx --test server/native-calls.test.ts",

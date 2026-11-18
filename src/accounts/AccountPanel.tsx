@@ -17,6 +17,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
       <Button title={state.busy?'Signing in…':'Sign in'} disabled={state.busy||!code.trim()} onPress={()=>{const value=code;setCode('');void client.signIn(value);}} />
     </View> : <>
       <Text style={styles.note}>{state.account.role==='patient'?'Patient':state.account.role==='caregiver'?'Caregiver':'Care team'} account · {client.native?'Sign-in saved on this phone':'Signed in until reload or session expiry'}</Text>
+      {client.native&&<Text style={styles.note}>{state.incomingReady?'Incoming call registration ready':'Incoming call registration pending. Reopen the app while online if this persists.'}</Text>}
       <Button title="Sign out" disabled={state.busy||Boolean(state.current)} onPress={()=>void client.signOut()} />
       {showIncoming && incoming && !state.current && <View style={styles.card} accessibilityLiveRegion="assertive">
         <Text style={styles.heading}>Incoming app call</Text><Text style={styles.text}>{incoming.callerName}</Text>

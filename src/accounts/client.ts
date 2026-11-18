@@ -2,11 +2,11 @@ import type { Account, CallRecord, Dashboard, Enrollment, MediaInvitation, CallA
 import { terminalCall } from '../../shared/accounts';
 import type { Invitation } from '../../shared/protocol';
 
-export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string; updatedAt?: number };
+export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string; updatedAt?: number; incomingReady?:boolean };
 export type MediaAdapter = { join(invitation: Invitation,callId?:string): Promise<void>; end(): void; phase(): string; error?(): string | undefined };
 export interface NativeAccounts {
  enroll(code:string):Promise<Enrollment>;restore():Promise<Partial<Enrollment>>;request(path:string,body?:unknown):Promise<unknown>;
- sync(calls:CallRecord[]):Promise<void>;actions():Promise<{id:string;action:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
+ status?():Promise<{registered:boolean;enrolled:boolean}>;sync(calls:CallRecord[]):Promise<void>;actions():Promise<{id:string;action:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
 }
 export class AccountClient {
   state: AccountState = { busy:false,error:'' };
@@ -41,6 +41,7 @@ export class AccountClient {
     } finally {clearTimeout(timeout);}
   }
   private clear():void {
+    if(this.currentId)void this.native?.end(this.currentId);
     this.epoch++; this.token=''; this.currentId='';this.joinedId='';this.pendingDial=undefined;this.mediaFailure='';
     clearInterval(this.timer);clearInterval(this.reporting); this.media.end();
     this.update({account:undefined,dashboard:undefined,current:undefined,busy:false,updatedAt:undefined});
@@ -69,7 +70,7 @@ export class AccountClient {
       if(this.native){for(const action of await this.native.actions()){if(action.action==='answer')this.currentId=action.id;if(action.action==='end'&&this.currentId===action.id){this.currentId='';this.joinedId='';this.media.end();}}}
       const dashboard=await this.request<Dashboard>('/dashboard');
       if(this.native&&!this.currentId){const resumed=dashboard.calls.find(c=>c.ownsMedia&&['accepted','connected'].includes(c.state));if(resumed)this.currentId=resumed.id;}
-      if(this.native)await this.native.sync(dashboard.calls);
+      if(this.native){await this.native.sync(dashboard.calls);const status=await this.native.status?.();if(status)this.update({incomingReady:status.registered});}
       if(epoch!==this.epoch || (initialCurrent!==this.currentId&&!this.native))return;
       let current=dashboard.calls.find(call=>call.id===this.currentId);
       if(this.currentId && (!current || terminalCall(current.state))){this.currentId='';this.joinedId='';this.media.end();current=undefined;}

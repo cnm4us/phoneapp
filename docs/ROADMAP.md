@@ -21,3 +21,5 @@ Supporting [plan 0002](plans/0002-browser-companion.md) adds an initial COM-01 b
 Communications quality iteration: [0003](plans/0003-adaptive-call-quality.md), COM-07–09. Native/browser controls and adaptation are implemented; browser/server deployed with automated acceptance. Physical native/Safari and experimental Ultra hardware/relay-capacity gates remain open. Original M1 acceptance is unchanged.
 
 Testing usability: [plan 0004](plans/0004-call-testing-usability.md) adds short test codes, four-hour rooms, disconnect diagnostics, and stable native full-screen presentation. Server/browser checks pass; owner full-screen/sustained-call confirmation remains open.
+
+Foreground incoming alerts: [0010](plans/0010-foreground-ringtone.md), COM-11. Native ringtone/vibration, persisted controls and incoming modal above settings implemented; local checks and both native builds pass. Install updated binaries and complete physical sound/silent/haptics/audio handoff checks. This does not complete native locked/background ringing, original full M1 matrix or transcription milestones.

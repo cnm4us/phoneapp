@@ -210,3 +210,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner asks whether a normal reboot permits incoming ringing without manually reopening Phoneapp, unlike explicit Force stop. Verified Android stopped-state persistence policy, FCM Direct Boot and Apple DTS first-unlock/VoIP caveats. Ordinary reboot after prior enrollment can support native incoming cold start; Android Force stop is not cleared by reboot. Initial design/acceptance baseline should include first phone unlock after boot, with pre-unlock operation tested/designed separately. iOS VoIP push relaunch remains an exception to generic force-quit rules.
 - Recorded the future acceptance matrix and distinguished it from the currently implemented foreground-only app. Discussion only; no code, services, schemas, credentials, providers or builds changed. Documentation/whitespace checks pass.
+
+## 2026-11-18 Ordinary incoming-call push notification discussion
+
+- Owner asks if push can notify the user of an incoming app call while Phoneapp is not open. Verified Apple/Expo OS-displayed alert behavior for background/terminated apps. Proposed notification→tap→securely authenticated current-call check→join-if-active/missed-if-expired as a possible interim stage, with device registration, persisted secure login, permission and short-expiry prerequisites.
+- Distinguished ordinary notification banner/optional alert sound from full native phone-call ringing; ordinary push does not bypass Android Settings Force stop, offline or disabled notification policies. No code/module/provider/DB/service/credential/build change or spend. Documentation/whitespace checks pass.

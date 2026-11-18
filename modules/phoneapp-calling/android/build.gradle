@@ -4,5 +4,8 @@ plugins {
 }
 group = 'com.bawebtech.phoneapp.calling'
 version = '0.1.0'
-android { namespace 'com.bawebtech.phoneapp.calling' }
+android {
+ namespace 'com.bawebtech.phoneapp.calling'
+ defaultConfig { versionCode 1; versionName '0.1.0' }
+}
 dependencies { implementation 'com.google.firebase:firebase-messaging:25.0.1' }

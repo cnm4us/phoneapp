@@ -28,7 +28,7 @@ export class AccountsStore {
       const [row] = await db.query(`SELECT e.*,u.display_name,u.role,u.auth_issuer FROM enrollment_codes e JOIN users u ON u.id=e.user_id WHERE e.token_hash=? FOR UPDATE`, [hash(code)]);
       if (!row || row.redeemed_at || row.revoked_at || millis(row.expires_at) <= this.now() || (row.auth_issuer && row.auth_issuer !== 'phoneapp:synthetic-enrollment')) throw new ApiError(401, 'Enrollment code is invalid, used, or expired. Ask the owner for a fresh code.');
       const token = randomBytes(32).toString('base64url');
-      const expires = this.now() + 12 * 60 * 60_000;
+      const expires = this.now() + (device?1:12) * 60 * 60_000;
       await db.query("UPDATE users SET status='active',auth_issuer='phoneapp:synthetic-enrollment',auth_subject=id WHERE id=?", [row.user_id]);
       await db.query('UPDATE enrollment_codes SET redeemed_at=? WHERE id=?', [utc(this.now()), row.id]);
       const sessionId=randomUUID();

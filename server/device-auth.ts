@@ -29,7 +29,7 @@ export class DeviceAuth {
    if(!d||!r||d.revoked_at||d.status!=='active'||Date.parse(r.expires_at.replace(' ','T')+'Z')<=now)return null;
    if(r.used_at){
     if(r.request_hash===hash(requestKey)&&Date.parse(r.used_at.replace(' ','T')+'Z')+60_000>now)return JSON.parse(this.box.open(r.response_ciphertext)) as DeviceEnrollment;
-    await db.query('UPDATE devices SET revoked_at=? WHERE id=?',[utc(now),deviceId]);
+    await db.query('UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?',[utc(now),deviceId]);
     await db.query('UPDATE auth_sessions SET revoked_at=? WHERE device_id=?',[utc(now),deviceId]);
     return null;
    }
@@ -54,6 +54,7 @@ export class DeviceAuth {
    if(!d||d.user_id!==actor.id||(provider==='apns_voip'?d.platform!=='ios':d.platform!=='android'))throw new ApiError(403,'Device registration mismatch.');
    if(provider==='apns_voip'&&environment!=='production')throw new ApiError(400,'This POC is configured for Production APNs.');
    const tokenHash=hash(token);
+   await db.query("UPDATE devices SET push_provider='none',push_token_hash=NULL,push_token_ciphertext=NULL WHERE revoked_at IS NOT NULL AND push_provider=? AND app_identifier=? AND push_token_hash=?",[provider,APP_ID,tokenHash]);
    // A provider token belongs to one active installation; do not let another credential claim it.
    const [other]=await db.query('SELECT id FROM devices WHERE push_provider=? AND app_identifier=? AND push_token_hash=? AND id<>?',[provider,APP_ID,tokenHash,d.id]);
    if(other)throw new ApiError(409,'Push token is already registered to another installation.');

@@ -10,13 +10,13 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
   const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
   return <View style={styles.stack}>
     <Text style={styles.title}>{state.account ? state.account.displayName : 'Connect to your care team'}</Text>
-    <Text style={styles.note}>Synthetic test accounts · Keep this screen open · Recording off</Text>
+    <Text style={styles.note}>Synthetic test accounts · {client.native?'Native calling test':'Keep this screen open'} · Recording off</Text>
     {!state.account ? <View style={styles.card}>
       <Text style={styles.text}>Paste the one-time enrollment code issued for this device’s test account.</Text>
       <TextInput accessibilityLabel="Enrollment code" placeholder="One-time enrollment code" placeholderTextColor="#81929d" style={styles.input} value={code} onChangeText={setCode} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!state.busy} />
       <Button title={state.busy?'Signing in…':'Sign in'} disabled={state.busy||!code.trim()} onPress={()=>{const value=code;setCode('');void client.signIn(value);}} />
     </View> : <>
-      <Text style={styles.note}>{state.account.role==='patient'?'Patient':state.account.role==='caregiver'?'Caregiver':'Care team'} account · Signed in until reload or session expiry</Text>
+      <Text style={styles.note}>{state.account.role==='patient'?'Patient':state.account.role==='caregiver'?'Caregiver':'Care team'} account · {client.native?'Sign-in saved on this phone':'Signed in until reload or session expiry'}</Text>
       <Button title="Sign out" disabled={state.busy||Boolean(state.current)} onPress={()=>void client.signOut()} />
       {showIncoming && incoming && !state.current && <View style={styles.card} accessibilityLiveRegion="assertive">
         <Text style={styles.heading}>Incoming app call</Text><Text style={styles.text}>{incoming.callerName}</Text>

@@ -1,4 +1,5 @@
 import { requireOptionalNativeModule } from 'expo';
+import { mediaDevices } from 'react-native-webrtc';
 import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
 import type { Enrollment,CallRecord } from '../../shared/accounts';
 import type { NativeAccounts } from './client';
@@ -13,6 +14,7 @@ export function nativeAccounts():NativeAccounts|undefined {
  return {
   enroll:async code=>{
    if(Platform.OS==='android'&&Number(Platform.Version)>=33)await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+   const microphone=await mediaDevices.getUserMedia({audio:true,video:false});microphone.getTracks().forEach(track=>track.stop());
    return calling.enroll(code);
   },restore:()=>calling.restore(),request:(path,body)=>calling.request(path,body===undefined?null:JSON.stringify(body)),
   sync:async calls=>{for(const c of calls.slice(0,10))await calling.syncCall(c.id,c.state,c.direction);},

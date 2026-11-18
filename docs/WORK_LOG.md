@@ -263,3 +263,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Screenshot shows project IAM permissions rather than Firebase Admin SDK or the service-account Keys tab. Verified Google's current key-creation path and added direct Service Accounts link plus exact existing-account → Keys → Add key → Create new key → JSON steps.
 - FCM credential handoff remains pending; no provider or runtime changes. Documentation and whitespace checks pass.
+
+## 2026-11-18 Firebase server credential received and authenticated
+
+- Owner supplied `artifacts/private/push/phoneapp-9a5c4-515f1c967b53.json`; retained actual filename, restricted to 600. Service-account type, project, expected Admin SDK email, token endpoint, RSA key and local signature checks pass. No private credential values displayed.
+- Real Google OAuth JWT exchange requesting Firebase Messaging scope returned HTTP 200; access token neither saved nor displayed. Private status records actual credential path/authentication evidence. FCM API/send permission and device delivery remain untested; APNs authorization remains pending.
+- Updated guide/state/tools/0011, including removal of obsolete current-state credential requests. All three supplied artifacts now present. Documentation and whitespace checks pass; no live runtime/service/DB/build change or push send. Next implementation remains secure device restoration/backend contracts then native delivery.

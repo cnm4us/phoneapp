@@ -81,12 +81,12 @@ Native configuration: real app IDs, correct APNs topic/environment/entitlements 
 
 ## External setup to resolve
 
-Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Owner supplied matching Firebase client config and Apple P-256 private key; local structural/signature checks pass and permissions are 600. Existing EAS team metadata is retained privately. New owner-supplied Production key `AuthKey_WS664U36TD.p8` passes local EC P-256/signature checks, mode 600; earlier Sandbox key is owner-reported revoked. Confirm Production key scope/topic and inspect actual signed push entitlement after implementation. APNs authorization/capability and separate FCM server identity remain pending; no provider delivery was tested.
+Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Owner supplied matching Firebase client config and Apple P-256 private key; local structural/signature checks pass and permissions are 600. Existing EAS team metadata is retained privately. New owner-supplied Production key `AuthKey_WS664U36TD.p8` passes local EC P-256/signature checks, mode 600; earlier Sandbox key is owner-reported revoked. Confirm Production key scope/topic and inspect actual signed push entitlement after implementation. Firebase server JSON is now supplied under its original download filename; project/account/local RSA checks and Google OAuth exchange with Messaging scope pass. APNs authorization/capability, FCM API/send permission and real delivery remain unverified.
 
 | Item | Current evidence | Needed to complete delivery tests |
 | --- | --- | --- |
 | Apple Developer / EAS signing | Existing signing verified; owner `.p8` locally parses/signs; key/team metadata available privately | Enable/verify push support for this app ID; verify key authorization and matching VoIP scope/environment/topic. |
-| Firebase Android project | Client config verified: project `phoneapp-9a5c4`, Android `com.bawebtech.phoneapp.poc` | Obtain dedicated scoped server send identity; verify API/authorization and later native delivery. |
+| Firebase Android project | Matching client config and Admin SDK service-account JSON supplied; Google OAuth Messaging-scope exchange accepted HTTP 200 | Verify FCM API/send permission in integration, native registration and actual delivery. |
 | Physical devices | Owner iPhone/wife Android; foreground flow/ringtone reported successful | Models/OS, permission states, real APNs/FCM enrollment and owner-operated lifecycle matrix. |
 | Standalone internal app | EAS preview profile exists | Actual bundled-JS builds installed and tested with Metro stopped/unreachable. |
 

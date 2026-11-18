@@ -57,18 +57,20 @@ Before sending, inspect the new signed binary's actual `aps-environment` and pro
 
 References: [Expo internal distribution signing](https://docs.expo.dev/build/internal-distribution/), [Apple APNs environment/signing rules](https://developer.apple.com/library/archive/technotes/tn2265/_index.html), [Apple token-key scope/environment](https://developer.apple.com/documentation/usernotifications/establishing-a-token-based-connection-to-apns).
 
-## Private handoff directory and actual status
+## Current private handoff status
 
-`/home/ubuntu/phoneapp/artifacts/private/push/` exists with directory mode 700 and is excluded from both Git and EAS uploads. Keep downloaded credentials mode 600. The agent will set restrictive file permissions after handoff and configure backend-only references; never place sender credentials in public app variables. Android client configuration will need an explicit build packaging path during implementation because this staging directory is excluded from EAS.
+All three supplied files are present in `/home/ubuntu/phoneapp/artifacts/private/push/` (directory 700, files 600):
 
-Owner subsequently supplied `google-services.json` and `AuthKey_C3W3F7TQ6D.p8`; both are present and mode 600. Firebase structure/app matching passes. Apple key parses as EC P-256 and a local sign/verify round trip passes; this does not establish Apple APNs authorization, key scope/environment, revocation state, or VoIP delivery. Existing EAS signing metadata supplies the team ID, retained in private `credential-status.json`; no need to ask the owner for it again. Owner confirms Sandbox and subsequently reports revoking the earlier key; treat this supplied key as unusable. Matching Production key/access for EAS ad hoc installs remains pending.
+| Purpose | Actual filename | Verified |
+| --- | --- | --- |
+| Android client config | `google-services.json` | Project `phoneapp-9a5c4`, Android `com.bawebtech.phoneapp.poc`, required client metadata |
+| Production APNs sender key | `AuthKey_WS664U36TD.p8` | Local EC P-256 parsing/signature; Production environment is owner-reported |
+| Firebase server credential | `phoneapp-9a5c4-515f1c967b53.json` | Service-account/project/email/token endpoint, RSA signature, real Google OAuth exchange with Firebase Messaging scope (HTTP 200) |
 
-Read-only EAS credential-menu inspection previously confirmed iOS signing/provisioning and a push-key management menu. Apple login was declined and no EAS keys were changed. No FCM server identity, provider send, native push registration, server wiring or new build has been configured or tested for this stage. Private status metadata records file locations and validation limits without copying private key contents.
+Keep the original Firebase download filename; the proposed `fcm-service-account.json` name in setup instructions is optional. No additional credential download is currently requested. The OAuth token was neither displayed nor saved. Authentication success does not establish FCM API enablement/send permission or actual device delivery. Apple scope/topic, key authorization, app capability and signed push entitlement remain to verify during integration.
 
-Next independent development increment remains secure device-bound credential restoration and backend registration/delivery contracts. Credentials alone do not add background ringing; plan 0011 includes the native work and handset acceptance.
+Earlier Sandbox `AuthKey_C3W3F7TQ6D.p8` is owner-reported revoked; do not use it. Private `credential-status.json` selects current key/file metadata and preserves that revoked history. Existing EAS signing supplies team metadata; key/team ownership remains to verify against APNs.
 
-## Latest handoff: Production key received
+The staging directory is excluded from Git and EAS uploads. Never ship sender credentials to a phone. Android client config needs an explicit build packaging path during implementation because the staging directory is excluded from EAS. No sender file is wired into the running service yet; no push was sent, native registration/new build/device test performed, or live call interrupted for this handoff.
 
-Owner supplied `artifacts/private/push/AuthKey_WS664U36TD.p8` as the Production key. It parses as EC P-256 and passes a local signature round trip; permissions are 600. Private status selects this key and archives earlier owner-revoked Sandbox metadata. No Apple portal/provider check was made: environment is owner-reported, key scope/topic and actual APNs authorization/delivery remain unverified. No credential is wired into a running service yet.
-
-No FCM service-account JSON was found in private push staging. The remaining owner step is the dedicated server sender credential above, saved as `artifacts/private/push/fcm-service-account.json`.
+Next development increment remains plan 0011 secure device-bound restoration and backend contracts, then native PushKit/CallKit and FCM/Telecom integration and real delivery acceptance. Credential receipt alone does not add background ringing.

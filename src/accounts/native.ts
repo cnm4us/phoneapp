@@ -5,8 +5,8 @@ import type { Enrollment,CallRecord } from '../../shared/accounts';
 import type { NativeAccounts } from './client';
 export type CallingModule={
  version:number;status():Promise<{registered:boolean;enrolled:boolean}>;enroll(code:string):Promise<Enrollment>;restore():Promise<Partial<Enrollment>>;request(path:string,body:string|null):Promise<unknown>;
- syncCall(id:string,state:string,direction:string):Promise<void>;actions():Promise<{id:string;action:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
- getAudioRoute(session:number):Promise<unknown>;mediaState(id:string,connected:boolean):Promise<void>;watchMedia?(id:string,peer:number):Promise<void>;stopMedia?():Promise<void>;setRoute?(route:string):Promise<void>;
+ syncCall(id:string,state:string,direction:string):Promise<void>;actions():Promise<{id:string;action:string;muted?:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
+ setMuted?(id:string,muted:boolean):Promise<void>;getAudioRoute(session:number):Promise<unknown>;mediaState(id:string,connected:boolean):Promise<void>;watchMedia?(id:string,peer:number):Promise<void>;stopMedia?():Promise<void>;setRoute?(route:string):Promise<void>;
 };
 export const calling=requireOptionalNativeModule<CallingModule>('PhoneappCalling');
 export function nativeAccounts():NativeAccounts|undefined {

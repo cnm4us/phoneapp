@@ -234,8 +234,8 @@ export class CallSession {
       } else this.diagnostic('selected media path not available yet');
     } catch { if (epoch === this.epoch) this.diagnostic('candidate statistics unavailable'); }
   }
-  mute() {
-    const muted = !this.state.muted;
+  mute() { this.setMuted(!this.state.muted); }
+  setMuted(muted:boolean) {
     this.state.local?.getAudioTracks().forEach((track) => { track.enabled = !muted; });
     this.update({ muted });
   }

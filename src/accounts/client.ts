@@ -3,10 +3,10 @@ import { terminalCall } from '../../shared/accounts';
 import type { Invitation } from '../../shared/protocol';
 
 export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string; updatedAt?: number; incomingReady?:boolean };
-export type MediaAdapter = { join(invitation: Invitation,callId?:string): Promise<void>; end(): void; phase(): string; error?(): string | undefined };
+export type MediaAdapter = { join(invitation: Invitation,callId?:string): Promise<void>; end(): void; phase(): string; error?(): string | undefined;setMuted?(muted:boolean):void };
 export interface NativeAccounts {
  enroll(code:string):Promise<Enrollment>;restore():Promise<Partial<Enrollment>>;request(path:string,body?:unknown):Promise<unknown>;
- status?():Promise<{registered:boolean;enrolled:boolean}>;sync(calls:CallRecord[]):Promise<void>;actions():Promise<{id:string;action:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
+ status?():Promise<{registered:boolean;enrolled:boolean}>;sync(calls:CallRecord[]):Promise<void>;actions():Promise<{id:string;action:string;muted?:string}[]>;answer(id:string):Promise<void>;end(id:string):Promise<void>;
 }
 export class AccountClient {
   state: AccountState = { busy:false,error:'' };
@@ -21,6 +21,7 @@ export class AccountClient {
   private currentId='';
   private counter=0;
   private previousConnected=false;
+  private nativeMuted?:boolean;
   private mediaFailure='';
   private pendingDial?:{patientId:string;key:string};
   constructor(readonly origin:string,private media:MediaAdapter,readonly native?:NativeAccounts) {}
@@ -67,13 +68,13 @@ export class AccountClient {
     if(!this.token || this.polling)return;
     this.polling=true;const epoch=this.epoch,initialCurrent=this.currentId;
     try{
-      if(this.native){for(const action of await this.native.actions()){if(action.action==='answer')this.currentId=action.id;if(action.action==='end'&&this.currentId===action.id){this.currentId='';this.joinedId='';this.media.end();}}}
+      if(this.native){for(const action of await this.native.actions()){if(action.action==='answer')this.currentId=action.id;if(action.action==='mute'&&this.currentId===action.id){this.nativeMuted=action.muted==='true';this.media.setMuted?.(this.nativeMuted);}if(action.action==='end'&&this.currentId===action.id){this.currentId='';this.joinedId='';this.nativeMuted=undefined;this.media.end();}}}
       const dashboard=await this.request<Dashboard>('/dashboard');
       if(this.native&&!this.currentId){const resumed=dashboard.calls.find(c=>c.ownsMedia&&['accepted','connected'].includes(c.state));if(resumed)this.currentId=resumed.id;}
       if(this.native){await this.native.sync(dashboard.calls);const status=await this.native.status?.();if(status)this.update({incomingReady:status.registered});}
       if(epoch!==this.epoch || (initialCurrent!==this.currentId&&!this.native))return;
       let current=dashboard.calls.find(call=>call.id===this.currentId);
-      if(this.currentId && (!current || terminalCall(current.state))){this.currentId='';this.joinedId='';this.media.end();current=undefined;}
+      if(this.currentId && (!current || terminalCall(current.state))){this.currentId='';this.joinedId='';this.nativeMuted=undefined;this.media.end();current=undefined;}
       this.update({dashboard,current,error:this.mediaFailure,updatedAt:performance.now()});
       if(current && current.ownsMedia && ['accepted','connected'].includes(current.state) && this.joinedId!==current.id && !this.joining){
         this.joining=true;
@@ -82,6 +83,7 @@ export class AccountClient {
           if(epoch!==this.epoch || this.currentId!==current.id)return;
           this.joinedId=current.id;this.previousConnected=false;
           await this.media.join(result.invitation,current.id);
+          if(this.nativeMuted!==undefined)this.media.setMuted?.(this.nativeMuted);
           if(epoch===this.epoch && ['ended','error'].includes(this.media.phase()))await this.hangup();
         }finally{this.joining=false;}
       }
@@ -108,7 +110,7 @@ export class AccountClient {
   async hangup():Promise<void> {
     const id=this.currentId,mediaError=this.media.error?.() || '';
     if(mediaError)this.mediaFailure=mediaError;
-    this.currentId='';this.joinedId='';this.media.end();this.update({current:undefined,...(mediaError?{error:mediaError}:{})});
+    this.currentId='';this.joinedId='';this.nativeMuted=undefined;this.media.end();this.update({current:undefined,...(mediaError?{error:mediaError}:{})});
     if(id)await this.native?.end(id);
     if(!id || !this.token)return;
     try{await this.request(`/calls/${id}/end`,{});await this.refresh();}

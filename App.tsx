@@ -30,7 +30,7 @@ function CallScreen() {
   const [base, setBase] = useState(process.env.EXPO_PUBLIC_SIGNALING_URL || 'https://phoneapp.bawebtech.com');
   const [incomingAlerts] = useState(()=>new IncomingAlerts(nativeIncomingAlertDriver()));
   const [alertState,setAlertState]=useState(incomingAlerts.state);
-  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: async (invite,id) => { await incomingAlerts.silence(); await session.join(base,'',AppState.currentState==='active',false,invite); }, end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error },nativeAccounts()));
+  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: async (invite,id) => { await incomingAlerts.silence(); await session.join(base,'',AppState.currentState==='active',false,invite); }, end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error,setMuted:muted=>session.setMuted(muted) },nativeAccounts()));
   const [accountState,setAccountState]=useState(accounts.state);
   const [legacy,setLegacy]=useState(false);
   const [key, setKey] = useState('');
@@ -115,7 +115,7 @@ function CallScreen() {
           status={call.quality.status} duration={duration} phase={labels[call.phase]}
           audioOutput={call.audioOutput} speaker={() => session.toggleSpeaker()}
           settings={() => { Keyboard.dismiss(); setSettingsOpen(true); }}
-          mute={() => session.mute()} camera={() => session.toggleCamera()} hangup={() => accountState.current ? void accounts.hangup() : session.end()}
+          mute={() => {session.mute();const id=accounts.state.current?.id;if(id&&Platform.OS==='ios')void calling?.setMuted?.(id,session.state.muted);}} camera={() => session.toggleCamera()} hangup={() => accountState.current ? void accounts.hangup() : session.end()}
         /> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.row}>
             <Text style={styles.title}>Phoneapp</Text>

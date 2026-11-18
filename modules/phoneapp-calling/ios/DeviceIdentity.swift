@@ -57,7 +57,7 @@ final class DeviceIdentity {
   let result:[String:Any]
   do {result=try http("/device/refresh",["deviceId":state["deviceId"] ?? "","refreshToken":state["refreshToken"] ?? "","requestKey":request])}
   catch {if (error as NSError).code==401 {clearEnrollment()};throw error}
-  let push=state["pushToken"];state=result;state["pushToken"]=push;try persist();return result
+  let push=state["pushToken"];let registered=state["pushRegistered"];state=result;state["pushToken"]=push;state["pushRegistered"]=registered;try persist();return result
  }
  private func clearEnrollment(_ pending:[String:Any]?=nil){let push=state["pushToken"];state=[:];state["pushToken"]=push;state["pendingLogout"]=pending;try? persist();UserDefaults.standard.set(UUID().uuidString.lowercased(),forKey:marker)}
  private func finishPendingLogout()throws {

@@ -19,6 +19,7 @@ public class PhoneappCallingModule: Module {
   AsyncFunction("syncCall"){(id:String,state:String,direction:String) in CallCoordinator.shared.sync(id,state,direction)}.runOnQueue(.main)
   AsyncFunction("actions"){CallCoordinator.shared.actions()}.runOnQueue(.main)
   AsyncFunction("answer"){(id:String) in CallCoordinator.shared.answer(id)}.runOnQueue(.main)
+  AsyncFunction("setMuted"){(id:String,muted:Bool) in CallCoordinator.shared.setMuted(id,muted)}.runOnQueue(.main)
   AsyncFunction("end"){(id:String) in CallCoordinator.shared.end(id)}.runOnQueue(.main)
   AsyncFunction("getAudioRoute"){(session:Int) in CallCoordinator.shared.routeSnapshot(session)}.runOnQueue(.main)
   AsyncFunction("setRoute"){(route:String) in try CallCoordinator.shared.setRoute(route)}.runOnQueue(.main)

@@ -12,6 +12,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  private var registry:PKPushRegistry?
  private var current:String?
  private var connected=false
+ private var systemMuted=false
  private var routeSession=0
  private var routePreference="automatic"
  private var pending:[[String:String]]=[]
@@ -67,7 +68,7 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  func actions()->[[String:String]]{let result=pending;pending=[];return result}
  func answer(_ id:String){guard let uuid=UUID(uuidString:id),current==id else{return};controller.request(CXTransaction(action:CXAnswerCallAction(call:uuid))){_ in}}
  func end(_ id:String){guard current==id,let uuid=UUID(uuidString:id) else{return};provider.reportCall(with:uuid,endedAt:Date(),reason:.remoteEnded);clean(id)}
- private func clean(_ id:String){if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};ended.insert(id);if ended.count>100{ended=Set(ended.suffix(50))};current=nil;connected=false;deadline=nil;poll?.invalidate();poll=nil;RTCAudioSession.sharedInstance().isAudioEnabled=false;RTCAudioSession.sharedInstance().useManualAudio=false}
+ private func clean(_ id:String){systemMuted=false;UserDefaults.standard.removeObject(forKey:"phoneapp.callkit.mute.id");if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};ended.insert(id);if ended.count>100{ended=Set(ended.suffix(50))};current=nil;connected=false;deadline=nil;poll?.invalidate();poll=nil;RTCAudioSession.sharedInstance().isAudioEnabled=false;RTCAudioSession.sharedInstance().useManualAudio=false}
  private func prepareAudio(){let audio=RTCAudioSession.sharedInstance();audio.useManualAudio=true;audio.isAudioEnabled=false;try? AVAudioSession.sharedInstance().setCategory(.playAndRecord,mode:.voiceChat,options:[.allowBluetooth])}
  func provider(_ provider:CXProvider,perform action:CXStartCallAction){prepareAudio();action.fulfill()}
  func provider(_ provider:CXProvider,perform action:CXAnswerCallAction){
@@ -78,6 +79,13 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
   }
  }
  func provider(_ provider:CXProvider,perform action:CXEndCallAction){let id=action.callUUID.uuidString.lowercased();pending.append(["id":id,"action":"end"]);clean(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])};action.fulfill()}
+ func setMuted(_ id:String,_ value:Bool){guard current==id,systemMuted != value,let uuid=UUID(uuidString:id) else{return};controller.request(CXTransaction(action:CXSetMutedCallAction(call:uuid,muted:value))){_ in}}
+ func provider(_ provider:CXProvider,perform action:CXSetMutedCallAction){
+  let id=action.callUUID.uuidString.lowercased();guard current==id else{action.fail();return}
+  systemMuted=action.isMuted;UserDefaults.standard.set(id,forKey:"phoneapp.callkit.mute.id");UserDefaults.standard.set(systemMuted,forKey:"phoneapp.callkit.muted")
+  NotificationCenter.default.post(name:Notification.Name("PhoneappSystemMute"),object:nil,userInfo:["id":id,"muted":systemMuted])
+  pending.append(["id":id,"action":"mute","muted":systemMuted ? "true":"false"]);action.fulfill()
+ }
  func providerDidReset(_ provider:CXProvider){if let id=current {pending.append(["id":id,"action":"end"]);clean(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])}}}
  func provider(_ provider:CXProvider,didActivate audioSession:AVAudioSession){RTCAudioSession.sharedInstance().audioSessionDidActivate(audioSession);RTCAudioSession.sharedInstance().isAudioEnabled=true}
  func provider(_ provider:CXProvider,didDeactivate audioSession:AVAudioSession){RTCAudioSession.sharedInstance().isAudioEnabled=false;RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)}

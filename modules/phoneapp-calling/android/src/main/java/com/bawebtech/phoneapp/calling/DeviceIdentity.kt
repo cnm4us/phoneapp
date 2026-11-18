@@ -64,7 +64,7 @@ class DeviceIdentity private constructor(private val context:Context) {
   if(expiry>System.currentTimeMillis()+120000&&!state.has("pendingRefresh"))return JSONObject(state.toString())
   val key=state.optString("pendingRefresh").ifEmpty{UUID.randomUUID().toString()};state.put("pendingRefresh",key);save()
   val result=try{http("/device/refresh",JSONObject().put("deviceId",state.getString("deviceId")).put("refreshToken",state.getString("refreshToken")).put("requestKey",key))}catch(e:CallHttpError){if(e.status==401)clearEnrollment();throw e}
-  state=JSONObject(result.toString()).put("installationId",state.optString("installationId")).put("pushToken",state.optString("pushToken"));save();return result
+  state=JSONObject(result.toString()).put("installationId",state.optString("installationId")).put("pushToken",state.optString("pushToken")).put("pushRegistered",state.optBoolean("pushRegistered"));save();return result
  }
  private fun clearEnrollment(pending:JSONObject?=null){val push=state.optString("pushToken");state=JSONObject().put("pushToken",push);if(pending!=null)state.put("pendingLogout",pending);save()}
  private fun finishPendingLogout(){val old=state.optJSONObject("pendingLogout")?:return

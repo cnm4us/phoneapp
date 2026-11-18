@@ -243,3 +243,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports revoking the earlier Sandbox key and asks how many keys are required. Recorded owner-reported revocation/unusable status in private metadata; retained file untouched. Current EAS ad hoc workflow needs only one Production-authorized key; a replacement Sandbox key is unnecessary.
 - Updated guide/current state; no provider request, runtime change or build. Documentation and whitespace checks pass. Next remains Production key handoff and separate FCM sender JSON.
+
+## 2026-11-18 Production APNs key received
+
+- Owner supplied `AuthKey_WS664U36TD.p8` as Production. EC P-256 parse and local sign/verify pass; restricted file to mode 600. Updated ignored private status to current key metadata while preserving revoked Sandbox history. Never printed private key contents or made a provider request.
+- No service-account JSON found in private push staging; remaining owner step is FCM sender credential. Updated guide/state/tools/0011; documentation and whitespace checks pass. No native/background runtime, server configuration, service, DB, or EAS build change.

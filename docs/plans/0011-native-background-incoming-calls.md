@@ -81,7 +81,7 @@ Native configuration: real app IDs, correct APNs topic/environment/entitlements 
 
 ## External setup to resolve
 
-Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Owner supplied matching Firebase client config and Apple P-256 private key; local structural/signature checks pass and permissions are 600. Existing EAS team metadata is retained privately. Owner confirms Apple key is Sandbox; current EAS internal/ad hoc installs require Production APNs access. Obtain/reuse matching Production-authorized key, confirm scope/topic, and inspect actual signed push entitlement after implementation. APNs authorization/capability and separate FCM server identity remain pending; no provider delivery was tested.
+Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Owner supplied matching Firebase client config and Apple P-256 private key; local structural/signature checks pass and permissions are 600. Existing EAS team metadata is retained privately. New owner-supplied Production key `AuthKey_WS664U36TD.p8` passes local EC P-256/signature checks, mode 600; earlier Sandbox key is owner-reported revoked. Confirm Production key scope/topic and inspect actual signed push entitlement after implementation. APNs authorization/capability and separate FCM server identity remain pending; no provider delivery was tested.
 
 | Item | Current evidence | Needed to complete delivery tests |
 | --- | --- | --- |

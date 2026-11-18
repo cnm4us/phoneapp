@@ -58,3 +58,9 @@ Owner subsequently supplied `google-services.json` and `AuthKey_C3W3F7TQ6D.p8`; 
 Read-only EAS credential-menu inspection previously confirmed iOS signing/provisioning and a push-key management menu. Apple login was declined and no EAS keys were changed. No FCM server identity, provider send, native push registration, server wiring or new build has been configured or tested for this stage. Private status metadata records file locations and validation limits without copying private key contents.
 
 Next independent development increment remains secure device-bound credential restoration and backend registration/delivery contracts. Credentials alone do not add background ringing; plan 0011 includes the native work and handset acceptance.
+
+## Latest handoff: Production key received
+
+Owner supplied `artifacts/private/push/AuthKey_WS664U36TD.p8` as the Production key. It parses as EC P-256 and passes a local signature round trip; permissions are 600. Private status selects this key and archives earlier owner-revoked Sandbox metadata. No Apple portal/provider check was made: environment is owner-reported, key scope/topic and actual APNs authorization/delivery remain unverified. No credential is wired into a running service yet.
+
+No FCM service-account JSON was found in private push staging. The remaining owner step is the dedicated server sender credential above, saved as `artifacts/private/push/fcm-service-account.json`.

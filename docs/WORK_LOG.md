@@ -288,3 +288,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Added reproducible private-package inspection helper; final APK/IPA pass bundled JS/native-handler checks. Both iOS embedded profile and actual Mach-O signature entitlements match Production APNs/app/team; one registered physical iPhone. This is not trust-chain or hardware acceptance. Final public browser suite again passes all 13 cases. Installation QR images regenerated.
 - Updated current state/resume prompt/tools/push guide/roadmap/plan/evidence. Native source and documentation reconciled into canonical feat/webrtc-poc; isolated stage11 worktree retained for audit/owner terminal continuity. Private snapshots/config/build metadata retained; credentials remain excluded.
 - Next: install final previews, use private enrollment file in current state, verify incoming registration, then owner-operated foreground/background/locked ring→Answer→two-way audio, controls/cancel/no-answer/reboot matrix without Metro. No actual handset push or ringing claimed.
+
+## 2026-11-18 Owner iPhone ringing after swipe-away
+
+- Owner reports iPhone calling works well and provider-call ringtone arrives after swiping Phoneapp up. Recorded physical owner feedback with gesture/device/audio/reboot details still unrecorded; did not mark the entire native lifecycle matrix complete.
+- Verified Apple guidance: swiping an app card away quits it; VoIP pushes are a documented exception to the usual force-quit background-launch restriction. No app/server/DB changes, new builds or unsolicited device calls. Documentation/link and whitespace checks pass.

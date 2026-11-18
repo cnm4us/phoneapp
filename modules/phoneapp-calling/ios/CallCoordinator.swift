@@ -104,14 +104,14 @@ final class CallCoordinator:NSObject,PKPushRegistryDelegate,CXProviderDelegate {
  }
  private func beginIncomingTask(_ id:String){
   guard backgroundTask == .invalid else{return}
-  backgroundTask=UIApplication.shared.beginBackgroundTask(withName:"Phoneapp incoming call") {self.end(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])}}
+  backgroundTask=UIApplication.shared.beginBackgroundTask(withName:"Phoneapp incoming call") {self.end(id)}
  }
  func mediaState(_ id:String,_ value:Bool){guard id==current else{return};if value && !connected {lastTransport=Date();connected=true;deadline=nil;if backgroundTask != .invalid{UIApplication.shared.endBackgroundTask(backgroundTask);backgroundTask = .invalid};if let uuid=UUID(uuidString:id){provider.reportOutgoingCall(with:uuid,connectedAt:Date())}}}
  private func startPolling(){poll?.invalidate();poll=Timer.scheduledTimer(withTimeInterval:2,repeats:true){[weak self]_ in self?.reconcile()};reconcile()}
  private func reconcile(){
   guard let id=current,!polling else{return}
   if connected && Date().timeIntervalSince(lastTransport)>45 {end(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])};return}
-  if let deadline,deadline<Date(){end(id);DeviceIdentity.shared.queue.async{_=try? DeviceIdentity.shared.request("/calls/"+id+"/end",[:])};return}
+  if let deadline,deadline<Date(){end(id);return}
   polling=true
   DeviceIdentity.shared.queue.async {
    var result:[String:Any]?;var unauthorized=false

@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 1.1 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 1.2 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The immediate deliverable is a WebRTC experiment using the owner's iPhone and hi
 
 Implementation checkpoint: [0008](plans/0008-database-foundation.md) established MariaDB persistence; [0009](plans/0009-authenticated-foreground-calls.md) implements synthetic enrollment, server-assigned provider/patient screens, assigned directory, patient-addressed calls and shared durable call history. [0010](plans/0010-foreground-ringtone.md) adds foreground sound/vibration; [0011](plans/0011-native-background-incoming-calls.md) adds persistent native device identity, encrypted APNs/FCM delivery, PushKit/CallKit and Android Telecom. Both final physical previews compile, iPhone signed Production APNs entitlement is verified, and the owner reports successful iPhone ringing after a described swipe-away. Remaining device acceptance is in [evidence](testing/2026-11-18-native-background-calls.md). Production identity, live-call recording/transcription and full time review/export remain pending. Audio-message capture/playback is implemented under 0012.
 
-Implemented next increment: [0012 audio messages and shared patient history](plans/0012-audio-messages-shared-history.md), deployed to development with physical message acceptance open. It adds two-way short recorded audio messages, private storage/playback, patient-linked history and late-enrollment access, using synthetic data. Video messages, transcription, patient-initiated live calls, no-answer voicemail and Twilio are subsequent increments.
+Implemented next increment: [0012 audio messages and shared patient history](plans/0012-audio-messages-shared-history.md), deployed to development with physical message acceptance open. It adds two-way short recorded audio messages, private storage/playback, patient-linked history and late-enrollment access, using synthetic data. Video messages, transcription, patient-initiated live calls, no-answer voicemail and Twilio are subsequent increments. [0013](plans/0013-persistent-browser-sign-in.md) now retains browser login across reloads; native sign-in already persists.
 
 ## Users and context
 
@@ -62,6 +62,7 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 | PAT-05 | Communication history belongs to the patient record before and after app enrollment. | Calls/messages attach to a stable patient ID independently of app installation. Verified enrollment links an authorized account to eligible existing history and retained media without copying/rekeying records. Phone-number matching alone never grants access; shared/unknown numbers need staff resolution. Internal notes and staff time-review data are not exposed through patient history. |
 | TEAM-01 | Individual staff accounts and roles. | Each activity identifies its actor; RN, MA, NP, and admin permissions are configurable. Later role changes do not rewrite historical attribution. |
 | TEAM-02 | Separate provider and patient experiences. | Provider sees authorized patients and their call options/history; patient sees their own incoming calls/history/transcripts. Backend enforces access independently of UI or app variant. Shared calling code serves both experiences; separate installable variants remain a packaging choice. |
+| TEAM-03 | Browser sign-in survives normal reloads and browser-profile reopen. | Redeem enrollment once, retain a revocable browser session with an explicit expiry, restore authorized identity after reload, and forget/revoke on Sign out. Do not save one-use enrollment codes or reusable session secrets in Web Storage. Saved login does not automatically restart camera/microphone or a previous call. Cookie expiry/site-data removal and separate-profile account testing are explained. Implemented POC policy: 30 fixed days under plan 0013. |
 
 ### Communications
 

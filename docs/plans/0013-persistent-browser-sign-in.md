@@ -1,10 +1,10 @@
 # 0013 Persistent browser sign-in
 
-Status: implemented in isolated stage13; rollout/evidence in progress. Updated: 2026-11-18.
+Status: implemented and deployed; automated/public acceptance passes, owner reload confirmation pending. Updated: 2026-11-18.
 
 ## Outcome and scope
 
-Owner asks to avoid entering another enrollment code whenever the browser reloads for changes. Save a revocable browser session for a fixed 30 days; keep the one-use enrollment code one-use. Restore identity automatically after reload/new tab/browser-profile reopen, and revoke/forget on explicit Sign out. Existing open bearer-based tabs can adopt their current session before their first reload. Supports TEAM-01–02 and OPS-02 in [PRD](../PRD.md), building on [0012](0012-audio-messages-shared-history.md). Native enrollment/calling, recordings and time-credit semantics are unchanged; no new native build or database migration.
+Owner asks to avoid entering another enrollment code whenever the browser reloads for changes. Save a revocable browser session for a fixed 30 days; keep the one-use enrollment code one-use. Restore identity automatically after reload/new tab/browser-profile reopen, and revoke/forget on explicit Sign out. Existing open bearer-based tabs can adopt their current session before their first reload. Supports TEAM-01–03 and OPS-02 in [PRD](../PRD.md), building on [0012](0012-audio-messages-shared-history.md). Native enrollment/calling, recordings and time-credit semantics are unchanged; no new native build or database migration.
 
 ## Current evidence
 
@@ -18,8 +18,8 @@ Existing browser credentials live only in JS memory for 12h; closing/reloading l
 - [x] Upgrade valid bearer credentials in already-open same-origin browser tabs when no cookie exists, so the current owner tab can reload without a fresh code.
 - [x] Restore browser identity automatically; use a noncredential marker in JS instead of exposing cookie values or saving codes/tokens in Web Storage. Handle stale requests/account changes and visibly failed offline logout.
 - [x] Verify real HTTPS cookie flags, reload/new-tab/profile restore, signout, fixed expiry, legacy adoption, hostile Origin/missing guard and wrong-account rejection; run existing call/message/auth regressions.
-- [ ] Publish backend/browser between calls, allow the current tab to adopt its session, then verify public behavior without sending calls/messages to owner phones.
-- [ ] Update exact deployed result, tools, state/work log and owner handoff.
+- [x] Publish backend/browser between calls, allow the current tab to adopt its session, then verify public behavior without sending calls/messages to owner phones.
+- [x] Update exact deployed result, tools, state/work log and owner handoff.
 
 ## Data and configuration
 
@@ -32,9 +32,9 @@ Production browser Origin is `https://phoneapp.bawebtech.com`; tests infer their
 | Scenario | Command/procedure | Expected | Actual |
 | --- | --- | --- | --- |
 | Cookie persistence / flags / logout / expiry / CSRF / legacy adoption | `npm run test:browser-session` | Real HTTPS Chromium + isolated DB; one enrollment suffices, HttpOnly credential stays inaccessible to JS, invalid/revoked sessions denied | 4 scenarios / 5 Node tests pass |
-| Native and browser client races | `npm run test:account-client` | Native restoration remains valid; offline logout is honest and late 401 cannot clear newer account | In progress |
-| Calling and messages | `npm run test:accounts`, `npm run test:audio-messages`, `npm run test:native-calls`, `npm test`, `npm run test:browser` sequentially where DB is shared | Existing permission/media/history/upload/native contracts remain compatible | Evidence recorded at rollout |
-| Public restore | Isolated synthetic Provider browser profile through deployed HTTPS | Sign in once -> reload/new tab -> same identity, signout -> signed out; no calls/push/recording | Pending rollout |
+| Native and browser client races | `npm run test:account-client` | Native restoration remains valid; offline logout is honest and late 401 cannot clear newer account | 7 client tests pass |
+| Calling and messages | `npm run test:accounts`, `npm run test:audio-messages`, `npm run test:native-calls`, `npm test`, `npm run test:browser` sequentially where DB is shared | Existing permission/media/history/upload/native contracts remain compatible | All pass; see evidence |
+| Public restore | Isolated synthetic Provider browser profile through deployed HTTPS | Sign in once -> reload/new tab -> same identity, signout -> signed out; no calls/push/recording | Public HTTPS smoke passes, including legacy adoption |
 | Owner current tab | Leave current browser open briefly after publish, then reload | Legacy session adopted and identity restored without another code | Owner feedback pending |
 
 ## Risks and recovery
@@ -45,4 +45,4 @@ Disable the browser UI opt-in/revert the feature implementation while preserving
 
 ## Handoff
 
-Next: final checks and source-only browser/backend rollout. No Apple login, EAS build or schema change required. Keep active calls intact and record public/owner results separately.
+Deployed between calls; service healthy and public session/calling checks pass. Owner was instructed to foreground the existing tab briefly, then reload. No Apple login, EAS build or schema change was needed. Record personal owner confirmation separately; continue 0012 physical checks without new enrollment on ordinary reloads. See [evidence](../testing/2026-11-18-browser-sessions.md).

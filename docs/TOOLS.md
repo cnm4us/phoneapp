@@ -263,3 +263,19 @@ Private package inspection uses `scripts/check-native-packages.py --audio-messag
 `messages:status` reports aggregate message state/sender-role/failure counts only; no patient IDs, media paths or grant values. Provider-only enrollment issues a new private one-use code without revoking unused codes or touching native sign-in. Latest owner Provider file: `artifacts/private/enrollment-1795038082921.txt`.
 
 `accounts:enroll -- patient-a` issues only Patient A’s code with the same private-file/one-use/24-hour policy. Latest owner-requested Patient A file: `artifacts/private/enrollment-1795039888000.txt`. Issuing a code does not revoke existing sessions or unused codes.
+
+## Persistent browser sign-in (0013)
+
+[Plan](plans/0013-persistent-browser-sign-in.md), [decision](decisions/0009-browser-sessions.md), [evidence](testing/2026-11-18-browser-sessions.md). Current browser sign-in is saved for 30 fixed days in a host-only HttpOnly/Secure/SameSite=Strict cookie; old memory-only descriptions above are historical. New browser enrollment/restore uses guarded `/api/browser/enroll` and `/api/browser/session`; no secret appears in response JSON or Web Storage. The marker token field is not a bearer credential. Native and CLI `/api/enroll` are unchanged.
+
+```sh
+npm run test:browser-session
+npm run test:account-client
+npm run smoke:browser-session
+```
+
+The session suite uses real local HTTPS/Chromium and isolated `phoneapp_test` under the established suite lock (4 scenarios/5 Node tests); run sequentially with other DB suites. Client suite now has seven native/browser cases. Public smoke issues only its own synthetic Provider credentials in a private browser context, tests saved login/adoption/logout and revokes only its sessions; no calls/messages/notifications. No credential/cookie values are printed or captured to public traces.
+
+Existing open browser tabs adopt valid bearer sessions on a same-origin API poll when no saved cookie exists; foreground the tab for about five seconds before its first reload after deployment. One cookie identity is shared by tabs in a browser profile; use another profile/private window when testing a second account. Explicit online Sign out revokes/clears; offline failure remains visible as signed in until retry. Clearing cookies/expiry/revocation needs a fresh code; don't reuse a redeemed code. The original code files remain private and one-use.
+
+No DDL/new environment key/native binary/nginx change. Existing `auth_sessions` rows hold fixed expiry/revocation. Production Origin is the existing project HTTPS hostname, not the reverse proxy's internal Host. Private test logs are retained under `artifacts/private/browser-sessions/`. Source rollout occurred between calls; service/cache reload published browser assets. No automatic microphone/camera/call resume is introduced.

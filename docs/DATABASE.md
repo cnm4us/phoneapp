@@ -116,3 +116,7 @@ Message expiry preserves metadata and removes bytes with retries/orphan cleanup;
 | Date | Environment alias | Migration | Outcome | Evidence |
 | --- | --- | --- | --- | --- |
 | 2026-11-18 | Test and development | `0005_audio_messages.sql` | Applied, scoped grants and permissions pass | [Audio-message report](testing/2026-11-18-audio-messages.md); private pre-migration snapshot under ignored audio-messages artifacts. |
+
+## Browser session persistence (0013; no schema migration)
+
+[0013](plans/0013-persistent-browser-sign-in.md) reuses hashed `auth_sessions` tokens and existing expiry/revocation columns for fixed 30-day browser-cookie sessions. Restoration does not extend the deadline; authenticated same-origin legacy adoption extends the existing browser row once without changing its ID or native-device binding. Generic bearer enrollment remains 12h and native device credentials retain their 0011 lifecycle. Logout revokes only the current browser session. No migration file, table, grant or encryption key change; migration ledger remains 0001–0005. No raw cookie/code is persisted in DB.

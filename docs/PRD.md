@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 0.5 draft. Updated: 2026-11-17 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.6 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -8,7 +8,7 @@ Capture the small increments of care-team work that are easily missed during chr
 
 The immediate deliverable is a WebRTC experiment using the owner's iPhone and his wife's Android phone. The full care-management product will be developed through separate, testable implementation plans.
 
-Implementation checkpoint: [plan 0008](plans/0008-database-foundation.md) now provides isolated MariaDB dev/test schemas, versioned migrations and synthetic Patient A/B/C data for the next provider/patient slice. This satisfies the initial persistence/tooling portion of OPS-01; patient screens/authentication, durable app call integration, push, consent enforcement, recording/playback and transcription remain to implement under [0007](plans/0007-provider-patient-calls-transcripts.md). Future schema changes use additional migrations. Existing foreground WebRTC continues independently.
+Implementation checkpoint: [0008](plans/0008-database-foundation.md) established MariaDB persistence; [0009](plans/0009-authenticated-foreground-calls.md) now implements synthetic account enrollment, server-assigned provider/patient screens, assigned directory, patient-addressed foreground App Audio/Video and shared durable call history. This implements portions of PAT-04, TEAM-02, COM-10 and REP-03 under [0007](plans/0007-provider-patient-calls-transcripts.md). Native locked/background ringing, production identity/secure session persistence, consent/media capture/playback/transcription and full time review/export remain pending. Recording/transcript is Off.
 
 ## Users and context
 
@@ -116,7 +116,7 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 
 ## Intended workflows
 
-Proposed next app-only slice: provider sees Patient A/B/C, selects a patient and App Audio/Video, and the enrolled patient receives an incoming app call without entering a room code. Both authorized users see its call-log entry and, if enabled/consented, a speaker-labeled transcript after processing. Initially only App Audio/Video is actionable. Post-call text is the requested result; live captions and LLM summaries are deferred. See [proposed plan 0007](plans/0007-provider-patient-calls-transcripts.md); native ringing and recording infrastructure are not implemented yet.
+Proposed next app-only slice: provider sees Patient A/B/C, selects a patient and App Audio/Video, and the enrolled patient receives an incoming app call without entering a room code. Both authorized users see its call-log entry and, if enabled/consented, a speaker-labeled transcript after processing. Initially only App Audio/Video is actionable. Post-call text is the requested result; live captions and LLM summaries are deferred. See [staged plan 0007](plans/0007-provider-patient-calls-transcripts.md) and foreground implementation 0009; native background ringing and recording infrastructure are not implemented yet.
 
 1. Staff select a patient and contact, call or open a message conversation, and perform care work.
 2. The app creates draft activity with measured duration and source evidence. A quick after-work prompt captures clinical purpose and corrections.

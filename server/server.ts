@@ -1,12 +1,15 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
-import type { ClientMessage, IceServer, ServerMessage } from '../shared/protocol';
+import type { ClientMessage, IceServer, ServerMessage, Invitation } from '../shared/protocol';
 import { loadWebAssets, webHeaders } from './web-assets';
 import { validLimit } from '../src/call/quality';
 
 export interface Options {
   accessKey: string;
+  apiHandler?: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+  authorizePrivateJoin?: (sessionId: string, callId: string) => Promise<boolean>;
+  privateRoomEnded?: (callId: string) => Promise<void>;
   roomTtlMs?: number;
   maxRooms?: number;
   now?: () => number;
@@ -18,8 +21,8 @@ export interface Options {
   relayVideoMaxBitrate?: number;
   ultraEnabled?: boolean;
 }
-type Peer = { socket: WebSocket; alive: boolean; missedPongs: number; closeCause?: string; roomId?: string; initiator?: boolean; count: number; window: number; version?: 2; revision?: number; controlCount?: number };
-type Room = { token: string; sessionId: string; expiresAt: number; peers: Set<Peer>; phase: 'waiting' | 'ready' | 'offered' | 'answered'; negotiationId?: number; queued?: boolean; negotiatingAt?: number; warned?: boolean };
+type Peer = { mediaSessionId?: string; socket: WebSocket; alive: boolean; missedPongs: number; closeCause?: string; roomId?: string; initiator?: boolean; count: number; window: number; version?: 2; revision?: number; controlCount?: number };
+type Room = { callId?: string; members?: Map<string, string>; token: string; sessionId: string; expiresAt: number; peers: Set<Peer>; phase: 'waiting' | 'ready' | 'offered' | 'answered'; negotiationId?: number; queued?: boolean; negotiatingAt?: number; warned?: boolean };
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const keys = (v: Record<string, unknown>, allowed: string[]) => Object.keys(v).every((k) => allowed.includes(k));
@@ -56,7 +59,11 @@ export function createSignaling(options: Options) {
   // for a different room within their original lifetime. Bounded by creation rate/TTL.
   const codes = new Map<string, { roomId: string; expiresAt: number }>();
   const peers = new Set<Peer>();
+  const privateRooms = new Map<string,string>();
   const log = options.log ?? (() => {});
+  const notifyClosed = (room: Room) => {
+    if (room.callId) { privateRooms.delete(room.callId); void options.privateRoomEnded?.(room.callId).catch(() => log({event:'account-room-close-failed'})); }
+  };
   const turnConfigured = Boolean(options.turnUrls?.length && options.turnSecret);
   const assets = options.webRoot ? loadWebAssets(options.webRoot) : undefined;
   let createWindow = now();
@@ -94,6 +101,7 @@ export function createSignaling(options: Options) {
       }
       if (room.expiresAt > now()) continue;
       rooms.delete(id);
+      notifyClosed(room);
       for (const p of room.peers) reject(p, 'expired', 'This invitation has expired. Create a new room.');
       log({ event: 'room-expired', sessionId: room.sessionId });
     }
@@ -133,6 +141,11 @@ export function createSignaling(options: Options) {
   };
   const http = createServer((req, res) => {
     expire();
+    if (req.url?.startsWith('/api/')) {
+      if (options.apiHandler) void options.apiHandler(req,res).catch(() => { if (!res.headersSent) json(res,503,{error:'Account service unavailable'}); });
+      else json(res,503,{error:'Account calling is not enabled on this server.'});
+      return;
+    }
     const asset = assets?.get((req.url ?? '').split('?')[0]);
     if (asset && (req.method === 'GET' || req.method === 'HEAD')) {
       res.writeHead(200, { ...webHeaders, 'Content-Type': asset.contentType });
@@ -176,6 +189,7 @@ export function createSignaling(options: Options) {
       if (!room) return;
       // A departed participant ends the room. Avoid reusing stale peer negotiation.
       rooms.delete(p.roomId);
+      notifyClosed(room);
       room.peers.delete(p);
       for (const other of room.peers) {
         send(other, { type: 'peer-left' });
@@ -183,7 +197,12 @@ export function createSignaling(options: Options) {
       }
       log({ event: 'room-ended', sessionId: room.sessionId, cause: p.closeCause ?? 'connection-closed', closeCode: code, initiatorLeft: p.initiator });
     });
+    let pendingMessages = Promise.resolve(), pendingCount=0;
     socket.on('message', (raw, binary) => {
+      if(pendingCount>=64)return reject(p,'rate-limit','Too many pending messages');
+      pendingCount++;
+      pendingMessages = pendingMessages.then(async () => {
+      if (socket.readyState !== WebSocket.OPEN) return;
       expire();
       if (now() - p.window >= 1_000) { p.window = now(); p.count = 0; p.controlCount = 0; }
       if (++p.count > 100) return reject(p, 'rate-limit', 'Too many messages');
@@ -193,7 +212,13 @@ export function createSignaling(options: Options) {
       if (m.type === 'join') {
         if (p.roomId) return reject(p, 'already-joined', 'Already in a room');
         const room = rooms.get(m.roomId);
-        if (!room || !equal(room.token, m.token)) return reject(p, 'invalid-invite', 'Invitation is invalid or expired.');
+        if (!room) return reject(p, 'invalid-invite', 'Invitation is invalid or expired.');
+        if (room.members && room.callId) {
+          const mediaSessionId=room.members.get(m.token);
+          if (!mediaSessionId || !await options.authorizePrivateJoin?.(mediaSessionId,room.callId) || rooms.get(m.roomId) !== room || socket.readyState !== WebSocket.OPEN) return reject(p,'invalid-invite','Call access has expired.');
+          if ([...room.peers].some(peer=>peer.mediaSessionId === mediaSessionId)) return reject(p,'already-joined','This participant is already connected.');
+          p.mediaSessionId=mediaSessionId;
+        } else if (!equal(room.token,m.token)) return reject(p,'invalid-invite','Invitation is invalid or expired.');
         if (room.peers.size >= 2) return reject(p, 'room-full', 'This room already has two participants.');
         p.roomId = m.roomId;
         p.initiator = room.peers.size === 0;
@@ -240,6 +265,7 @@ export function createSignaling(options: Options) {
       }
       for (const other of room.peers) if (other !== p) send(other, m as ServerMessage);
       if (m.type === 'answer' && room.queued) negotiate(room);
+      }).catch(() => reject(p,'server-error','Signaling is temporarily unavailable.')).finally(()=>{pendingCount--;});
     });
   });
   const sweep = setInterval(() => {
@@ -253,6 +279,25 @@ export function createSignaling(options: Options) {
   sweep.unref();
   return {
     http,
+    privateInvitation: (callId: string, bindings: {userId:string;sessionId:string}[], sessionId: string): Invitation => {
+      const existing=privateRooms.get(callId);
+      let roomId=existing, room=existing ? rooms.get(existing) : undefined;
+      if (!room) {
+        if (rooms.size >= (options.maxRooms ?? 100)) throw new Error('Room capacity reached');
+        roomId=randomBytes(9).toString('base64url');
+        room={ callId, members:new Map(bindings.map(binding=>[randomBytes(24).toString('base64url'),binding.sessionId])), token:'', sessionId:randomUUID(), expiresAt:now()+ttl, peers:new Set(), phase:'waiting' };
+        rooms.set(roomId,room); privateRooms.set(callId,roomId);
+      }
+      const member=[...room.members!].find(([,memberSession])=>memberSession===sessionId);
+      if (!member) throw new Error('Call participant is not bound');
+      return {roomId:roomId!,token:member[0],expiresAt:room.expiresAt};
+    },
+    closePrivateRoom: (callId: string) => {
+      const id=privateRooms.get(callId),room=id ? rooms.get(id) : undefined;
+      if (!room || !id) return;
+      rooms.delete(id); privateRooms.delete(callId);
+      for (const peer of room.peers) { send(peer,{type:'peer-left'}); peer.socket.close(1000,'call-ended'); }
+    },
     close: async () => {
       clearInterval(sweep);
       for (const p of peers) p.socket.terminate();

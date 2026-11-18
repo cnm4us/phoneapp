@@ -42,12 +42,17 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
   const [locked] = await db.query("SELECT GET_LOCK('phoneapp:test-suite',0) AS acquired");
   assert.equal(Number(locked.acquired), 1, 'Another DB test is active');
   try {
-    await t.test('clean v1 install and v2 upgrade preserve directory and call history', async () => {
+    await t.test('clean install and v1/v2/v3 upgrades preserve directory, calls and transcripts', async () => {
       await resetDisposable(db);
       assert.deepEqual(await migrate(db, { through: '0001_identity_calls.sql' }), ['0001_identity_calls.sql']);
       await seed(db);
       const { call } = await addCall(db);
-      assert.deepEqual(await migrate(db), ['0002_transcripts_activity.sql']);
+      assert.deepEqual(await migrate(db,{through:'0002_transcripts_activity.sql'}), ['0002_transcripts_activity.sql']);
+      const transcript=randomUUID();
+      await db.query('INSERT INTO transcript_versions (id,call_id,version_number) VALUES (?,?,1)',[transcript,call]);
+      assert.deepEqual(await migrate(db), ['0003_foreground_accounts.sql']);
+      const [preserved]=await db.query('SELECT id FROM transcript_versions WHERE id=?',[transcript]);
+      assert.equal(preserved.id,transcript);
       const [row] = await db.query('SELECT id FROM calls WHERE id=?', [call]);
       assert.equal(row.id, call);
       const [count] = await db.query('SELECT COUNT(*) AS n FROM patients');
@@ -143,14 +148,14 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       const directory = await mkdtemp(join(tmpdir(), 'phoneapp-migration-'));
       try {
         await cp(migrationDirectory, directory, { recursive: true });
-        await writeFile(join(directory, '0003_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
+        await writeFile(join(directory, '0004_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
         await assert.rejects(migrate(db, { directory }), rejected('ER_PARSE_ERROR'));
         assert.equal((await history(db)).at(-1)?.state, 'failed');
         await assert.rejects(migrate(db, { directory }), /Unfinished migration/);
         const [probe] = await db.query("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='recovery_probe'");
         assert.equal(Number(probe.n), 1, 'DDL was committed before failure');
         await resetDisposable(db);
-        assert.equal((await migrate(db)).length, 2);
+        assert.equal((await migrate(db)).length, 3);
         await seed(db);
         const [counts] = await db.query('SELECT (SELECT COUNT(*) FROM calls) AS calls, (SELECT COUNT(*) FROM transcription_jobs) AS jobs, (SELECT COUNT(*) FROM recording_assets) AS assets');
         assert.deepEqual([counts.calls, counts.jobs, counts.assets].map(Number), [0, 0, 0]);

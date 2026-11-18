@@ -86,7 +86,7 @@ export class CallSession {
     if (this.socket?.readyState !== WebSocket.OPEN) throw new Error('Signaling connection is not open. Start a new room.');
     this.socket.send(JSON.stringify(message));
   }
-  async join(base: string, code: string, video: boolean, relay: boolean) {
+  async join(base: string, code: string, video: boolean, relay: boolean, suppliedInvitation?: {roomId:string;token:string;expiresAt:number}) {
     const preferences = this.quality.state;
     this.cleanup();
     const epoch = this.epoch;
@@ -99,7 +99,7 @@ export class CallSession {
     try {
       const origin = endpoint(base);
       let invite: Awaited<ReturnType<typeof resolveInvitation>>;
-      try { invite = await resolveInvitation(origin, code); }
+      try { invite = suppliedInvitation ?? await resolveInvitation(origin, code); }
       catch (error) { if (epoch === this.epoch) this.end(error instanceof Error ? error.message : 'Could not resolve room code'); return; }
       if (epoch !== this.epoch) return;
       const stream = await mediaDevices.getUserMedia({ audio: true, video: video && !preferences.audioOnly ? { facingMode: 'user', ...constraints(intersect(START_LIMIT, preferences.send)) } : false });
@@ -108,7 +108,7 @@ export class CallSession {
       const socket = new WebSocket(`${origin.replace(/^http/, 'ws')}/signal`);
       this.socket = socket;
       this.deadline = setTimeout(() => { if (epoch === this.epoch) this.end('The signaling server did not respond. Check its address and try a new room.'); }, 15_000);
-      socket.onopen = () => { if (epoch === this.epoch) this.send({ type: 'join', ...invite }, epoch); };
+      socket.onopen = () => { if (epoch === this.epoch) this.send({ type: 'join', roomId:invite.roomId, token:invite.token }, epoch); };
       // Serialize async SDP operations so candidates cannot race a remote description.
       let messages = Promise.resolve();
       socket.onmessage = (event) => {

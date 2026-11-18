@@ -16,6 +16,10 @@ test('development runtime identity has scoped DML and protected history', async 
       await assert.rejects(db.query(`UPDATE ${table} SET id=id WHERE 1=0`), denied);
       await assert.rejects(db.query(`DELETE FROM ${table} WHERE 1=0`), denied);
     }
+    for(const table of ['enrollment_codes','auth_sessions','call_runtime','call_presence']) {
+      await db.query(`UPDATE ${table} SET ${table==='call_runtime'||table==='call_presence'?'call_id=call_id':'id=id'} WHERE 1=0`);
+      await assert.rejects(db.query(`DELETE FROM ${table} WHERE 1=0`),denied);
+    }
     await assert.rejects(db.query('SELECT User FROM mysql.user LIMIT 0'), denied);
     await assert.rejects(db.query('USE phoneapp_test'), denied);
     await db.beginTransaction();

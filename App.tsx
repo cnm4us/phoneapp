@@ -10,6 +10,8 @@ import { QualityControls } from './src/call/QualityControls';
 import { CallVideoStage } from './src/call/CallVideoStage';
 import { SettingsPanel } from './src/call/SettingsPanel';
 import { AudioOutputControls } from './src/call/AudioOutputControls';
+import { AccountClient } from './src/accounts/client';
+import { AccountPanel } from './src/accounts/AccountPanel';
 
 const labels = { idle: 'Ready to test', permissions: 'Requesting microphone / camera', joining: 'Joining room…', waiting: 'Waiting for the other phone…', connecting: 'Connecting media…', connected: 'Connected', reconnecting: 'Connection interrupted…', ended: 'Call ended', error: 'Unable to continue' };
 
@@ -21,6 +23,9 @@ function CallScreen() {
   const session = useRef(new CallSession()).current;
   const [call, setCall] = useState(session.state);
   const [base, setBase] = useState(process.env.EXPO_PUBLIC_SIGNALING_URL || 'https://phoneapp.bawebtech.com');
+  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: invite => session.join(base,'',true,false,invite), end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error }));
+  const [accountState,setAccountState]=useState(accounts.state);
+  const [legacy,setLegacy]=useState(false);
   const [key, setKey] = useState('');
   const [code, setCode] = useState('');
   const [video, setVideo] = useState(true);
@@ -32,13 +37,14 @@ function CallScreen() {
   const [previewVisible, setPreviewVisible] = useState(true);
   const active = !['idle', 'ended', 'error'].includes(call.phase);
   useEffect(() => {
-    const unsubscribe = session.subscribe(setCall);
+    const unsubscribe = session.subscribe(state=>{setCall(state);accounts.mediaChanged(state.phase);});
+    const accountSubscription=accounts.subscribe(setAccountState);
     const listener = AppState.addEventListener('change', (state) => {
       // iOS permission prompts briefly make the app inactive; only real backgrounding ends a call.
-      if (state === 'background' && !['idle', 'ended', 'error'].includes(session.state.phase)) session.end('This experiment runs in the foreground. Return to the app and start a new room.');
+      if (state === 'background' && !['idle', 'ended', 'error'].includes(session.state.phase)) session.end('This experiment runs in the foreground. Return to the app and start a new call.');
     });
-    return () => { unsubscribe(); listener.remove(); session.end(); };
-  }, [session]);
+    return () => { unsubscribe(); accountSubscription(); accounts.dispose(); listener.remove(); session.end(); };
+  }, [session,accounts]);
   useEffect(() => { setSettingsOpen(false); }, [active]);
   useEffect(() => {
     if (!settingsOpen) return;
@@ -87,13 +93,14 @@ function CallScreen() {
           status={call.quality.status} duration={duration} phase={labels[call.phase]}
           audioOutput={call.audioOutput} speaker={() => session.toggleSpeaker()}
           settings={() => { Keyboard.dismiss(); setSettingsOpen(true); }}
-          mute={() => session.mute()} camera={() => session.toggleCamera()} hangup={() => session.end()}
+          mute={() => session.mute()} camera={() => session.toggleCamera()} hangup={() => accountState.current ? void accounts.hangup() : session.end()}
         /> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.row}>
             <Text style={styles.title}>Phoneapp</Text>
             <Button title="⚙ Settings" accessibilityLabel="Open Phoneapp settings" onPress={() => { Keyboard.dismiss(); setSettingsOpen(true); }} />
           </View>
-          <Text style={styles.muted}>Foreground test calls · No recording</Text>
+          <AccountPanel client={accounts} state={accountState} />
+          {legacy && !accountState.account && <><Text style={styles.muted}>Manual POC calls · No recording</Text>
           <View style={styles.card}>
             <Text style={styles.label}>{labels[call.phase]}</Text>
             {call.seconds > 0 && <Text style={styles.muted}>Last connected time: {duration}</Text>}
@@ -107,15 +114,16 @@ function CallScreen() {
             <Button title="Share room code" disabled={!code || creating} onPress={() => void Share.share({ message: code })} />
             {formError ? <Text style={styles.error} accessibilityRole="alert">{formError}</Text> : null}
             <Button title="Join call" disabled={!code || creating} onPress={() => { Keyboard.dismiss(); setFormError(''); void session.join(base, code, video, relay); }} color="#5ce1c2" />
-          </View>
+          </View></>}
         </ScrollView>}
       </View>
       {settingsOpen && <SettingsPanel close={closeSettings}>
         {!active && <View style={styles.card}>
           <Text style={styles.label}>Test connection setup</Text>
+          <View style={styles.row}><Text style={styles.text}>Show manual room testing</Text><Switch accessibilityLabel="Show manual room testing" value={legacy} onValueChange={setLegacy} disabled={Boolean(accountState.account)} /></View>
           <Text style={styles.muted}>Only the invitation creator needs the access key.</Text>
-          <Text style={styles.fieldLabel}>Signaling server</Text>
-          <TextInput accessibilityLabel="Signaling server" style={styles.input} value={base} onChangeText={setBase} autoCapitalize="none" autoCorrect={false} keyboardType="url" editable={!creating} />
+          <Text style={styles.fieldLabel}>Manual room signaling server</Text>
+          <TextInput accessibilityLabel="Signaling server" style={styles.input} value={base} onChangeText={setBase} autoCapitalize="none" autoCorrect={false} keyboardType="url" editable={!creating && !accountState.account} />
           <Text style={styles.fieldLabel}>Test access key</Text>
           <TextInput accessibilityLabel="Test access key" style={styles.input} value={key} onChangeText={setKey} secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Creator only" placeholderTextColor="#81929d" editable={!creating} />
           <View style={styles.row}><Text style={styles.text}>Send video when joining</Text><Switch accessibilityLabel="Send video when joining" value={video} onValueChange={setVideo} disabled={creating} /></View>

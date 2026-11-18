@@ -1,4 +1,5 @@
 import { BrowserCall, type State } from './call';
+import { accountPanel } from './accounts';
 import { invitation, displayInvitation, roomTimeLeft } from '../src/call/core';
 import type { Invitation } from '../shared/protocol';
 import { PRESETS, type Preset, type VideoLimit } from '../src/call/quality';
@@ -174,6 +175,7 @@ function render(state: State) {
   }
 }
 const call = new BrowserCall(render);
+const accounts = accountPanel(call);
 button('copy-video-diagnostics').onclick = async () => {
   const output = element<HTMLTextAreaElement>('video-diagnostics-output');
   output.value = call.videoDiagnosticsText();
@@ -284,7 +286,7 @@ button('fullscreen').onclick = async () => {
   button('fullscreen').textContent = 'Exit full screen';
 };
 document.addEventListener('fullscreenchange', () => { button('fullscreen').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
-button('hangup').onclick = () => call.end();
+button('hangup').onclick = () => {if(accounts.state.current)void accounts.hangup();else call.end();};
 button('play-audio').onclick = () => {
   void playRemote();
 };

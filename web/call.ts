@@ -50,6 +50,8 @@ const empty = (): State => ({
 
 export class BrowserCall {
   state = empty();
+  private observers=new Set<(state:State)=>void>();
+  subscribe(listener:(state:State)=>void):()=>void {this.observers.add(listener);return ()=>this.observers.delete(listener);}
   private epoch = 0;
   private socket?: WebSocket;
   private peer?: RTCPeerConnection;
@@ -71,6 +73,7 @@ export class BrowserCall {
   private update(patch: Partial<State>) {
     this.state = { ...this.state, ...patch };
     this.changed(this.state);
+    for(const listener of this.observers)listener(this.state);
   }
   private send(message: ClientMessage, epoch: number) {
     if (epoch !== this.epoch) return;
@@ -108,7 +111,7 @@ export class BrowserCall {
     this.quality = this.makeQuality(preferences);
     this.update({ quality: this.quality.state });
   }
-  async join(code: string, video: boolean, relay: boolean) {
+  async join(code: string, video: boolean, relay: boolean, suppliedInvitation?: {roomId:string;token:string;expiresAt:number}) {
     const preferences = this.quality.state;
     this.end();
     const epoch = this.epoch;
@@ -123,7 +126,7 @@ export class BrowserCall {
     this.update({ quality: this.quality.state, phase: 'joining' });
     let invite: Awaited<ReturnType<typeof resolveInvitation>>;
     try {
-      invite = await resolveInvitation(location.origin, code);
+      invite = suppliedInvitation ?? await resolveInvitation(location.origin, code);
     } catch (error) {
       if (epoch === this.epoch) this.update({ phase: 'error', error: (error as Error).message });
       return;
@@ -182,7 +185,7 @@ export class BrowserCall {
           );
       }, 15_000);
       socket.onopen = () => {
-        if (epoch === this.epoch) this.send({ type: 'join', ...invite }, epoch);
+        if (epoch === this.epoch) this.send({ type: 'join', roomId:invite.roomId, token:invite.token }, epoch);
       };
       let queue = Promise.resolve();
       socket.onmessage = (event) => {

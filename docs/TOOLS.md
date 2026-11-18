@@ -1,6 +1,6 @@
 # Tools and access inventory
 
-Updated: 2026-11-17 UTC. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
+Updated: 2026-11-18 UTC. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
 
 ## Verified environment
 
@@ -60,7 +60,7 @@ The [GitHub Actions template](templates/docs-workflow.yml) can run the same chec
 | Signaling/backend | Node tests via `tsx`; local HTTP/WSS tests, static allowlist/headers, public smoke | 31 unit/server/adapter tests pass; no media in signaling smoke. |
 | Browser companion | Buildless UI source in `web/`, TypeScript bundled by esbuild 0.28.2, Playwright 1.65.1 | 12 deployed-site checks pass in Chromium with synthetic media. Physical/native/Safari results remain separate. |
 | Native acceptance | Both physical phones, EAS artifacts, sanitized session diagnostics | Owners install builds and execute the matrix in the active plan. |
-| DB access | MariaDB Connector/Node.js 3.5.5; dedicated dev/test identities; versioned SQL runner | Runtime connectivity and UTC verified; existing call service not yet integrated. |
+| DB access | MariaDB Connector/Node.js 3.5.5; dedicated dev/test identities; versioned SQL runner | Runtime connectivity/UTC verified; account APIs now integrate persistence when explicitly enabled. |
 | DB tests | `test:db` disposable reset/replay/upgrade/integrity tests; `test:db:permissions` scoped runtime checks | Eight DB scenarios plus permission case pass; see [report](testing/2026-11-17-database-foundation.md). |
 
 See `package.json` for actual scripts. Install Chromium once using `npx playwright install chromium`. Local browser tests start an isolated server on loopback 8790 with a synthetic creator key; if `.env.server` exists, only the configured TURN connection is reused. Without TURN the relay scenario is explicitly skipped. `test:browser:live` uses `.env.server` to exercise the public site; it creates temporary rooms and transfers synthetic media. Neither controls the physical phones. Linux relay diagnostics remain available with `python3 scripts/check-turn.py --transport udp` (or `tcp`/`tls`).
@@ -112,7 +112,7 @@ Before using DB tooling, verify target host/database/environment and intended mi
 
 Full instructions and recovery: [setup/runbook](SETUP.md). `phoneapp-signaling` and `phoneapp-turn` are enabled systemd services. Check with `sudo systemctl status phoneapp-signaling phoneapp-turn --no-pager`; restart only the affected project unit after checks. Their runtime follows this development checkout, so account for running services before changing branches/dependencies. Generated native folders and private artifacts are ignored.
 
-Before starting/restarting signaling, run `npm run build:web`: it loads the three allowlisted compiled assets from `web/dist` at startup. Asset changes need a signaling restart after tests. nginx routes only those three page/assets paths plus existing APIs; arbitrary repository files are not served. Build outputs, private screenshots, and browser test results are ignored.
+Before starting/restarting signaling, run `npm run build:web`: it loads the three allowlisted compiled assets from `web/dist` at startup. Asset changes need a signaling restart after tests. nginx routes those three page/assets paths, existing room/signal APIs, and the project `/api/` account prefix; arbitrary repository files are not served. Build outputs, private screenshots, and browser test results are ignored.
 
 The AWS role cannot describe/manage EC2 security groups. No AWS rules were changed by the agent. Owner confirmed inbound TCP 3478/5349, UDP 3478 and `49160-49200` were added; public relay probes subsequently passed. AWS Console requires an ordinary ASCII hyphen for the range. A configured health flag alone does not prove reachability.
 
@@ -150,3 +150,22 @@ npm run db:check -- test
 Provisioning/grants require existing `sudo -n mariadb` access. Migration/check/seed/test use separate password-authenticated project accounts. `db:seed` inserts only disabled synthetic Provider/Patient A/B/C records and bindings, preserves existing values/revocations, and can be repeated. All CLI commands accept only `dev` or `test`, never an arbitrary target name. `db:status` checks checksums and pending history; `db:check` requires current schema. `db:migrate -- test` applies only to disposable test. Re-run `db:grants` after adding reviewed tables to its explicit allowlist.
 
 **`test:db` destroys/recreates tables in `phoneapp_test`**, never development. It verifies the exact DB/account and suite lock first, leaves only synthetic seed rows, and rehearses partial-DDL recovery. `test:db:permissions` reads development and uses denied statements/rolled-back no-op updates. No development reset/backup/repair command is implemented; follow [recovery workflow](DATABASE.md) before any data-bearing destructive change. `.env.database` and `database/` are excluded from mobile source archives; no Expo public variable contains a DB credential.
+
+## Synthetic provider/patient accounts
+
+[Plan 0009](plans/0009-authenticated-foreground-calls.md), [decision 0006](decisions/0006-foreground-accounts.md), and [report](testing/2026-11-18-foreground-accounts.md) define this foreground-only iteration. Same existing native binary; reload the development app for JS changes. Browser uses the public HTTPS site. Native Settings → Show manual room testing preserves the original invitation workflow while signed out.
+
+```sh
+npm run db:status
+npm run accounts:enroll
+npm run test:accounts
+npm run smoke:accounts
+```
+
+`accounts:enroll` creates four fresh one-use 24-hour codes, one for Provider and each Patient A/B/C. It prints only the path to a new `artifacts/private/enrollment-<timestamp>.txt` (600); open privately in VS Code and paste the appropriate code into each client's enrollment field. Codes/tokens are credentials, not patient identifiers. A successful redemption creates a 12-hour opaque session in client memory; reload/app close loses it and needs another code. Generate more code files as needed. Never publish a code, put one in a URL/EXPO_PUBLIC variable, or add these files to Git/EAS.
+
+Use Provider on one device and Patient A on another. Keep both app/page screens open, select A → App Audio/Video, then Answer on A. Histories show the same call ID/outcome and observed seconds. B/C cannot view A's calls. Off labels are intentional: recording/playback/transcription are not activated. Native background/locked ringing and hardware acceptance are pending. Incoming display is an in-app prompt, not an audible/system ringtone or push notification.
+
+`test:accounts` uses only disposable MariaDB with the same suite lock as `test:db`, plus independent Chromium contexts/fake media. It verifies real video with authenticated foreground UI, API access/race/restart/timeout/limits and observed interval behavior; it does not reset development. Run DB suites sequentially. `smoke:accounts` uses development synthetic Provider/A only and the public HTTPS API; it issues/redeems private transient codes, creates/answers/ends its own no-media test call, checks shared history and logs out its own sessions. It never prints codes/tokens or claims media acceptance; do not run while manually testing a call under the same provider account.
+
+Server configuration: `.env.server` flag `ENABLE_ACCOUNT_CALLS=true` plus `.env.database` runtime credentials. Migrate and apply explicit table grants before enabling; startup checks schema only. Failure recovery: disable the flag and restart the project signaling service to retain manual POC calling; preserve all DB tables/history. New API route: project nginx `/api/`, max 4 KiB JSON bodies, no CORS/session cookies. No new public DB port or paid identity provider.

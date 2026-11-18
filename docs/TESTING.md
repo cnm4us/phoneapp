@@ -7,6 +7,7 @@ python3 scripts/check_project.py
 npm run typecheck
 npm run test:db
 npm run test:db:permissions
+npm run test:accounts
 npm test
 npm run test:browser
 npm run test:browser:live
@@ -61,3 +62,9 @@ Use [the device report template](testing/DEVICE_REPORT_TEMPLATE.md). Never fill 
 [Foundation report](testing/2026-11-17-database-foundation.md): eight live MariaDB scenarios verify clean install, v1-to-v2 upgrade with data preservation, no-op replay/seed, shared contacts/FKs, duplicate events/requests, device ownership, consent/transcript call scope, raw/reviewed seconds, migration locks/checksum/future history refusal and dirty-DDL recovery. A separate permission case checks the actual development runtime grants. These do not establish authenticated API isolation, native delivery, recording consent enforcement or a transcription service.
 
 `npm run test:db` is destructive to the exact disposable `phoneapp_test` schema; it verifies target/account and a suite lock before resetting tables, then leaves synthetic directory rows only. It never accepts a development reset target. `npm run test:db:permissions` uses development reads, denied statements, and rolled-back no-op updates. Run both for schema/grant changes; ordinary `npm test` remains independent of DB/sudo availability. See [database](DATABASE.md) for recovery and credential handling.
+
+## Foreground accounts
+
+[Account report](testing/2026-11-18-foreground-accounts.md) records six integration scenarios (7 Node tests including wrapper) on real isolated MariaDB plus Chromium: one-use/expired credentials, role/patient/provider isolation, deduplicated calls/reports, competing answer ownership, private media access, bounded observed intervals, cancel/decline/missed/setup timeout, logout/expiry/relationship revocation, restart-retained history, body/rate limits, and the complete directory→incoming Answer→real two-way video→shared ended log. Both native JS exports pass; actual iPhone/Android acceptance is open.
+
+Run `test:accounts` and `test:db` sequentially: both hold `phoneapp:test-suite` on the isolated test target, so a concurrent suite is refused. The account suite leaves only synthetic account/call data; `test:db` resets all disposable tables to the seed. `smoke:accounts` is a separate explicit development/public no-media check; it is not part of regular tests or a production action. See tools for credentials and intended targets. Foreground polling/visible prompts do not verify native push/locked ringing or a ringtone.

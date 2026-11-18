@@ -28,7 +28,10 @@
     "db:migrate": "tsx database/cli.ts migrate",
     "db:seed": "tsx database/cli.ts seed",
     "test:db": "tsx --test database/database.test.ts",
-    "test:db:permissions": "tsx --test database/permissions.test.ts"
+    "test:db:permissions": "tsx --test database/permissions.test.ts",
+    "accounts:enroll": "tsx scripts/enrollment.ts",
+    "test:accounts": "npm run build:web && tsx --test server/accounts.test.ts",
+    "smoke:accounts": "tsx scripts/smoke-accounts.ts"
   },
   "engines": {
     "node": ">=22.13.0"

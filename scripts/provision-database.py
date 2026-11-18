@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / '.env.database'
 MUTABLE = ('users', 'patients', 'patient_accounts', 'patient_assignments',
            'patient_phone_numbers', 'devices', 'calls', 'call_participants',
-           'recording_assets', 'transcription_jobs')
+           'recording_assets', 'transcription_jobs', 'enrollment_codes', 'auth_sessions', 'call_runtime', 'call_presence')
 APPEND_ONLY = ('call_events', 'consent_events', 'transcript_versions',
                'transcript_segments', 'activity_observations', 'activity_reviews')
 

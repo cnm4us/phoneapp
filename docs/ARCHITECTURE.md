@@ -47,7 +47,7 @@ Native staff apps / patient browser
 - The backend owns patient/contact associations, authorized access, provider credentials, event normalization, activity review, and exports.
 - Twilio Voice's native React Native SDK is the proposed telephone integration. Its signaling, tokens, call legs, and native incoming-call lifecycle differ from the direct M1 experiment. Use the SDK's own setup rather than assuming a raw WebRTC room can dial a phone number.
 - Twilio Messaging provides service-number SMS; device-local personal SMS access is not part of the design.
-- Local MariaDB 10.6.22 now has isolated Phoneapp dev/test schemas, official connector 3.5.5, SQL/checksum migration tooling and disabled synthetic seeds; see [decision 0005](decisions/0005-database-foundation.md). `database/` is backend-only and excluded from EAS archives. The existing call service is not yet integrated; authentication, production hosting, media capture/storage and job services remain unselected.
+- Local MariaDB 10.6.22 now has isolated Phoneapp dev/test schemas, official connector 3.5.5, SQL/checksum migration tooling and disabled synthetic seeds; see [decision 0005](decisions/0005-database-foundation.md). `database/` is backend-only and excluded from EAS archives. The optional 0009 account service now persists synthetic enrollment/session hashes, authorized directory and logical calls/history. Private media rooms bind participant sessions and recheck joins; existing legacy rooms remain separate. Production identity/hosting, native incoming delivery, media capture/storage and job services remain unselected.
 - Store raw provider event identifiers separately from a normalized logical encounter so transfers/retries/multiple call legs do not inflate time. Enforce idempotency at persistent boundaries.
 - Keep original observations, corrections, and review decisions distinguishable. Apply billing rules through a separately validated/versioned policy.
 
@@ -69,3 +69,11 @@ This table remains a broader conceptual model. Identity/patients/devices/calls/c
 ## Time and data boundaries
 
 Persist event times in UTC and duration in integer seconds. Select a practice timezone explicitly before monthly reports; the developer's timezone and host timezone are not business configuration. Separate foreground reading estimates from confirmed work. Keep diagnostic collection minimal and secrets out of mobile/public variables and Git. Production controls are specified at a high level in the PRD and intentionally deferred from M1.
+
+## Foreground account integration
+
+`shared/accounts.ts` is the native/browser wire contract; `src/accounts/client.ts` owns memory-only auth, two-second foreground polling, call actions and eight-second media reports. Native `AccountPanel` and browser `web/accounts.ts` share this controller and the existing WebRTC/quality/routing adapters. Role is supplied by authenticated backend state. Manual room testing remains available (native Settings toggle; browser signed-out invitation setup).
+
+`server/accounts-store.ts` uses explicit MariaDB transactions for enrollment redemption, assigned access, first answer, idempotency, lifecycle events and backend-timed observed intervals. `accounts-api.ts` supplies bounded JSON endpoints under `/api/`; nginx forwards only this project prefix. Private rooms use distinct per-session media capabilities with no public short code and revalidate session/relationship/state on join. A five-second sweep closes expired/revoked calls. The feature is enabled explicitly with `ENABLE_ACCOUNT_CALLS`; startup verifies current migrations, never applies DDL.
+
+See [decision 0006](decisions/0006-foreground-accounts.md) for prototype identity, restart behavior, time-estimate limitations and future native ringing/capture boundaries.

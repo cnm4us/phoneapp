@@ -238,3 +238,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner confirms supplied Apple key is Sandbox; recorded in private status metadata without changing key files. Scope/type remains unconfirmed. Checked EAS profiles: both internal distribution; Expo documents ad hoc signing and Apple documents Production APNs for ad hoc installs, including development clients.
 - Updated guide/state/tools/0011: obtain or reuse Production-authorized APNs key for this EAS workflow, retain Sandbox key, verify actual new signed push entitlement/token environment before provider sends. Production endpoint does not require publishing the app. FCM server credential remains pending. No runtime/provider/build changes; documentation and whitespace checks pass.
+
+## 2026-11-18 Revoked Sandbox key and required key count
+
+- Owner reports revoking the earlier Sandbox key and asks how many keys are required. Recorded owner-reported revocation/unusable status in private metadata; retained file untouched. Current EAS ad hoc workflow needs only one Production-authorized key; a replacement Sandbox key is unnecessary.
+- Updated guide/current state; no provider request, runtime change or build. Documentation and whitespace checks pass. Next remains Production key handoff and separate FCM sender JSON.

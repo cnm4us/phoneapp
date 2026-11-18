@@ -31,6 +31,7 @@
     "test:db:permissions": "tsx --test database/permissions.test.ts",
     "accounts:enroll": "tsx scripts/enrollment.ts",
     "push:check": "tsx --env-file=.env.server scripts/check-push.ts",
+    "test:account-client": "tsx --test src/accounts/client.test.ts",
     "test:native-calls": "tsx --test server/native-calls.test.ts",
     "test:accounts": "npm run build:web && tsx --test server/accounts.test.ts",
     "smoke:accounts": "tsx scripts/smoke-accounts.ts"

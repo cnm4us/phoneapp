@@ -18,7 +18,11 @@ Owner separately confirmed that project ID. The ID identifies the project; FCM H
 
 ### Remaining Android account step: server sending credential
 
-For this EC2 proof of concept, use a dedicated service account:
+The existing Firebase-created `firebase-adminsdk-…` service account can be used for this proof of concept. The owner-reported **Firebase Admin SDK Administrator Service Agent** role includes `cloudmessaging.messages.create`; a second service account is not required. This account has broader Firebase access than a sender-only account. Its existence and roles are owner-reported; actual server authorization remains untested.
+
+To use it, open Firebase → Phoneapp → Project settings → Service accounts → Firebase Admin SDK → **Generate new private key**, then confirm **Generate key**. Save the downloaded JSON as `/home/ubuntu/phoneapp/artifacts/private/push/fcm-service-account.json`. The personal Google account listed in IAM is the human project owner, not the server service account.
+
+A separate sender-only service account is an optional narrower-access alternative:
 
 1. Open [Google Cloud service accounts for Phoneapp](https://console.cloud.google.com/iam-admin/serviceaccounts?project=phoneapp-9a5c4), confirming selected project `phoneapp-9a5c4`.
 2. Create a service account named `phoneapp-push-sender`, or reuse an existing account dedicated to this purpose.
@@ -28,7 +32,7 @@ For this EC2 proof of concept, use a dedicated service account:
 
 This private JSON belongs only on the backend; never bundle it in the mobile app. If Google account policy blocks key creation, report that condition rather than changing organization policy; workload identity is an alternative. The agent must validate the downloaded credential/project and authorization separately before claiming delivery works.
 
-References: [FCM API sender role](https://docs.cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging), [Google service-account key download](https://docs.cloud.google.com/iam/docs/keys-create-delete).
+References: [FCM roles including the Admin SDK send permission](https://docs.cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging), [Google service-account key download](https://docs.cloud.google.com/iam/docs/keys-create-delete).
 
 References: [Firebase Android setup](https://firebase.google.com/docs/android/setup), [FCM server authorization](https://firebase.google.com/docs/cloud-messaging/send/v1-api).
 

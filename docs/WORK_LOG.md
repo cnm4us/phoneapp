@@ -253,3 +253,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner confirms project `phoneapp-9a5c4` and asks whether ID alone suffices. Verified official FCM authorization docs: sender also requires an authorized identity/access token. JSON key is the selected EC2 POC method; ADC/workload federation are alternatives, not already configured capabilities.
 - Read-only checks found no conventional gcloud ADC/login files, relevant environment names, Google sender settings in `.env.server`, or identity JSON in private push staging. No values printed or cloud/provider changes. Updated guide/state; documentation and whitespace checks pass. Dedicated FCM sender credential remains next owner account step.
+
+## 2026-11-18 Existing Firebase Admin SDK service account accepted
+
+- Owner reports Firebase-created Admin SDK service account with Administrator Service Agent/Token Creator roles and asks whether another is needed. Official IAM definition includes `cloudmessaging.messages.create`; existing account is usable for this POC, while a narrower dedicated sender remains optional. Prior separate-account instruction was a recommendation, not a requirement.
+- Updated guide/state with Firebase Generate new private key download to private `fcm-service-account.json`. Account/roles remain owner-reported; actual sender authorization untested. No credentials generated or provider/runtime/build changes. Documentation and whitespace checks pass.

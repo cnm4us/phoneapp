@@ -258,3 +258,8 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner reports Firebase-created Admin SDK service account with Administrator Service Agent/Token Creator roles and asks whether another is needed. Official IAM definition includes `cloudmessaging.messages.create`; existing account is usable for this POC, while a narrower dedicated sender remains optional. Prior separate-account instruction was a recommendation, not a requirement.
 - Updated guide/state with Firebase Generate new private key download to private `fcm-service-account.json`. Account/roles remain owner-reported; actual sender authorization untested. No credentials generated or provider/runtime/build changes. Documentation and whitespace checks pass.
+
+## 2026-11-18 Google Cloud IAM screenshot navigation
+
+- Screenshot shows project IAM permissions rather than Firebase Admin SDK or the service-account Keys tab. Verified Google's current key-creation path and added direct Service Accounts link plus exact existing-account → Keys → Add key → Create new key → JSON steps.
+- FCM credential handoff remains pending; no provider or runtime changes. Documentation and whitespace checks pass.

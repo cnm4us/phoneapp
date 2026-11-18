@@ -22,6 +22,8 @@ The existing Firebase-created `firebase-adminsdk-…` service account can be use
 
 To use it, open Firebase → Phoneapp → Project settings → Service accounts → Firebase Admin SDK → **Generate new private key**, then confirm **Generate key**. Save the downloaded JSON as `/home/ubuntu/phoneapp/artifacts/private/push/fcm-service-account.json`. The personal Google account listed in IAM is the human project owner, not the server service account.
 
+If viewing Google Cloud **IAM permissions** (owner screenshot), key management is on a different page: click **Service Accounts** in the left sidebar, or open [Phoneapp service accounts](https://console.cloud.google.com/iam-admin/serviceaccounts?project=phoneapp-9a5c4). Click the `firebase-adminsdk-fbsvc@phoneapp-9a5c4.iam.gserviceaccount.com` email → **Keys** → **Add key** → **Create new key** → **JSON** → **Create**. This downloads the same kind of server credential; use the private EC2 destination above. Google Cloud labels differ from Firebase's Generate new private key button.
+
 A separate sender-only service account is an optional narrower-access alternative:
 
 1. Open [Google Cloud service accounts for Phoneapp](https://console.cloud.google.com/iam-admin/serviceaccounts?project=phoneapp-9a5c4), confirming selected project `phoneapp-9a5c4`.

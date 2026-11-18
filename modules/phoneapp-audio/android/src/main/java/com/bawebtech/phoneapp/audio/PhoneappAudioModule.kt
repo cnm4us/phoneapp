@@ -12,6 +12,8 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class PhoneappAudioModule : Module() {
+  private var incoming: IncomingAlertPlayer? = null
+  private var foreground = true
   private var manager: AudioManager? = null
   private var active = false
   private var sessionID = 0
@@ -28,6 +30,16 @@ class PhoneappAudioModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("PhoneappAudio")
     Events("onRouteChanged")
+    Constant("incomingAlertVersion") { 1 }
+    AsyncFunction("getAlertPreferences") { incomingPlayer().preferences() }.runOnQueue(Queues.MAIN)
+    AsyncFunction("setAlertPreferences") { sound: Boolean, vibration: Boolean -> incomingPlayer().save(sound, vibration) }.runOnQueue(Queues.MAIN)
+    AsyncFunction("ring") { id: String, sound: Boolean, vibration: Boolean, leaseMs: Double ->
+      if (!active && foreground) incomingPlayer().ring(id, sound, vibration, leaseMs)
+    }.runOnQueue(Queues.MAIN)
+    AsyncFunction("silence") { id: String -> incoming?.silence(id) }.runOnQueue(Queues.MAIN)
+    OnActivityEntersForeground { foreground = true }
+    OnActivityEntersBackground { foreground = false; handler.post { incoming?.stop() } }
+    OnActivityDestroys { foreground = false; handler.post { incoming?.stop() } }
 
     AsyncFunction("start") { session: Int ->
       startRouting(session)
@@ -54,7 +66,12 @@ class PhoneappAudioModule : Module() {
     }.runOnQueue(Queues.MAIN)
 
     AsyncFunction("stop") { stopRouting() }.runOnQueue(Queues.MAIN)
-    OnDestroy { handler.post { stopRouting() } }
+    OnDestroy { handler.post { incoming?.stop(); stopRouting() } }
+  }
+
+  private fun incomingPlayer(): IncomingAlertPlayer {
+    if (incoming == null) incoming = IncomingAlertPlayer(appContext.reactContext ?: error("Audio context is unavailable"))
+    return incoming!!
   }
 
   private fun audioManager(): AudioManager {
@@ -67,6 +84,7 @@ class PhoneappAudioModule : Module() {
 
   @Suppress("DEPRECATION")
   private fun startRouting(session: Int) {
+    incoming?.stop()
     if (active && sessionID == session) return
     if (active) stopRouting()
     sessionID = session

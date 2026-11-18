@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name = 'PhoneappAudio'
   s.version = '0.1.0'
-  s.summary = 'Foreground Phoneapp call audio output routing'
+  s.summary = 'Foreground Phoneapp call audio routing and incoming alerts'
   s.description = s.summary
   s.author = 'BA Web Tech'
   s.homepage = 'https://github.com/cnm4us/phoneapp'
@@ -11,5 +11,6 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
   s.swift_version = '5.0'
+  s.resource_bundles = { 'PhoneappAudioResources' => ['Resources/*.wav'] }
   s.source_files = '**/*.{h,m,mm,swift}'
 end

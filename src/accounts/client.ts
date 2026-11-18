@@ -2,7 +2,7 @@ import type { Account, CallRecord, Dashboard, Enrollment, MediaInvitation, CallA
 import { terminalCall } from '../../shared/accounts';
 import type { Invitation } from '../../shared/protocol';
 
-export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string };
+export type AccountState = { account?: Account; dashboard?: Dashboard; current?: CallRecord; busy: boolean; error: string; updatedAt?: number };
 export type MediaAdapter = { join(invitation: Invitation): Promise<void>; end(): void; phase(): string; error?(): string | undefined };
 export class AccountClient {
   state: AccountState = { busy:false,error:'' };
@@ -38,7 +38,7 @@ export class AccountClient {
   private clear():void {
     this.epoch++; this.token=''; this.currentId='';this.joinedId='';this.pendingDial=undefined;this.mediaFailure='';
     clearInterval(this.timer);clearInterval(this.reporting); this.media.end();
-    this.update({account:undefined,dashboard:undefined,current:undefined,busy:false});
+    this.update({account:undefined,dashboard:undefined,current:undefined,busy:false,updatedAt:undefined});
   }
   async signIn(code:string):Promise<void> {
     await this.run(async()=>{
@@ -66,7 +66,7 @@ export class AccountClient {
       if(epoch!==this.epoch || initialCurrent!==this.currentId)return;
       let current=dashboard.calls.find(call=>call.id===this.currentId);
       if(this.currentId && (!current || terminalCall(current.state))){this.currentId='';this.joinedId='';this.media.end();current=undefined;}
-      this.update({dashboard,current,error:this.mediaFailure});
+      this.update({dashboard,current,error:this.mediaFailure,updatedAt:performance.now()});
       if(current && current.ownsMedia && ['accepted','connected'].includes(current.state) && this.joinedId!==current.id && !this.joining){
         this.joining=true;
         try{

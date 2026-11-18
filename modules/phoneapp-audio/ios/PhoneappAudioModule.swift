@@ -3,6 +3,7 @@ import ExpoModulesCore
 import UIKit
 
 public class PhoneappAudioModule: Module {
+  private let incoming = IncomingAlertPlayer()
   private var active = false
   private var sessionID = 0
   private var preference = "automatic"
@@ -13,6 +14,15 @@ public class PhoneappAudioModule: Module {
   public func definition() -> ModuleDefinition {
     Name("PhoneappAudio")
     Events("onRouteChanged")
+    Constant("incomingAlertVersion") { 1 }
+    AsyncFunction("getAlertPreferences") { self.incoming.preferences() }.runOnQueue(.main)
+    AsyncFunction("setAlertPreferences") { (sound: Bool, vibration: Bool) in self.incoming.save(sound: sound, vibration: vibration) }.runOnQueue(.main)
+    AsyncFunction("ring") { (id: String, sound: Bool, vibration: Bool, leaseMs: Double) in
+      guard !self.active else { return }
+      try self.incoming.ring(id, sound: sound, vibration: vibration, leaseMs: leaseMs)
+    }.runOnQueue(.main)
+    AsyncFunction("silence") { (id: String) in self.incoming.silence(id) }.runOnQueue(.main)
+    OnAppEntersBackground { self.incoming.stop() }
 
     AsyncFunction("start") { (session: Int) -> [String: Any] in
       self.startRouting(session)
@@ -48,11 +58,12 @@ public class PhoneappAudioModule: Module {
     }.runOnQueue(.main)
 
     OnDestroy {
-      DispatchQueue.main.async { self.stopRouting() }
+      DispatchQueue.main.async { self.incoming.stop(); self.stopRouting() }
     }
   }
 
   private func startRouting(_ session: Int) {
+    incoming.stop()
     if active && sessionID == session { return }
     if active { stopRouting() }
     sessionID = session

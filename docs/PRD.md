@@ -1,6 +1,6 @@
 # Phoneapp product requirements
 
-Version: 0.6 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
+Version: 0.7 draft. Updated: 2026-11-18 UTC. Product owner: repository owner, with clinical workflow input from his wife, a California nurse practitioner specializing in gerontology.
 
 ## Purpose
 
@@ -74,6 +74,7 @@ M3 through M5 may be reordered after M1 evidence and clinical feedback. HIPAA wo
 | COM-08 | Audio-first behavior in every quality mode. | Reduce or pause video to protect intelligible, low-latency speech; use supported media priority controls where available. Coordinate both directions and show when video is paused to protect audio. Recover video gradually after sustained improvement. No guarantee of uninterrupted audio on an inadequate or disconnected network. |
 | COM-09 | Explicit two-way audio-only mode. | A clear in-call action stops sending and requests stopping receipt of video while audio continues. Show the active mode on both clients. Requesting video again never enables another person's camera without that person's permission. Distinguish this from the existing local camera toggle. |
 | COM-10 | Initiate an app call directly from the provider patient list. | Provider selects Patient A/B/C, then App Audio/Video; the enrolled patient receives a native incoming call with answer/decline. No manual room-code exchange in this flow. Validate foreground, background, locked, unavailable/expired, cancellation, and duplicate/multi-device notifications on actual phones. Initially only App Audio/Video is actionable; App Audio and Phone #1–3 remain future options. |
+| COM-11 | Audible foreground incoming calls with configurable vibration. | While Phoneapp is visible, including its settings panel, an incoming call can repeat a ringtone and optional vibration with device-local toggles. Respect system sound/silent/haptic policy; stop on Answer/Decline, caller cancellation, timeout, logout, background, teardown and before WebRTC audio. Show a reachable incoming prompt above settings. Old native binaries retain visual calling with update guidance. Background/locked native ringing remains a separate COM-10 gate. |
 
 Ordinary telephone calls are audio; browser/app video is a separate channel. Calls outside this service, including unrelated personal cellular calls, are not automatically captured. Routing and missed-call handling must set expectations for nonemergency use before production.
 

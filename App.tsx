@@ -12,6 +12,10 @@ import { SettingsPanel } from './src/call/SettingsPanel';
 import { AudioOutputControls } from './src/call/AudioOutputControls';
 import { AccountClient } from './src/accounts/client';
 import { AccountPanel } from './src/accounts/AccountPanel';
+import { IncomingAlerts } from './src/call/incoming-alert';
+import { nativeIncomingAlertDriver } from './src/call/native-incoming-alert';
+import { IncomingCallPrompt } from './src/call/IncomingCallPrompt';
+import { IncomingAlertControls } from './src/call/IncomingAlertControls';
 
 const labels = { idle: 'Ready to test', permissions: 'Requesting microphone / camera', joining: 'Joining room…', waiting: 'Waiting for the other phone…', connecting: 'Connecting media…', connected: 'Connected', reconnecting: 'Connection interrupted…', ended: 'Call ended', error: 'Unable to continue' };
 
@@ -23,7 +27,9 @@ function CallScreen() {
   const session = useRef(new CallSession()).current;
   const [call, setCall] = useState(session.state);
   const [base, setBase] = useState(process.env.EXPO_PUBLIC_SIGNALING_URL || 'https://phoneapp.bawebtech.com');
-  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: invite => session.join(base,'',true,false,invite), end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error }));
+  const [incomingAlerts] = useState(()=>new IncomingAlerts(nativeIncomingAlertDriver()));
+  const [alertState,setAlertState]=useState(incomingAlerts.state);
+  const [accounts] = useState(()=>new AccountClient(endpoint(base), { join: async invite => { await incomingAlerts.silence(); await session.join(base,'',true,false,invite); }, end:()=>session.end(), phase:()=>session.state.phase,error:()=>session.state.error }));
   const [accountState,setAccountState]=useState(accounts.state);
   const [legacy,setLegacy]=useState(false);
   const [key, setKey] = useState('');
@@ -37,14 +43,21 @@ function CallScreen() {
   const [previewVisible, setPreviewVisible] = useState(true);
   const active = !['idle', 'ended', 'error'].includes(call.phase);
   useEffect(() => {
-    const unsubscribe = session.subscribe(state=>{setCall(state);accounts.mediaChanged(state.phase);});
-    const accountSubscription=accounts.subscribe(setAccountState);
+    const observeAlert=()=>incomingAlerts.observe({
+      callId: accounts.state.account && !accounts.state.current ? accounts.state.dashboard?.calls.find(row=>row.canAnswer)?.id : undefined,
+      updatedAt:accounts.state.updatedAt,foreground:AppState.currentState==='active',
+      mediaActive:!['idle','ended','error'].includes(session.state.phase),busy:accounts.state.busy,
+    });
+    const alertSubscription=incomingAlerts.subscribe(setAlertState);
+    const unsubscribe = session.subscribe(state=>{setCall(state);accounts.mediaChanged(state.phase);observeAlert();});
+    const accountSubscription=accounts.subscribe(state=>{setAccountState(state);observeAlert();});
     const listener = AppState.addEventListener('change', (state) => {
+      observeAlert();
       // iOS permission prompts briefly make the app inactive; only real backgrounding ends a call.
       if (state === 'background' && !['idle', 'ended', 'error'].includes(session.state.phase)) session.end('This experiment runs in the foreground. Return to the app and start a new call.');
     });
-    return () => { unsubscribe(); accountSubscription(); accounts.dispose(); listener.remove(); session.end(); };
-  }, [session,accounts]);
+    return () => { unsubscribe(); accountSubscription(); alertSubscription(); incomingAlerts.dispose(); accounts.dispose(); listener.remove(); session.end(); };
+  }, [session,accounts,incomingAlerts]);
   useEffect(() => { setSettingsOpen(false); }, [active]);
   useEffect(() => {
     if (!settingsOpen) return;
@@ -77,6 +90,12 @@ function CallScreen() {
     } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not reach the server'); }
     finally { clearTimeout(timeout); setCreating(false); }
   }
+  const incomingCall=!active && !accountState.current ? accountState.dashboard?.calls.find(row=>row.canAnswer) : undefined;
+  const incomingAction=(action:'answer'|'decline')=>{
+    if(!incomingCall || accountState.busy)return;
+    void incomingAlerts.silence().catch(()=>{});
+    void accounts.act(incomingCall,action);
+  };
   const duration = `${Math.floor(call.seconds / 60)}:${String(call.seconds % 60).padStart(2, '0')}`;
   const closeSettings = () => { Keyboard.dismiss(); setSettingsOpen(false); };
   return <SafeAreaView style={styles.page}>
@@ -99,7 +118,7 @@ function CallScreen() {
             <Text style={styles.title}>Phoneapp</Text>
             <Button title="⚙ Settings" accessibilityLabel="Open Phoneapp settings" onPress={() => { Keyboard.dismiss(); setSettingsOpen(true); }} />
           </View>
-          <AccountPanel client={accounts} state={accountState} />
+          <AccountPanel client={accounts} state={accountState} showIncoming={false} />
           {legacy && !accountState.account && <><Text style={styles.muted}>Manual POC calls · No recording</Text>
           <View style={styles.card}>
             <Text style={styles.label}>{labels[call.phase]}</Text>
@@ -118,6 +137,7 @@ function CallScreen() {
         </ScrollView>}
       </View>
       {settingsOpen && <SettingsPanel close={closeSettings}>
+        <View style={styles.card}><IncomingAlertControls state={alertState} change={preferences=>void incomingAlerts.setPreferences(preferences)} /></View>
         {!active && <View style={styles.card}>
           <Text style={styles.label}>Test connection setup</Text>
           <View style={styles.row}><Text style={styles.text}>Show manual room testing</Text><Switch accessibilityLabel="Show manual room testing" value={legacy} onValueChange={setLegacy} disabled={Boolean(accountState.account)} /></View>
@@ -151,6 +171,7 @@ function CallScreen() {
           {active && <Button title="Refresh connection details" onPress={() => session.refreshDiagnostics()} />}
         </View>}
       </SettingsPanel>}
+      <IncomingCallPrompt call={incomingCall} busy={accountState.busy} answer={()=>incomingAction('answer')} decline={()=>incomingAction('decline')} />
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }

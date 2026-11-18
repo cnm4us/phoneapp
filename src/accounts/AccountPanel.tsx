@@ -3,7 +3,7 @@ import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AccountClient, type AccountState } from './client';
 import { terminalCall } from '../../shared/accounts';
 
-export function AccountPanel({ client, state }: {client:AccountClient;state:AccountState}) {
+export function AccountPanel({ client, state, showIncoming = true }: {client:AccountClient;state:AccountState;showIncoming?:boolean}) {
   const [code,setCode]=useState('');
   const [selected,setSelected]=useState('');
   const patient=state.dashboard?.patients.find(row=>row.id===selected);
@@ -18,7 +18,7 @@ export function AccountPanel({ client, state }: {client:AccountClient;state:Acco
     </View> : <>
       <Text style={styles.note}>{state.account.role==='patient'?'Patient':state.account.role==='caregiver'?'Caregiver':'Care team'} account · Signed in until reload or session expiry</Text>
       <Button title="Sign out" disabled={state.busy||Boolean(state.current)} onPress={()=>void client.signOut()} />
-      {incoming && !state.current && <View style={styles.card} accessibilityLiveRegion="assertive">
+      {showIncoming && incoming && !state.current && <View style={styles.card} accessibilityLiveRegion="assertive">
         <Text style={styles.heading}>Incoming app call</Text><Text style={styles.text}>{incoming.callerName}</Text>
         <Button title="Answer with audio/video" disabled={state.busy} onPress={()=>void client.act(incoming,'answer')} />
         <Button title="Decline" disabled={state.busy} onPress={()=>void client.act(incoming,'decline')} />

@@ -30,7 +30,7 @@ On Windows, use `py -3 scripts/check_project.py` if `python3` is unavailable. Th
 
 ## Development environment
 
-The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `@mbcollins2/phoneapp` is linked. Expo SDK 57, React Native 0.86.3, and native WebRTC 155 are pinned in the lockfile. Expo Go cannot load this app; use a custom development build. Both native development builds are available; full physical-device acceptance remains outstanding.
+The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `@mbcollins2/phoneapp` is linked. Expo SDK 57, React Native 0.86.3, and native WebRTC 155 are pinned in the lockfile. Expo Go cannot load this app; use a custom development build or bundled internal preview. Both native development builds are available; full physical-device acceptance remains outstanding.
 
 ```sh
 npm ci
@@ -49,4 +49,4 @@ Repository: <https://github.com/cnm4us/phoneapp>
 
 ## Provider and patient foreground testing
 
-The shared native app and browser now include synthetic enrollment, an assigned patient directory, foreground App Audio/Video and durable shared call history. See [account testing commands](docs/TOOLS.md) and [plan 0009](docs/plans/0009-authenticated-foreground-calls.md). Run `npm run accounts:enroll` for private one-time codes; keep both clients open. Native locked/background calling is implemented under [0011](docs/plans/0011-native-background-incoming-calls.md), with updated preview builds/signing and physical acceptance tracked separately. Recording/transcription remain future stages.
+The shared native app and browser now include synthetic enrollment, an assigned patient directory, foreground App Audio/Video and durable shared call history. See [account testing commands](docs/TOOLS.md) and [plan 0009](docs/plans/0009-authenticated-foreground-calls.md). Run `npm run accounts:enroll` for private one-time codes. Original foreground builds need both clients open; native preview lifecycle testing follows plan 0011. Native locked/background calling is implemented under [0011](docs/plans/0011-native-background-incoming-calls.md), with updated preview builds/signing and physical acceptance tracked separately. Recording/transcription remain future stages.

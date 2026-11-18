@@ -16,11 +16,11 @@ Scope: [0009](../plans/0009-authenticated-foreground-calls.md); synthetic accoun
 | `npm run bundle:check` | iOS and Android JavaScript exports pass. No new native dependency/build submitted; not a device/compilation pass. |
 | Development migration/grants | Additive 0003 applied after disposable verification; runtime permission case passes, latest schema/current UTC connection, 3 patients/4 users. |
 
-The first account browser run exposed the supplied invitation's expiry metadata being spread into the strict signaling Join message. Fixed both native/browser adapters to explicitly send only room ID/token. Restart recovery initially mislabeled a ringing call Missed; it now preserves Failed for interrupted-server calls. Full integration suite passes after both corrections. No applied migration was edited.
+The first account browser run exposed the supplied invitation's expiry metadata being spread into the strict signaling Join message. Fixed both native/browser adapters to explicitly send only room ID/token. Restart recovery initially mislabeled a ringing call Missed; it now preserves Failed for interrupted-server calls. Shutdown ordering was additionally verified with two real signaling sockets: mark active account calls Failed before terminating media sockets, retaining Failed history after restart. Full integration suite passes after these corrections. No applied migration was edited.
 
 ## Deployment evidence
 
-Pending project-only deployment and public smoke; update this section after execution. No active legacy rooms were found in the preceding four-hour lifecycle log before rollout preparation. Original M1/physical speaker/earpiece/sustained/Ultra acceptance remains open.
+Deployed verified implementation 16e1ff7 to canonical feature checkout, rebuilt web assets, enabled account feature, and added only the loaded Phoneapp nginx `/api/` proxy. `nginx -t` passed; reloaded nginx and restarted only project signaling. TURN and MariaDB remain active, with no configuration change. No active legacy rooms were found in the preceding four-hour lifecycle log before rollout. `smoke:accounts` passed through public HTTPS: synthetic enrollment/directory/incoming Answer/common Ended history, zero media seconds, own sessions logged out. Original `smoke` HTTPS/WSS room/offer/answer/hangup also passed. Metro port 8081 reports running. Generated owner handoff `artifacts/private/enrollment-1794963771095.txt` (600); code values never printed or committed. Original M1/physical speaker/earpiece/sustained/Ultra acceptance remains open.
 
 ## Limits and manual acceptance
 

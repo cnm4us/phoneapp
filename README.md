@@ -30,7 +30,7 @@ On Windows, use `py -3 scripts/check_project.py` if `python3` is unavailable. Th
 
 ## Development environment
 
-The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `@mbcollins2/phoneapp` is linked. Expo SDK 57, React Native 0.86.3, and native WebRTC 155 are pinned in the lockfile. Expo Go cannot load this app; use a custom development build. iPhone provisioning and physical-device testing remain outstanding.
+The owner uses Windows and VS Code, with this checkout on AWS EC2. EAS project `@mbcollins2/phoneapp` is linked. Expo SDK 57, React Native 0.86.3, and native WebRTC 155 are pinned in the lockfile. Expo Go cannot load this app; use a custom development build. Both native development builds are available; full physical-device acceptance remains outstanding.
 
 ```sh
 npm ci
@@ -46,3 +46,7 @@ For local service configuration, `npm run init:local` creates private `.env.serv
 Run `npm run build:web` before starting/restarting signaling on a fresh checkout. For browser tests, install Chromium once with `npx playwright install chromium`; forced-relay testing needs configured/reachable TURN. `npm run test:browser:live` checks the deployed site using the private creator key and synthetic media; it does not operate physical devices.
 
 Repository: <https://github.com/cnm4us/phoneapp>
+
+## Provider and patient foreground testing
+
+The shared native app and browser now include synthetic enrollment, an assigned patient directory, foreground App Audio/Video and durable shared call history. See [account testing commands](docs/TOOLS.md) and [plan 0009](docs/plans/0009-authenticated-foreground-calls.md). Run `npm run accounts:enroll` for private one-time codes; keep both clients open. Recording/transcription and native locked/background ringing remain future stages.

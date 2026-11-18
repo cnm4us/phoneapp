@@ -1,6 +1,6 @@
 # 0009 Authenticated directory and foreground patient calls
 
-Status: in progress. Updated: 2026-11-18.
+Status: complete for implementation, automated verification and development rollout; physical handset acceptance pending. Updated: 2026-11-18.
 
 ## Outcome and scope
 
@@ -19,7 +19,7 @@ Implement the next bounded stage of [0007](0007-provider-patient-calls-transcrip
 - [x] Bridge authorized call participants to private signaling rooms without share codes; recheck session/relationship on media join.
 - [x] Add native/browser enrollment/directory/incoming/history UI while preserving manual POC calling and quality controls.
 - [x] Verify clean install/upgrade, API isolation/retry/race/restart/session behavior and real browser media; typecheck/regression/native JS exports.
-- [ ] Apply tested development migration/grants, deploy project-only services/assets, create private enrollment handoff, update continuity/evidence, commit/push.
+- [x] Apply tested development migration/grants, deploy project-only services/assets, create private enrollment handoff, update continuity/evidence, commit/push.
 
 ## Data and configuration
 
@@ -36,7 +36,7 @@ Connected duration is an estimate from authenticated endpoint media-state report
 | Lifecycle | API integration suite | Idempotent retries, first answer, cancel/decline/missed, restart history, bounded duration | Passed |
 | Calling UI/media | Real Chromium synthetic-media scenario | Provider directory → call → patient answer → audio/video → common history, no room code | Passed with two independent Chromium contexts |
 | Regression/native code | Typecheck, 50 existing tests, browser suite, both JS exports | Existing controls/POC retained; no native compilation claim | TypeScript, 50 tests, 13 browser cases, both exports pass |
-| Deployment | Development migration/status and public check | New UI/API live; private enrollment handoff; no recordings or native builds | Pending |
+| Deployment | Development migration/status and public check | New UI/API live; private enrollment handoff; no recordings or native builds | Passed: public account and legacy smoke; private code file generated |
 
 ## Risks and recovery
 
@@ -44,4 +44,4 @@ Enrollment tokens are credentials; public role selection is never authentication
 
 ## Handoff
 
-Record actual checks/deployment and remaining physical iPhone/Android acceptance. Next stage after this: native incoming/background lifecycle and separately consent/media storage/transcription plans. No false recording/playback controls.
+Completed: [report](../testing/2026-11-18-foreground-accounts.md) records local and public checks, migration/grants, deployment and private handoff. Owner must still perform actual iPhone/Android foreground acceptance. Next stage after this: native incoming/background lifecycle and separately consent/media storage/transcription plans. No false recording/playback controls.

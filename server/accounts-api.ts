@@ -17,6 +17,7 @@ export class AccountsApi {
   private inFlight = 0;
   private timer?: ReturnType<typeof setInterval>;
   private sweeping = false;
+  private stopped = false;
   constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {}) {}
   async start(): Promise<void> {
     // This POC has one signaling process. Old transient rooms cannot survive restart.
@@ -25,6 +26,7 @@ export class AccountsApi {
     this.timer.unref();
   }
   async stop(): Promise<void> {
+    this.stopped=true;
     clearInterval(this.timer);
     for (const id of await this.store.activeIds()) await this.store.endInternal(id,'failed');
   }
@@ -60,6 +62,7 @@ export class AccountsApi {
     return value;
   }
   async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if(this.stopped){req.resume();this.json(res,503,{error:'Account service is restarting. Try again shortly.'});return;}
     if (++this.inFlight > 32) { this.inFlight--; req.resume(); this.json(res,429,{ error:'Too many requests. Try again shortly.' }); return; }
     try {
       if (req.method === 'POST' && req.url === '/api/enroll') {

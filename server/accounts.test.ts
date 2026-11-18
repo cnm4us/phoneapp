@@ -126,7 +126,19 @@ test('authenticated foreground calls on isolated MariaDB and real browser media'
     });
     await t.test('durable history and session survive server restart; orphaned active calls fail honestly',async()=>{
       const {id}=await dial(provider.token);
-      await server.close();await api.stop();await start();
+      await request(`/calls/${id}/answer`,a.token,{});
+      const sockets:WebSocket[]=[];
+      for(const token of [provider.token,a.token]){
+        const {invitation}=await request<{invitation:Invitation}>(`/calls/${id}/media`,token,{});
+        const socket=new WebSocket(origin.replace('http','ws')+'/signal');sockets.push(socket);
+        await new Promise<void>(resolve=>socket.once('open',resolve));
+        const joined=new Promise<string>(resolve=>socket.once('message',raw=>resolve(JSON.parse(raw.toString()).type)));
+        socket.send(JSON.stringify({type:'join',roomId:invitation.roomId,token:invitation.token}));
+        assert.equal(await joined,'joined');
+        await request(`/calls/${id}/presence`,token,{connected:true,eventKey:'restart-connected'});
+      }
+      await api.stop();await server.close();await start();
+      for(const socket of sockets)socket.close();
       const call=(await dashboard(provider.token)).calls.find(row=>row.id===id);
       assert.equal(call?.state,'failed');assert.equal(call?.observedSeconds,0);
       assert((await dashboard(a.token)).calls.some(row=>row.id===id&&row.state==='failed'));
@@ -177,6 +189,6 @@ test('authenticated foreground calls on isolated MariaDB and real browser media'
       }finally{await browser.close();}
     });
   }finally{
-    if(server!)await server.close();if(api!)await api.stop();await db.end();
+    if(api!)await api.stop();if(server!)await server.close();await db.end();
   }
 });

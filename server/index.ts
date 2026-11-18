@@ -41,7 +41,7 @@ let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
   if (stopping) return;
   stopping = true;
-  void server.close().then(()=>accounts?.stop()).then(() => process.exit(0));
+  void Promise.resolve(accounts?.stop()).then(()=>server.close()).then(() => process.exit(0)).catch(()=>{console.error(JSON.stringify({event:"shutdown-failed"}));process.exit(1);});
 });
 
 }

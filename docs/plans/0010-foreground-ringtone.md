@@ -16,7 +16,7 @@ Native module currently routes audio only. Both development binaries need updati
 - [x] Add bundled original synthesized tone, native foreground playback/vibration, persisted preferences, scoped stop, native lease/background safeguards and restoration before WebRTC.
 - [x] Add tested serial JS alert owner and optional native adapter; observe fresh incoming state independently of panel; stop and await native release before media.
 - [x] Add incoming modal above settings and sound/vibration controls with honest old-binary availability.
-- [ ] Verify lifecycle/failure/race behavior, TypeScript, regressions, both JS exports, native discovery/prebuild/archive resources.
+- [x] Verify lifecycle/failure/race behavior, TypeScript, regressions, both JS exports, native discovery/prebuild/archive resources.
 - [ ] Submit existing-profile iOS/Android development builds, monitor actual compilation, apply verified JS safely, document installation links/results.
 - [ ] Update PRD/state/tools/evidence/work log, commit and push.
 
@@ -28,9 +28,9 @@ No DB/schema/provider/service change. Local native UserDefaults/SharedPreference
 
 | Scenario | Procedure | Expected | Actual |
 | --- | --- | --- | --- |
-| Lifecycle | Unit race/fake-driver tests | Repeated poll renews rather than restarts; cancellation/expiry/answer/logout/background stop; stale starts/stops cannot win | Pending |
+| Lifecycle | Unit race/fake-driver tests | Repeated poll renews rather than restarts; cancellation/expiry/answer/logout/background stop; stale starts/stops cannot win | Eight alert scenarios pass; 58 total unit/server/routing cases |
 | Settings/UI | Native JS export, source review and device check | Incoming prompt above settings; preferences persist; unsupported binary clear | Pending |
-| Audio handoff | Serial stop-before-media test + native compile/device | Release alert session before WebRTC; no muted mic/output preference changes | Pending |
+| Audio handoff | Serial stop-before-media test + native compile/device | Release alert session before WebRTC; no muted mic/output preference changes | Serial tests pass; native compilation and physical audio pending |
 | Build/package | Both native exports, discovery/prebuild/archive, EAS builds | Correct native APIs, WAVs and permissions included; real native compilation | Pending |
 | Handset sound | Owner iPhone/Android foreground/settings/volume/silent/headset/cancel matrix | Audible alert when allowed, optional vibration, no sound after answer/end/background | Not run |
 
@@ -40,4 +40,4 @@ iOS alert category must not override an active call audio session; deactivate/re
 
 ## Handoff
 
-Capture automated/build evidence and exact build IDs/links. Owner installs updated native binaries, reloads current Metro JS, obtains fresh test enrollment codes if needed, and checks foreground sound/vibration/settings/modal/answer handoff. Keep original M1/background/production acceptance separate.
+Submitted Android 352e0a90-4961-4615-b594-b4a73ca0f911 and iOS 43047d0d-f5aa-4f5c-a73d-71fcceaf8e5c from cb10b68; native results pending. See [report](../testing/2026-11-18-foreground-ringtone.md). Capture automated/build evidence and exact build IDs/links. Owner installs updated native binaries, reloads current Metro JS, obtains fresh test enrollment codes if needed, and checks foreground sound/vibration/settings/modal/answer handoff. Keep original M1/background/production acceptance separate.

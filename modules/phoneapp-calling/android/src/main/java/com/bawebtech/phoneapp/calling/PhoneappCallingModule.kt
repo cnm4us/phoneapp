@@ -22,7 +22,10 @@ class PhoneappCallingModule:Module(){
  private var pcId=0
  private var sent=0.0
  private var received=0.0
- private var sampling=false
+ @Volatile private var sampling=false
+ @Volatile private var reporting=false
+ private var transport=0.0
+ private var lastTransport=0L
  private fun context()=appContext.reactContext?:error("Native call context unavailable")
  private fun identity()=DeviceIdentity.get(context())
  private fun json(v:Any?):Any?=when(v){is JSONObject->v.keys().asSequence().associateWith{json(v.get(it))};is JSONArray->(0 until v.length()).map{json(v.get(it))};JSONObject.NULL->null;else->v}
@@ -40,7 +43,7 @@ class PhoneappCallingModule:Module(){
   AsyncFunction("answer"){id:String->CallCoordinator.answer(id)}.runOnQueue(Queues.MAIN)
   AsyncFunction("end"){id:String->CallCoordinator.end(id)}.runOnQueue(Queues.MAIN)
   AsyncFunction("mediaState"){id:String,connected:Boolean->CallCoordinator.mediaState(id,connected)}.runOnQueue(Queues.MAIN)
-  AsyncFunction("watchMedia"){id:String,peer:Int->if(watchId!=id){watchId=id;pcId=peer;sent=0.0;received=0.0;handler.removeCallbacks(sample);handler.post(sample)}}.runOnQueue(Queues.MAIN)
+  AsyncFunction("watchMedia"){id:String,peer:Int->if(watchId!=id){watchId=id;pcId=peer;sent=0.0;received=0.0;transport=0.0;lastTransport=System.currentTimeMillis();handler.removeCallbacks(sample);handler.post(sample)}}.runOnQueue(Queues.MAIN)
   AsyncFunction("stopMedia"){watchId=null;handler.removeCallbacks(sample)}.runOnQueue(Queues.MAIN)
   AsyncFunction("getAudioRoute"){session:Int->routeSession=session;CallCoordinator.routeSnapshot(session)}.runOnQueue(Queues.MAIN)
   AsyncFunction("setRoute"){route:String->CallCoordinator.setRoute(route);CallCoordinator.routeSnapshot(routeSession)}.runOnQueue(Queues.MAIN)
@@ -54,13 +57,15 @@ class PhoneappCallingModule:Module(){
     val promise=PromiseImpl(Callback{args->
      sampling=false
      if(watchId==id)runCatching{
-      val rows=JSONArray(args.firstOrNull() as? String?:"[]");var out=0.0;var input=0.0
-      for(i in 0 until rows.length()){val row=rows.getJSONArray(i).getJSONObject(1);if(row.optString("kind",row.optString("mediaType"))!="audio")continue
+      val rows=JSONArray(args.firstOrNull() as? String?:"[]");var out=0.0;var input=0.0;var transportNow=0.0
+      for(i in 0 until rows.length()){val row=rows.getJSONArray(i).getJSONObject(1);if(row.optString("type")=="candidate-pair"&&row.optString("state")=="succeeded")transportNow+=row.optDouble("bytesReceived",0.0)+row.optDouble("responsesReceived",0.0)+row.optDouble("requestsReceived",0.0);if(row.optString("kind",row.optString("mediaType"))!="audio")continue
        if(row.optString("type")=="outbound-rtp")out+=row.optDouble("bytesSent",0.0)
        if(row.optString("type")=="inbound-rtp")input+=row.optDouble("bytesReceived",0.0)
       }
+      if(transportNow>transport)lastTransport=System.currentTimeMillis();transport=transportNow
+      if(System.currentTimeMillis()-lastTransport>45000)handler.post{if(CallCoordinator.current==id)CallCoordinator.localEnd(id)}
       val moving=sent>0&&received>0&&out>sent&&input>received;sent=out;received=input
-      identity().queue.execute{runCatching{identity().request("/calls/$id/presence",JSONObject().put("connected",moving).put("eventKey","native-"+UUID.randomUUID().toString()).put("source","native-rtp"))}}
+      if(!reporting){reporting=true;identity().queue.execute{try{runCatching{identity().request("/calls/$id/presence",JSONObject().put("connected",moving).put("eventKey","native-"+UUID.randomUUID().toString()).put("source","native-rtp"))}}finally{reporting=false}}}
      }
     },Callback{sampling=false})
     module.javaClass.getMethod("peerConnectionGetStats",Int::class.javaPrimitiveType,ReactPromise::class.java).invoke(module,pcId,promise)

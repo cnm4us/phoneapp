@@ -29,7 +29,7 @@ export class DeviceAuth {
    if(!d||!r||d.revoked_at||d.status!=='active'||Date.parse(r.expires_at.replace(' ','T')+'Z')<=now)return null;
    if(r.used_at){
     if(r.request_hash===hash(requestKey)&&Date.parse(r.used_at.replace(' ','T')+'Z')+60_000>now)return JSON.parse(this.box.open(r.response_ciphertext)) as DeviceEnrollment;
-    await db.query('UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?',[utc(now),deviceId]);
+    await db.query("UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?",[utc(now),deviceId]);
     await db.query('UPDATE auth_sessions SET revoked_at=? WHERE device_id=?',[utc(now),deviceId]);
     return null;
    }

@@ -140,7 +140,7 @@ function CallScreen() {
         </ScrollView>}
       </View>
       {settingsOpen && <SettingsPanel close={closeSettings}>
-        <View style={styles.card}><IncomingAlertControls state={alertState} change={preferences=>void incomingAlerts.setPreferences(preferences)} /></View>
+        <View style={styles.card}>{calling ? <Text style={styles.muted}>Incoming call sound follows your phone’s call and notification settings.</Text> : <IncomingAlertControls state={alertState} change={preferences=>void incomingAlerts.setPreferences(preferences)} />}</View>
         {!active && <View style={styles.card}>
           <Text style={styles.label}>Test connection setup</Text>
           <View style={styles.row}><Text style={styles.text}>Show manual room testing</Text><Switch accessibilityLabel="Show manual room testing" value={legacy} onValueChange={setLegacy} disabled={Boolean(accountState.account)} /></View>

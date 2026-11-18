@@ -7,6 +7,8 @@ import {seed,providerId,patientId,patientUserId} from '../database/seed';
 import {AccountsStore,hash,utc} from './accounts-store';
 import {APP_ID,DeviceAuth,SecretBox,type DeviceEnrollment} from './device-auth';
 import {PushWorker,type PushRequest} from './push';
+import {AccountsApi} from './accounts-api';
+import {createSignaling} from './server';
 
 test('native device ownership, secure refresh and transactional delivery',{timeout:30000},async t=>{
  loadConfiguration();const db=await connect('test');const [lock]=await db.query("SELECT GET_LOCK('phoneapp:test-suite',0) AS acquired");assert.equal(Number(lock.acquired),1);
@@ -48,6 +50,24 @@ test('native device ownership, secure refresh and transactional delivery',{timeo
    const canceled=await store.create(await actor(p),patientId('A'),randomUUID());await store.action(await actor(p),canceled,'cancel');await worker.tick();assert.equal(sent.length,1);
    const expired=await store.create(await actor(p),patientId('A'),randomUUID());clock+=61000;await worker.tick();assert.equal(sent.length,1);await store.sweep();
    const invalid=await store.create(await actor(p),patientId('A'),randomUUID());const bad=new PushWorker(store,box,async()=>({accepted:false,invalidToken:true,code:'fake-unregistered'}));await bad.tick();const [revoked]=await db.query('SELECT push_token_hash FROM devices WHERE id=?',[a.deviceId]);assert.equal(revoked.push_token_hash,null);await store.action(await actor(p),invalid,'cancel');
+  });
+  await t.test('native HTTP enrollment/registration and refreshed room capability remain compatible with browsers',async()=>{
+   let api:AccountsApi;const server=createSignaling({accessKey:'synthetic-native-api-key',apiHandler:(req,res)=>api.handle(req,res),authorizePrivateJoin:(principal,call)=>store.authorizeMedia(principal,call)});api=new AccountsApi(store,server,()=>{},devices);
+   await new Promise<void>(resolve=>server.http.listen(0,'127.0.0.1',resolve));const address=server.http.address();assert(address&&typeof address!=='string');const origin=`http://127.0.0.1:${address.port}`;
+   const request=async(path:string,token:string|undefined,body:unknown,status=200)=>{const response=await fetch(origin+'/api'+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body)});assert.equal(response.status,status);return await response.json() as any;};
+   try{
+    const code=randomBytes(32).toString('base64url');await db.query('INSERT INTO enrollment_codes (id,user_id,token_hash,expires_at) VALUES (?,?,?,?)',[randomUUID(),patientUserId('A'),hash(code),utc(clock+60000)]);
+    await request('/enroll',undefined,{code,device:{installationId:randomUUID(),platform:'web',appIdentifier:APP_ID}},400);
+    const a=await request('/enroll',undefined,{code,device:{installationId:randomUUID(),platform:'ios',appIdentifier:APP_ID}}) as DeviceEnrollment;
+    await request('/device/push',undefined,{provider:'apns_voip',token:'synthetic-http-push-token',environment:'production'},401);
+    await request('/device/push',a.token,{provider:'apns_voip',token:'synthetic-http-push-token',environment:'production'});
+    const p=await issue(providerId,false);const {id}=await request('/calls',p.token,{patientId:patientId('A'),requestKey:randomUUID()},201);
+    await request(`/calls/${id}/answer`,a.token,{});
+    const first=await request(`/calls/${id}/media`,a.token,{});
+    const refreshed=await request('/device/refresh',undefined,{deviceId:a.deviceId,refreshToken:a.refreshToken,requestKey:randomUUID()}) as DeviceEnrollment;
+    const next=await request(`/calls/${id}/media`,refreshed.token,{});assert.deepEqual(next,first);assert(await store.authorizeMedia(a.deviceId,id));
+    await request('/logout',refreshed.token,{});await request(`/calls/${id}/media`,refreshed.token,{},401);
+   }finally{await endAll();await server.close();}
   });
   await t.test('raw media freshness remains bounded without generic native heartbeat credit',async()=>{
    const p=await issue(providerId,false),a=await issue(patientUserId('A'));const id=await store.create(await actor(p),patientId('A'),randomUUID());await store.action(await actor(a),id,'answer');

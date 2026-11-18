@@ -205,7 +205,7 @@ export class AccountsStore {
   }
   async logout(actor: Actor): Promise<string[]> {
     const ids = await this.transaction(async db => {
-      if(actor.deviceId){await db.query('UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?',[utc(this.now()),actor.deviceId]);await db.query('UPDATE auth_sessions SET revoked_at=? WHERE device_id=?',[utc(this.now()),actor.deviceId]);}
+      if(actor.deviceId){await db.query("UPDATE devices SET revoked_at=?,push_provider='none',push_token_ciphertext=NULL,push_token_hash=NULL WHERE id=?",[utc(this.now()),actor.deviceId]);await db.query('UPDATE auth_sessions SET revoked_at=? WHERE device_id=?',[utc(this.now()),actor.deviceId]);}
       else await db.query('UPDATE auth_sessions SET revoked_at=? WHERE id=?', [utc(this.now()),actor.sessionId]);
       return (await db.query("SELECT c.id FROM calls c JOIN call_runtime r ON r.call_id=c.id WHERE c.state IN ('ringing','accepted','connected') AND (r.caller_session_id=? OR r.answered_session_id=?)", [actor.sessionId,actor.sessionId])).map((r: Row) => r.id) as string[];
     });

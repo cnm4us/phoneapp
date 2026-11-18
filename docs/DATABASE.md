@@ -95,3 +95,11 @@ Logical calls survive service restarts; transient WebRTC rooms do not. On shutdo
 ## Next planned native incoming-call schema work
 
 [0011](plans/0011-native-background-incoming-calls.md) proposes resumable device credentials/rotation/revocation, session-to-device and winning-device call bindings, encrypted APNs/FCM registration metadata and a short-expiry transactional delivery outbox. It must preserve current browser/session paths and first-answer semantics. No new migration exists or was applied by this planning checkpoint; applied history remains 0001–0003. Select exact columns/constraints/credential lifetimes in implementation, append the next numbered migration and run clean/upgrade/recovery/grant/access tests before development application.
+
+## Native calls migration 0004
+
+`0004_native_devices_push.sql` is applied to isolated test and development targets. Adds device environment metadata, nullable session/winning-device bindings, refresh credential rotation/retry ciphertext and transactional push delivery records. Existing browser/session columns and all previous migrations remain unchanged. Runtime receives only scoped SELECT/INSERT/UPDATE on the two new mutable tables, no DELETE or DDL; permission suite passes. Clean install and v2→v3→v4 upgrade preserve existing transcripts/calls; dirty-DDL recovery test now uses the next synthetic migration number.
+
+Before development application, a private `phoneapp-before-0004.sql` single-transaction snapshot was retained under the isolated worktree's `artifacts/private/native-calls/` (600). Migration and grants applied successfully; ledger current. No destructive backfill/down migration. Disable native calling via feature flag without dropping history. Restore is a separately planned operator action; never reset development from the test harness.
+
+Refresh credentials have a fixed 90-day enrollment deadline, rotating one-hour access sessions (browser remains 12 hours). Same request UUID permits a 60-second encrypted response retry; other reuse of a spent token revokes device sessions and push binding. Device revocation does not rely on a client-supplied installation ID. Duration still requires actual media observations; a native system answer or transport keepalive is not connected/billable seconds.

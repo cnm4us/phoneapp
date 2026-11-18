@@ -3,7 +3,7 @@ import { createPrivateKey, sign, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { APP_ID, SecretBox } from './device-auth';
 import { AccountsStore,utc,hash } from './accounts-store';
-export type PushRequest={provider:string;environment:string;token:string;callId:string;expiresAt:number};
+export type PushRequest={provider:string;environment:string;token:string;callId:string;expiresAt:number;validateOnly?:boolean};
 export type PushResult={accepted:boolean;invalidToken?:boolean;retry?:boolean;code:string};
 export type Sender=(request:PushRequest)=>Promise<PushResult>;
 const encode=(v:unknown)=>Buffer.from(JSON.stringify(v)).toString('base64url');
@@ -37,7 +37,7 @@ export function providerSender(env:NodeJS.ProcessEnv):Sender {
    const response=await fetch('https://oauth2.googleapis.com/token',{method:'POST',body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion}),signal:AbortSignal.timeout(8000)});
    const value=await response.json() as any;if(!response.ok||!value.access_token)return {accepted:false,code:'fcm-auth',retry:response.status>=500};oauth=value.access_token;oauthExpires=Date.now()+Math.max(0,Number(value.expires_in)-120)*1000;
   }
-  const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(google.project_id)}/messages:send`,{method:'POST',headers:{Authorization:`Bearer ${oauth}`,'Content-Type':'application/json'},body:JSON.stringify({message:{token:request.token,android:{priority:'HIGH',ttl:`${Math.min(ttl,60)}s`},data:{callId:request.callId,expiresAt:String(request.expiresAt)}}}),signal:AbortSignal.timeout(8000)});
+  const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(google.project_id)}/messages:send`,{method:'POST',headers:{Authorization:`Bearer ${oauth}`,'Content-Type':'application/json'},body:JSON.stringify({...(request.validateOnly?{validate_only:true}:{}),message:{...(request.validateOnly?{topic:'phoneapp_configuration_check'}:{token:request.token}),android:{priority:'HIGH',ttl:`${Math.min(ttl,60)}s`},data:{callId:request.callId,expiresAt:String(request.expiresAt)}}}),signal:AbortSignal.timeout(8000)});
   const value=await response.json() as any;
   const invalid=value.error?.details?.some((v:any)=>v.errorCode==='UNREGISTERED');
   if(response.status===401)oauthExpires=0;

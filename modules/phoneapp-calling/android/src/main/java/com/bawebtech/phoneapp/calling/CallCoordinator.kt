@@ -83,7 +83,7 @@ object CallCoordinator {
  fun notifyCall(incoming:Boolean){val c=context?:return;runCatching{c.getSystemService(NotificationManager::class.java).notify(7811,notification(incoming))};runCatching{c.startForegroundService(Intent(c,CallForegroundService::class.java).putExtra("incoming",incoming))}}
  private val poll=object:Runnable{override fun run(){val id=current?:return;val c=context?:return
   if(deadline>0&&deadline<System.currentTimeMillis()){localEnd(id);return}
-  if(!polling){polling=true;DeviceIdentity.get(c).queue.execute{val result=runCatching{DeviceIdentity.get(c).request("/dashboard",null)}.getOrNull();handler.post{polling=false;if(current==id&&result!=null){val calls=result.getJSONArray("calls");val call=(0 until calls.length()).map{calls.getJSONObject(it)}.firstOrNull{it.optString("id")==id};if(call==null||call.optString("state") in listOf("ended","failed","canceled","missed","declined"))end(id)}}}}
+  if(!polling){polling=true;DeviceIdentity.get(c).queue.execute{val result=runCatching{DeviceIdentity.get(c).request("/dashboard",null)}.getOrNull();handler.post{polling=false;if(current==id&&result!=null){val calls=result.getJSONArray("calls");val call=(0 until calls.length()).map{calls.getJSONObject(it)}.firstOrNull{it.optString("id")==id};if(call==null||call.optString("state") in listOf("ended","failed","canceled","missed","declined")||(call.optString("state") in listOf("accepted","connected")&&!call.optBoolean("ownsMedia")))end(id)}}}}
   if(current==id)handler.postDelayed(this,2000)
  }}
 }

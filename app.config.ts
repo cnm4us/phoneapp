@@ -13,7 +13,7 @@ const config: ExpoConfig = {
     // Current privately tested standard-crypto POC; reassess for public distribution/new crypto features.
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
-  android: { package: 'com.bawebtech.phoneapp.poc' },
+  android: { package: 'com.bawebtech.phoneapp.poc', allowBackup: false },
   plugins: [
     './plugins/with-phoneapp-calling',
     'expo-dev-client',

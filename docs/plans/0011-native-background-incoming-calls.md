@@ -81,12 +81,12 @@ Native configuration: real app IDs, correct APNs topic/environment/entitlements 
 
 ## External setup to resolve
 
-Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Read-only EAS menus confirmed signing but did not verify a reusable push key; no provider credentials were created or changed. Firebase project/client config and separate server identity remain pending.
+Owner instructions and private file handoff are in [push setup](../PUSH_SETUP.md). Owner supplied matching Firebase client config and Apple P-256 private key; local structural/signature checks pass and permissions are 600. Existing EAS team metadata is retained privately. Apple key environment/type/topic confirmation, APNs authorization/capability and separate FCM server identity remain pending; no provider delivery was tested.
 
 | Item | Current evidence | Needed to complete delivery tests |
 | --- | --- | --- |
-| Apple Developer / EAS signing | Existing account and native builds verified | Enable/verify push support for this app ID; APNs sender key/ID/team and matching VoIP environment/topic, without creating duplicate signing assets unnecessarily. |
-| Firebase Android project | No project/config/sender connection verified locally | Reuse or create a selected project; register `com.bawebtech.phoneapp.poc`, obtain client build config and scoped server send identity. |
+| Apple Developer / EAS signing | Existing signing verified; owner `.p8` locally parses/signs; key/team metadata available privately | Enable/verify push support for this app ID; verify key authorization and matching VoIP scope/environment/topic. |
+| Firebase Android project | Client config verified: project `phoneapp-9a5c4`, Android `com.bawebtech.phoneapp.poc` | Obtain dedicated scoped server send identity; verify API/authorization and later native delivery. |
 | Physical devices | Owner iPhone/wife Android; foreground flow/ringtone reported successful | Models/OS, permission states, real APNs/FCM enrollment and owner-operated lifecycle matrix. |
 | Standalone internal app | EAS preview profile exists | Actual bundled-JS builds installed and tested with Metro stopped/unreachable. |
 

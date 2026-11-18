@@ -12,7 +12,21 @@ The owner performs account login and credential approval/download. The agent han
 4. Using VS Code Remote SSH, copy the downloaded file to `/home/ubuntu/phoneapp/artifacts/private/push/google-services.json` on EC2.
 5. Tell the agent the Firebase project ID and that the file is available. The project ID is not a private key.
 
-This file configures the Android client; it does not authorize the EC2 server to send messages. A separate, appropriately scoped FCM server identity is still required. Once the project is selected, configure that identity through the owner's Google Cloud account, using workload identity or a dedicated service account. If a private service-account JSON key is used, keep it only on the backend in the private directory below, never in a mobile build. Verify sender permissions before delivery testing.
+Client configuration received and parsed: project `phoneapp-9a5c4`, one matching Android client for `com.bawebtech.phoneapp.poc`, project number and mobile app ID present. This file does not authorize the EC2 server to send messages. A separate FCM server identity is still required.
+
+### Remaining Android account step: server sending credential
+
+For this EC2 proof of concept, use a dedicated service account:
+
+1. Open [Google Cloud service accounts for Phoneapp](https://console.cloud.google.com/iam-admin/serviceaccounts?project=phoneapp-9a5c4), confirming selected project `phoneapp-9a5c4`.
+2. Create a service account named `phoneapp-push-sender`, or reuse an existing account dedicated to this purpose.
+3. In project access, grant **Firebase Cloud Messaging API Admin** (`roles/firebasecloudmessaging.admin`). Do not grant general project Owner/Editor for this sender.
+4. Open that service account → Keys → Add key → Create new key → JSON. Save the download on EC2 as `/home/ubuntu/phoneapp/artifacts/private/push/fcm-service-account.json`.
+5. Verify the [Firebase Cloud Messaging API](https://console.cloud.google.com/apis/library/fcm.googleapis.com?project=phoneapp-9a5c4) is enabled in this project.
+
+This private JSON belongs only on the backend; never bundle it in the mobile app. If Google account policy blocks key creation, report that condition rather than changing organization policy; workload identity is an alternative. The agent must validate the downloaded credential/project and authorization separately before claiming delivery works.
+
+References: [FCM API sender role](https://docs.cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging), [Google service-account key download](https://docs.cloud.google.com/iam/docs/keys-create-delete).
 
 References: [Firebase Android setup](https://firebase.google.com/docs/android/setup), [FCM server authorization](https://firebase.google.com/docs/cloud-messaging/send/v1-api).
 
@@ -31,6 +45,8 @@ Reference: [Apple private-key setup and download rules](https://developer.apple.
 
 `/home/ubuntu/phoneapp/artifacts/private/push/` exists with directory mode 700 and is excluded from both Git and EAS uploads. Keep downloaded credentials mode 600. The agent will set restrictive file permissions after handoff and configure backend-only references; never place sender credentials in public app variables. Android client configuration will need an explicit build packaging path during implementation because this staging directory is excluded from EAS.
 
-Read-only EAS credential-menu inspection confirmed existing iOS signing/provisioning and a push-key management menu. Apple login was declined; no key was selected, generated, downloaded, or modified. A reusable APNs sender key is still unverified. No Firebase project, client configuration, server identity, provider send, native push registration, or new build has been configured or tested for this stage.
+Owner subsequently supplied `google-services.json` and `AuthKey_C3W3F7TQ6D.p8`; both are present and mode 600. Firebase structure/app matching passes. Apple key parses as EC P-256 and a local sign/verify round trip passes; this does not establish Apple APNs authorization, key scope/environment, revocation state, or VoIP delivery. Existing EAS signing metadata supplies the team ID, retained in private `credential-status.json`; no need to ask the owner for it again. Apple key environment/type/topic confirmation is pending owner reply.
+
+Read-only EAS credential-menu inspection previously confirmed iOS signing/provisioning and a push-key management menu. Apple login was declined and no EAS keys were changed. No FCM server identity, provider send, native push registration, server wiring or new build has been configured or tested for this stage. Private status metadata records file locations and validation limits without copying private key contents.
 
 Next independent development increment remains secure device-bound credential restoration and backend registration/delivery contracts. Credentials alone do not add background ringing; plan 0011 includes the native work and handset acceptance.

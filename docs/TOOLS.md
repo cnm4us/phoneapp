@@ -190,8 +190,8 @@ Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcoll
 | --- | --- |
 | Secure persistent native identity | Not implemented; current account credential is memory-only. Must be available to early native handlers while locked after first unlock. |
 | Device-bound call ownership | Existing ownership uses API session IDs; adapt safely for same-device refresh and first-answer wins. |
-| APNs VoIP sender/app capability | Not configured/verified locally; verify app ID, sender key/team/key ID, environment/topic and native entitlement setup. |
-| Android Firebase/FCM | Project/client config/server sender identity not verified; reuse or create selected project when implementation needs delivery testing. |
+| APNs VoIP sender/app capability | Owner supplied `.p8`; local EC P-256 parse/sign/verify passes. Existing EAS team metadata available. Environment/type/topic, provider authorization, capability/entitlements still pending. |
+| Android Firebase/FCM | Client config verified for project `phoneapp-9a5c4` and exact Android package. Separate FCM server send identity/API authorization still pending. |
 | Native call lifecycle | PushKit/CallKit and FCM/Telecom/services absent; current app ends calls on background. |
 | Standalone cold-start build | `preview` EAS profile exists but not exercised for this stage. Build with bundled JS so ringing/answer does not depend on Metro. |
 | Hardware verification | Need actual models/OS and permission/network/reboot states; this session cannot control the phones. |
@@ -199,3 +199,5 @@ Latest ringtone installation: [iPhone EAS page](https://expo.dev/accounts/mbcoll
 Keep sender credentials backend-only. Android Firebase client build configuration is distinct from server service-account secrets; review Git/EAS packaging explicitly when implemented. No runnable push-registration/send commands exist yet; do not present proposed names as available tools.
 
 Owner handoff: [push setup guide](PUSH_SETUP.md). Prepared `artifacts/private/push/` with mode 700, ignored by Git and EAS. Read-only EAS menus confirmed signing/provisioning and push-key management access; declined Apple login and selected no key-changing action. No reusable APNs key was verified. Firebase client configuration and separate server send identity remain pending. This inspection supersedes the earlier uninspected-remote status above; no credentials were generated/downloaded/changed.
+
+Subsequent owner handoff: `artifacts/private/push/google-services.json` and `artifacts/private/push/AuthKey_C3W3F7TQ6D.p8` received, restricted to mode 600 and locally validated without displaying key contents. Private `credential-status.json` records paths/project/key metadata, existing EAS team ID and pending authorization/environment checks. Earlier “client config pending” describes the previous checkpoint only. Remaining owner steps and dedicated FCM sender role/download are in the guide; do not copy server private credentials to an EAS build path. No runtime/provider send/build was started.

@@ -54,7 +54,7 @@ class PhoneappCallingModule:Module(){
   val id=watchId?:return
   if(!sampling){sampling=true
    runCatching{
-    val module=context().getNativeModule("WebRTCModule")?:error("WebRTC unavailable")
+    val module=(context() as? com.facebook.react.bridge.ReactContext)?.getNativeModule("WebRTCModule")?:error("WebRTC unavailable")
     val promise=PromiseImpl(Callback{args->
      sampling=false
      if(watchId==id)runCatching{

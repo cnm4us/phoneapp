@@ -456,3 +456,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner says the UI looks good and asks for the next logical project step. Reviewed state, PRD and parent 0015 ordering; recommended Stage B care-team inbox with individual staff identity, eligible assignment, receipts independent of work state, internal comments and source-linked replies. Suggested a small Provider/RN/Patient A message workflow as acceptance, with existing source audiences preserved. This provides staff attribution/work history for future time evidence; it does not create billing credit.
 - In-app text, retained originals/saved-message transcription, reviewed summaries and staff time links follow; remaining Android/media/call/accessibility checks can continue alongside development. Updated recommendation/state/roadmap only; no new implementation plan, runtime/schema/provider/build changes. Documentation/whitespace checks pass.
+
+
+## 2026-11-19 Office manager care teams and staff handoffs discussion
+
+- Owner identifies office-manager responsibility for patient/provider-team association, RN/MA referral to providers, and provider delegation to RN/MA. Captured two separate layers: durable authorized patient/team roster versus per-communication work ownership. Preserve original recipient, media, independent receipts and actor attribution; handoffs are internal work events, not patient replies or resolution.
+- Clarified parent 0015 Stage B prerequisite and TEAM-01 acceptance: minimal office-manager/team management with separate roster/clinical/work permissions and explicit handling of ineligible pending work after membership changes. Existing source/call-participant audiences remain enforced; full multi-organization/self-service onboarding is not implied.
+- Updated PRD/parent plan/state for the later focused implementation plan. Discussion only; no runtime/schema/role/provider/build changes. Documentation/whitespace checks pass.

@@ -52,6 +52,16 @@ Playing/reading does not resolve a task. A successfully published linked reply c
 
 Reassignment requires a current authorized staff target; designated recipient remains visible. Use versioned/conditional updates so concurrent staff changes cannot silently overwrite an assignment/resolution. Backfilled historical records start with unknown receipt/unspecified work state, not fabricated New/Heard/Resolved events or an unsolicited notification backlog. A configurable cutover defines new-item behavior prospectively.
 
+### Office manager roster and staff handoffs
+
+Owner clarifies the operational model: an authorized office manager associates patients with a provider/care team. This durable patient/team roster is separate from who currently handles one communication. The roster can include provider(s), RN(s) and MA(s); do not infer a shared account or a new selected team destination before authorized membership exists. Current `patient_assignments` supports patient/staff relationships, but named team management and office-manager UI/permissions are not implemented.
+
+An RN/MA can refer a communication to an eligible provider for review; a provider can delegate it to an eligible RN/MA. These are recorded assignment/handoff actions on the same work item, with actor, previous/new owner, timestamp and optional internal reason. Preserve original sender/addressee, source media and each actor's receipts/work attribution; a handoff is neither a patient reply nor automatic resolution. A general Assign/Reassign action can have Refer to provider and Delegate to RN/MA shortcuts. The responsible staff member changes; patient membership does not change merely because one item is delegated.
+
+Office-manager roster capabilities, clinical/source reading and work-item delegation need distinct authorization. Only eligible team members with required current patient/source access can receive work; assigning work cannot grant that access. Roster removal/coverage changes must retain prior attribution and explicitly surface or reassign ineligible pending work, without silently deleting/completing it. Existing call-participant limits remain intact; care-team membership is not automatic permission to all historical call sources. Internal handoff notes stay outside patient messages/notifications.
+
+Include a minimal office-manager/team-roster prerequisite in the focused next slice, without claiming full multi-organization/self-service onboarding. Demonstrate office manager → Patient A/team association; Patient A message → RN review → provider referral → MA/RN delegation → explicit response/resolution, retaining the same source and audited actor history. This is product discussion; no role/table/API or workflow implementation is created by this clarification.
+
 ### Detail and audience
 
 | Section | Expected behavior / audience |
@@ -97,10 +107,11 @@ Owner iPhone follow-up before Stage B is now consolidated in **[0016 communicati
 
 ### B. Staff workflow, receipts and internal discussion
 
+- [ ] Define and implement the minimal authorized office-manager care-team roster prerequisite, separate from clinical access and per-item ownership; establish eligible staff and roster-change handling before handoff controls. Keep full organization self-service onboarding out of this slice.
 - [ ] Implement append-only receipt/assignment/workflow/comment events and current projections. Separate actor-relative receipts, original addressee and mutable work owner; use explicit reply links and conditional updates.
 - [ ] Add Needs attention/Assigned to me/All with actor-aware counts, assignment/reassignment, no-response-needed resolution, reply-completion rules and reopening on new incoming content. Do not make playback/AI processing/idle polling resolve work.
 - [ ] Build staff comments with clear internal labeling and revision history; prevent them entering patient detail/notifications/AI input or being counted as replies. Enforce permission checks at the API/worker layer.
-- [ ] Add isolated synthetic RN/MA/second-provider fixtures to test collisions and staff attribution. Do not expose a shared enrollment/login or imply this delivers organizations/team onboarding. Verify historical receipts remain unknown and cutover creates no fake notifications.
+- [ ] Add isolated synthetic RN/MA/second-provider fixtures to test collisions and staff attribution. Do not expose a shared enrollment/login or imply the minimal roster delivers full multi-organization/self-service onboarding. Verify historical receipts remain unknown and cutover creates no fake notifications.
 
 ### C. In-app text and thread grouping
 

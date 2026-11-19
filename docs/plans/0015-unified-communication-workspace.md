@@ -95,6 +95,14 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 
 Owner iPhone follow-up before Stage B: installed 8fadedcf shows unified filters/rows/detail, but bottom-of-list detail placement and visible four-second polling cause inconvenient navigation and flicker. Overlay versus inline expansion is under discussion; recommended overlay preserves list position, with quiet change-only refresh. No implementation yet; see current evidence.
 
+#### Owner presentation proposal (discussion; not implemented)
+
+- History card uses the phone’s full usable horizontal width, removing outer gutters while retaining inner text padding and device safe areas. Each record starts with patient name and patient ID, then existing date/time/direction/status and duration/review status. Place the call/audio/video icon at the upper right; remove visible App call/Audio message/Video message headings and the list’s sender line. Keep meaningful accessibility labels for type icons.
+- Detail becomes a full-width overlay above the retained list, with independent scrolling and a fixed upper-right Close button. Restore the same list position/filters on dismissal. Remove message-type heading, duplicate From text, Channel, Original, exact-original technical copy and bottom Record reply/Close detail buttons. Retain accurate backend metadata and availability handling; this is presentation simplification, not a change to source retention.
+- Show separate From, To and Date/time lines. Use name and role where useful, avoiding duplicated sender metadata. Add a Reply menu directly below Close with Video Message, Video Call, Audio Message and Audio Call choices. Recorded audio/video reply can use existing capture; live call availability must reflect role and implemented capability. Patient-originated live calls and a distinct App Audio action remain unimplemented. Do not expose an enabled action that cannot complete.
+- Put accessible play/pause on the lower-left video surface/poster instead of a separate Play video message button. Keep loading/failure/expired-media feedback in the same stable area; preserve native call interruption and one media owner. Audio can use a compact player with the same control convention.
+- Preserve the prior quiet-polling proposal. Future CC/Forward fits directed communication, but needs explicit recipients/access and source/reply/forward relationships; it is not implemented by removing labels or adding a menu. Forwarding must preserve original authorship.
+
 ### B. Staff workflow, receipts and internal discussion
 
 - [ ] Implement append-only receipt/assignment/workflow/comment events and current projections. Separate actor-relative receipts, original addressee and mutable work owner; use explicit reply links and conditional updates.

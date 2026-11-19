@@ -397,3 +397,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Owner installed 8fadedcf as Patient A, confirms unified filters/source rows/detail opening, and reports bottom-of-list detail placement plus periodic vertical jumps/button flicker. Playback remains unconfirmed.
 - Inspected source: workspace polls every four seconds, always sets loading true/false, inserts/removes a visible loading row, disables/re-enables filter controls and republishes unchanged metadata. Recommended overlay with upper-right Close and retained list position; silent change-only polling with a new-items indicator while reading/scrolled down. User requested thoughts on overlay versus inline expansion; recorded the proposal without implementing UI or submitting builds.
 - Updated state/plan/evidence for continuity; documentation/link/whitespace checks only. No runtime/schema/service/provider changes.
+
+
+## 2026-11-19 Owner proposes edge-to-edge history and email-like details
+
+- Discussed removing history/detail outer gutters while retaining inner padding/safe areas, patient-first list rows with upper-right type icons, and a full-width overlay with fixed upper-right Close/Reply. Detail uses From/To/Date and video-surface play/pause, removing duplicated source/technical headings and bottom reply/close buttons. Prior quiet-polling correction remains part of the proposed usability work.
+- Inspected current App padding, workspace/message containers and native video controls. Existing recorded audio/video capture can support message reply choices; live-call menu availability needs role/capability handling because patient-originated calls and a distinct app-audio action are not implemented. CC/Forward remains future directed communication with explicit audience and original attribution.
+- Recorded the proposal in parent plan/current state. User requested thoughts; no UI/source/schema/service/build changes were made. Documentation/whitespace checks pass; phone acceptance/playback results remain as previously recorded.

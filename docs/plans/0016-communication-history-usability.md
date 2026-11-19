@@ -1,6 +1,6 @@
 # 0016 Communication history, detail overlay and media controls
 
-Status: implemented/deployed to development; native build/package and owner device handoff in progress. Updated: 2026-11-19 UTC. Source and verification are tracked in the [evidence report](../testing/2026-11-19-history-usability.md) and [ADR 0012](../decisions/0012-history-overlay-and-playback.md).
+Status: implemented/deployed to development; both native previews FINISHED/package-checked; owner physical acceptance pending. Updated: 2026-11-19 UTC. Source and verification are tracked in the [evidence report](../testing/2026-11-19-history-usability.md) and [ADR 0012](../decisions/0012-history-overlay-and-playback.md).
 
 ## Outcome and scope
 
@@ -94,8 +94,10 @@ Transient network failures keep the last authorized list with a stable offline/r
 - [x] Implement detail overlay/focus/scroll restoration, simplified header and capability-aware Reply menu with existing record/preview/send behavior.
 - [x] Implement media-surface play/pause, scrubbers/timing and interruption-safe seek/playback; avoid history redraws from progress updates.
 - [x] Implement date-picker overlays/draft range/validation and server-compatible Pacific filtering.
-- [ ] Extend automated acceptance, capture actual results, then publish browser changes between calls and submit/check both authorized bundled previews. Update install links/QR and owner device procedures.
-- [ ] Update state/work log/evidence/tools as applicable. Record phone outcomes separately; proceed to parent Stage B only with this slice's actual outcome and remaining gates explicit.
+- [x] Extend automated acceptance, capture actual results, then publish browser changes between calls and submit/check both authorized bundled previews. Update install links/QR and owner device procedures.
+- [x] Update state/work log/evidence/tools as applicable. Record phone outcomes separately; proceed to parent Stage B only with this slice's actual outcome and remaining gates explicit.
+
+- [ ] Complete owner iPhone/Android physical acceptance, keeping the earlier calling/media/accessibility gates explicit.
 
 Primary files: `App.tsx`, `src/accounts/AccountPanel.tsx`, `src/communications/`, `src/messages/AudioMessages.tsx`, `src/messages/controller.ts`, native audio/media adapters, `web/communications.ts`, `web/messages.ts`, browser media adapter/styles and relevant tests. Backend changes should be unnecessary for the initial UI; recheck before editing APIs. Do not invent receipt/workflow updates to support UI badges.
 
@@ -123,7 +125,7 @@ Automated and public development checks now pass; native package and physical re
 | Accessibility | Browser keyboard/focus and owner VoiceOver/TalkBack/text scaling | Type labels, Close/Reply/picker/slider names, adjustable seek, reachable year/month/day and no clipped/overlapped header | Browser named controls/dialog/Escape exercised; VoiceOver/TalkBack/text-scale acceptance pending |
 | Calling regressions | `test:accounts`, `test:native-calls`, `test:browser` and safe public calling checks; physical native matrix | Incoming/current/other-device call controls survive filters/overlays; call/background/logout interrupts capture/player; no unsolicited owner rings from smokes | Pass: existing local/public suites and incoming calls interrupting detail/calendar overlays; native matrix pending |
 | General / saved identity | `typecheck`, `test:message-client`, `test:account-client`, `test:audio-messages`, `test:video-messages`, `test:browser-session`, `npm test` as affected | Current message/media/session/call contracts remain compatible | Pass: TypeScript, current media/account/session/unit/controller suites |
-| Native / release | `doctor`, `bundle:check`, archive inspection; EAS preview/package checks; documented owner test | Both actual packages retain bundled UI/media/calling/push support; install over current builds; native acceptance reported separately | Doctor21, both exports/archive pass; final EAS/package/device results in evidence |
+| Native / release | `doctor`, `bundle:check`, archive inspection; EAS preview/package checks; documented owner test | Both actual packages retain bundled UI/media/calling/push support; install over current builds; native acceptance reported separately | Doctor21, both exports/archive and final IPA/APK checks pass; owner device acceptance pending |
 | Documentation | `python3 scripts/check_project.py`, `git diff --check` | Links/requirements/whitespace valid | Pass, 2026-11-19; documentation only |
 
 Shared MariaDB suites run sequentially under the existing `phoneapp:test-suite` lock. No DB reset or migration suite is required for documentation-only planning. At implementation run checks appropriate to actual changes; expand DB verification only if persistent/API contracts change. Public checks use temporary synthetic sessions and avoid owner calls/messages. Record sanitized evidence under a dated report; private packages/screenshots/logs stay out of Git/EAS archives.
@@ -136,4 +138,4 @@ No data rollback is expected. Restore the prior schema-compatible browser assets
 
 ## Handoff
 
-Source is implemented in `/home/ubuntu/phoneapp-stage16` / `feat/history-usability`, with ADR 0012 and shared calendar/seek/quiet-refresh checks. Browser rollout/public checks and final local checks pass. Complete final EAS/package/QR handoff and record actual owner hardware outcomes separately. [0015](0015-unified-communication-workspace.md) remains the parent for staff workflow and later processing; this document is the sole active implementation checklist for its UI follow-up.
+Source is implemented in `/home/ubuntu/phoneapp-stage16` / `feat/history-usability`, with ADR 0012 and shared calendar/seek/quiet-refresh checks. Browser rollout/public checks and final local checks pass. Both final previews/package checks and QR refresh are complete; record actual owner hardware outcomes separately. [0015](0015-unified-communication-workspace.md) remains the parent for staff workflow and later processing; this document is the sole active implementation checklist for its UI follow-up.

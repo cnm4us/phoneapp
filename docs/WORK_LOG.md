@@ -390,3 +390,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Follow-up test commit `53a3968` selects the playable fixture by stable source ID (random equal-time drafts previously made the selector flaky), checks narrow 360px browser detail and verifies both-source/zero-source registry checks independently of uniqueness. All 8 workspace Node tests pass; no app/runtime behavior changed. iPhone 8fadedcf finished and actual IPA/push/calling/bundle checks pass; QR refreshed and owner offered install/test. Android still compiles. GitHub connector PR edit was 403; existing authenticated CLI updated the draft without changing review state.
 
 - Both `663e036` native previews are now FINISHED and actual IPA/APK package checks pass; both JS bundles contain the workspace, signed/profile Production APNs and calling/media capabilities are retained, and both install QRs are refreshed. Android public APK and iPhone install links are in current state/evidence. No new signing/dependency/provider change. Owner iPhone history/playback test was requested and remains unreported; all physical gates stay open. Updated final state/resume/plan/PR evidence and pushed the feature branch without merging the draft.
+
+
+## 2026-11-19 Owner iPhone history navigation and polling discussion
+
+- Owner installed 8fadedcf as Patient A, confirms unified filters/source rows/detail opening, and reports bottom-of-list detail placement plus periodic vertical jumps/button flicker. Playback remains unconfirmed.
+- Inspected source: workspace polls every four seconds, always sets loading true/false, inserts/removes a visible loading row, disables/re-enables filter controls and republishes unchanged metadata. Recommended overlay with upper-right Close and retained list position; silent change-only polling with a new-items indicator while reading/scrolled down. User requested thoughts on overlay versus inline expansion; recorded the proposal without implementing UI or submitting builds.
+- Updated state/plan/evidence for continuity; documentation/link/whitespace checks only. No runtime/schema/service/provider changes.

@@ -93,6 +93,8 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 - [x] Complete both native preview builds/package verification and refresh install QR codes.
 - [ ] Owner iPhone/Android layout/media/call acceptance. Keep hardware results separate from automated checks.
 
+Owner iPhone follow-up before Stage B: installed 8fadedcf shows unified filters/rows/detail, but bottom-of-list detail placement and visible four-second polling cause inconvenient navigation and flicker. Overlay versus inline expansion is under discussion; recommended overlay preserves list position, with quiet change-only refresh. No implementation yet; see current evidence.
+
 ### B. Staff workflow, receipts and internal discussion
 
 - [ ] Implement append-only receipt/assignment/workflow/comment events and current projections. Separate actor-relative receipts, original addressee and mutable work owner; use explicit reply links and conditional updates.

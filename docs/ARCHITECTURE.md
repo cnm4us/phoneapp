@@ -77,3 +77,9 @@ Persist event times in UTC and duration in integer seconds. Select a practice ti
 `server/accounts-store.ts` uses explicit MariaDB transactions for enrollment redemption, assigned access, first answer, idempotency, lifecycle events and backend-timed observed intervals. `accounts-api.ts` supplies bounded JSON endpoints under `/api/`; nginx forwards only this project prefix. Private rooms use distinct per-session media capabilities with no public short code and revalidate session/relationship/state on join. A five-second sweep closes expired/revoked calls. The feature is enabled explicitly with `ENABLE_ACCOUNT_CALLS`; startup verifies current migrations, never applies DDL.
 
 See [decision 0006](decisions/0006-foreground-accounts.md) for prototype identity, restart behavior, time-estimate limitations and future native ringing/capture boundaries.
+
+## Planned communication workspace (0015)
+
+[Plan 0015](plans/0015-unified-communication-workspace.md) proposes a communication registry over preserved call/media/text source records. Format, interaction and channel are separate dimensions. Viewer receipts, original addressee, mutable work owner and resolution state remain independent. Source-specific authorization constrains every derived transcript, clinical note, comment, count and export; internal staff material is excluded from patient payloads.
+
+Use communication-scoped versioned artifacts/jobs and explicit same-patient source links for saved-message transcripts and reviewed AI clinical draft notes; preserve existing call-scoped constraints through adapters/bridges. Exact future upload originals and normalized playback copies need distinct private asset identities/retention. Existing decoded live-call recording, speech/AI service and Twilio/SMS adapters do not exist; later stages select and verify them. This is planned direction, not an accepted vendor/runtime design or a deployed schema.

@@ -18,12 +18,12 @@ Date overlays offer explicit year/month/day selection, leap/month clamping, Canc
 | `test:communication-client` | 11 cases pass: existing account/detail/access/pagination races, quiet unchanged polls, held new arrivals, offline retention, calendar boundaries and seek intent/interruption |
 | `test:message-client` | 11 cases pass, including unchanged polling/offline playback preservation and retained draft through call interruption |
 | `test:account-client` | 8 cases pass, including native access-status propagation |
-| `test:communications` | Nine DB/API/Chromium scenarios / 10 Node tests pass, including actual paused audio/video seeks, calendar clamping/cancel/apply, two idle poll intervals with stable row identity, Close scroll restoration and caregiver switching |
+| `test:communications` | Nine DB/API/Chromium scenarios / 10 Node tests pass, including actual paused audio/video seeks, in-overlay audio/video replies, supported staff Video Call, incoming calls hiding detail and date picker, calendar clamping/cancel/apply, two idle poll intervals with stable row identity, Close scroll restoration and caregiver switching |
 | Audio/video integration | 9 Node tests each pass under existing guarded disposable DB target |
 | Account/native/browser-cookie integration | 7, 8 and 5 Node tests respectively pass |
 | Unit/server and WebRTC browser | 58 unit/server tests and 13 local browser scenarios pass |
 | Expo Doctor / both JS exports | 21/21 and both final JS exports pass |
-| Archive / native build / public rollout | Pending; no physical acceptance inferred |
+| Archive / native build / public rollout | Archive exclusion pass; public overlay/Reply/Close/year-month-day smoke passes; final native status below |
 
 Shared DB suites run sequentially. No schema/migration change is needed. Tests use their own random synthetic users/patients and temporary media, not owner calls or messages. Private fixture screenshots/packages/logs stay under ignored history-ui artifacts.
 
@@ -33,6 +33,6 @@ During implementation, existing UI tests were updated to select accessible type-
 
 Published browser source ae77c90 between calls, after verifying zero active account calls/WebSockets and retaining the prior browser assets/source reference privately. Public workspace smoke confirms all 34 authorized legacy sources exactly once, reload and authenticated Range access; public cookie/session smoke and all 13 public WebRTC cases pass. No owner call/message/push is sent by the workspace/session smokes. No schema, grant, media, credential or service configuration change.
 
-The first ae77c90 EAS candidates (iPhone 2647b41b, Android 4ad3dbe9) were canceled before installation to include a final native draft-retention fix: keep the workspace mounted but hidden during live calls, and make poster filenames unique per view lifetime. Final source typechecks and both JS exports pass. Replacement EAS previews/package/QR and owner acceptance remain pending.
+The first ae77c90 EAS candidates (iPhone 2647b41b, Android 4ad3dbe9) were canceled before installation to include a final native draft-retention fix: keep the workspace mounted but hidden during live calls, and make poster filenames unique per view lifetime. Final source typechecks and both JS exports pass. Final EAS previews from app source 0a93f34: iPhone 1f6e7abd-7229-4798-a87a-8f8c2c1a27c0 and Android 2381d48d-1c50-4a6b-b00e-e98fa95d4285. Package/QR results are recorded at final handoff; owner acceptance remains pending.
 
 Owner still needs to verify the full-width iPhone/Android history, Close/Back/scroll preservation, menus/date picker, actual audio/video play/pause/seek/fullscreen, in-overlay replies/draft handling, accessibility and native incoming/background/call interruption. Earlier Stage A/media/calling hardware gates remain open. Compilation, synthetic media and signed package inspection are distinct evidence.

@@ -41,5 +41,5 @@ export function communicationWorkspace(client:AccountClient,release:()=>Promise<
  };
  controller.subscribe(render);
  const hide=()=>{picker.close();detail.close();controller.dispose();detail.remove();picker.remove();};window.addEventListener('pagehide',hide,{once:true});
- return {root,controller,render,mediaSlot:()=>mediaSlot,composeSlot:()=>composeSlot,detail,backToDetail:()=>{composeSlot.hidden=true;mediaSlot.hidden=false;},suspend:(value:boolean)=>{suspended=value;render();}};
+ return {root,controller,render,mediaSlot:()=>mediaSlot,composeSlot:()=>composeSlot,detail,backToDetail:()=>{composeSlot.hidden=true;mediaSlot.hidden=false;},suspend:(value:boolean)=>{suspended=value;if(value&&picker.open)picker.close();render();}};
 }

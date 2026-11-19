@@ -1,6 +1,6 @@
 # 0015 Unified communication workspace, transcripts and clinical draft notes
 
-Status: Stage A implemented/deployed to development; both native previews FINISHED/package-checked; owner device acceptance pending; follow-up UI plan 0016 is ready. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
+Status: Stage A implemented/deployed to development; both native previews FINISHED/package-checked; owner device acceptance pending; follow-up UI 0016 is implemented/deployed with native handoff tracked separately. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
 
 ## Outcome and scope
 
@@ -93,7 +93,7 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 - [x] Complete both native preview builds/package verification and refresh install QR codes.
 - [ ] Owner iPhone/Android layout/media/call acceptance. Keep hardware results separate from automated checks.
 
-Owner iPhone follow-up before Stage B is now consolidated in **[0016 communication history usability](0016-communication-history-usability.md)**, the sole active implementation checklist for this UI slice. It includes full-width compact rows/detail overlay, quiet polling/scroll preservation, patient/caregiver selection, From/To and Reply, media play/pause/scrubbers, future Media/Transcript/Summary placement and year/month/day date-picker overlays. All prior presentation discussion is superseded by that consolidated plan; it is ready for implementation, not implemented. Existing Stage A source/device evidence remains above and in its report.
+Owner iPhone follow-up before Stage B is now consolidated in **[0016 communication history usability](0016-communication-history-usability.md)**, the sole active implementation checklist for this UI slice. It includes full-width compact rows/detail overlay, quiet polling/scroll preservation, patient/caregiver selection, From/To and Reply, media play/pause/scrubbers, future Media/Transcript/Summary placement and year/month/day date-picker overlays. All prior presentation discussion is superseded by that consolidated plan; its browser/source implementation is deployed; native build/device handoff is tracked in 0016 evidence. Existing Stage A source/device evidence remains above and in its report.
 
 ### B. Staff workflow, receipts and internal discussion
 

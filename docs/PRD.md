@@ -131,7 +131,7 @@ COM-07 through COM-09 now have native/browser quality controls, audio-first poli
 | OPS-02 | Maintainable iterative delivery. | Each substantial feature has a plan, acceptance evidence, updated project state, relevant tests, and recorded decisions. |
 | OPS-03 | Future privacy/security and production readiness. | Before real patient use, complete applicable vendor/BAA review, access controls, auditability, encryption, retention, backups/recovery, logging/notification policy, messaging consent, and recording-law review. No POC compliance claim. |
 
-Next UI implementation plan: [0016 communication history usability](plans/0016-communication-history-usability.md) consolidates owner refinements to REP-04–06/PAT-04–05 and media presentation: full-width history/overlay, quiet refresh, role-aware patient selection, Reply controls, playback scrubbers and calendar date filters. Media/Transcript/Summary is future detail navigation; existing artifact access/retention requirements remain unchanged. Planning complete, implementation pending.
+UI implementation plan: [0016 communication history usability](plans/0016-communication-history-usability.md) consolidates owner refinements to REP-04–06/PAT-04–05 and media presentation: full-width history/overlay, quiet refresh, role-aware patient selection, Reply controls, playback scrubbers and calendar date filters. Media/Transcript/Summary is future detail navigation; existing artifact access/retention requirements remain unchanged. Implemented/deployed to development; native installation/device acceptance is tracked in current state.
 
 ## Intended workflows
 

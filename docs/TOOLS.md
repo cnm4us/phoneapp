@@ -326,6 +326,8 @@ Backend `ENABLE_COMMUNICATION_WORKSPACE` defaults false. Enable only after migra
 Stages B–G and their workflow/text/STT/AI/time/capture/Twilio tools remain unimplemented. Speech/model choice, backend credentials, spending limits and actual provider evaluation are later gates. EAS authorization does not approve a new provider subscription.
 
 
-## Planned history UI follow-up (0016)
+## History UI (0016)
 
-[Plan 0016](plans/0016-communication-history-usability.md) is the next focused implementation checklist before 0015 Stage B. It adds no runnable command, dependency, schema, secret or provider request during planning. Existing date filter/media APIs and verification tools remain the baseline. Prefer installed capabilities for calendar/slider UI; any dependency choice requires current official compatibility verification and pinning during implementation. Native previews need rebuilding when the bundled UI changes; do not infer this plan has updated the installed app.
+[Plan 0016](plans/0016-communication-history-usability.md) is implemented/deployed to development. Existing `test:communication-client` now runs `src/communications/*.test.ts` (11 cases); `test:communications`, message/account client and existing media/call/browser suites verify the UI without a new dependency or DB migration. `smoke:communications` includes public detail/Reply/Close/date-picker reads with no owner calls/messages/pushes. Native HTTP 403/404 access errors are preserved by the bridge so quiet refresh can distinguish them from transport failures.
+
+Native app source is 0a93f34, with final preview/package/install results in current state. Initial ae77c90 preview candidates were canceled before installation for the draft-retention/poster-lifetime fix. Private packages/build/archive/screenshots/logs are in stage16 `artifacts/private/history-ui/`; canonical public rollout/previous-assets logs are in the same relative private path. Keep config/keys/media excluded from source archives; no new signing/provider setup was needed. Existing postinstall patches and source-built media modules remain unchanged. Owner physical media/accessibility/call gates remain separate.

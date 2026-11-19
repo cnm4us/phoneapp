@@ -1,3 +1,4 @@
+import {Communications} from './communications';
 import {BrowserSessions} from './browser-session';
 import {Messages,validId} from './messages';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -21,7 +22,7 @@ export class AccountsApi {
   private timer?: ReturnType<typeof setInterval>;
   private sweeping = false;
   private stopped = false;
-  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth,readonly messages?:Messages,readonly browser=new BrowserSessions(store)) {}
+  constructor(readonly store: AccountsStore, readonly bridge: RoomBridge, readonly onError: () => void = () => {},readonly devices?:DeviceAuth,readonly messages?:Messages,readonly browser=new BrowserSessions(store),readonly communications?:Communications) {}
   async start(): Promise<void> {
     // This POC has one signaling process. Old transient rooms cannot survive restart.
     for (const id of await this.store.activeIds()) await this.store.endInternal(id,'failed');
@@ -92,7 +93,14 @@ export class AccountsApi {
       if(cookieMode&&req.headers['x-phoneapp-account']&&req.headers['x-phoneapp-account']!==actor.id){this.json(res,409,{error:'Browser sign-in changed in another tab. Reload to continue.',code:'SESSION_CHANGED'});return;}
       if(req.url==='/api/browser/session'&&req.method==='GET'){this.json(res,200,await this.store.browserSession(bearer));return;}
       if(!cookieMode&&!actor.deviceId)await this.browser.legacy(req,res,bearer);
-      if(req.url==='/api/messages/context'&&req.method==='GET'){this.json(res,200,this.messages?await this.messages.context(actor):{enabled:false,patients:[]});return;}
+      if(req.url==='/api/messages/context'&&req.method==='GET'){this.json(res,200,this.messages?{...await this.messages.context(actor),workspaceEnabled:Boolean(this.communications)}:{enabled:false,patients:[]});return;}
+      if(req.url==='/api/communications/context'&&req.method==='GET'){this.json(res,200,this.communications?await this.communications.context(actor):{enabled:false,patients:[],people:[],recipients:[],timezone:'America/Los_Angeles'});return;}
+      if(req.url?.startsWith('/api/communications')){
+        if(!this.communications)throw new ApiError(503,'Communication workspace is not enabled.');
+        if(req.url==='/api/communications/list'&&req.method==='POST'){const body=await this.body(req,['patientId','kind','format','direction','channel','senderId','recipientId','fromDate','toDate','cursor']);this.json(res,200,await this.communications.list(actor,body));return;}
+        const detail=req.url.match(/^\/api\/communications\/([a-f0-9-]{36})$/);if(detail&&req.method==='GET'){this.json(res,200,await this.communications.detail(actor,detail[1]));return;}
+        throw new ApiError(404,'Not found.');
+      }
       if(req.url?.startsWith('/api/messages')){
         const mixed=req.url.startsWith('/api/messages/v2');const route=mixed?req.url.replace('/api/messages/v2','/api/messages'):req.url;
         if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');
@@ -102,7 +110,7 @@ export class AccountsApi {
         throw new ApiError(404,'Not found.');
       }
       if(req.method==='POST'&&req.url==='/api/device/push'){const b=await this.body(req,['provider','token','environment']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!['apns_voip','fcm'].includes(String(b.provider))||typeof b.token!=='string'||b.token.length<16||b.token.length>4096||!/^[A-Za-z0-9_:.-]+$/.test(b.token)||!['production','sandbox'].includes(String(b.environment)))throw new ApiError(400,'Invalid push registration.');await this.devices.register(actor,String(b.provider),b.token,String(b.environment));this.json(res,200,{ok:true});return;}
-      if (req.method === 'GET' && req.url === '/api/dashboard') { this.json(res,200,await this.store.dashboard(actor)); return; }
+      if (req.method === 'GET' && req.url === '/api/dashboard') { this.json(res,200,{...await this.store.dashboard(actor),communicationWorkspace:Boolean(this.communications&&this.messages)}); return; }
       if (req.method === 'POST' && req.url === '/api/logout') {
         await this.body(req,[]);
         for (const id of await this.store.logout(actor)) this.bridge.closePrivateRoom(id);

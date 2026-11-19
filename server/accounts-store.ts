@@ -1,3 +1,4 @@
+import {registerCommunication} from './communication-registry';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Connection } from 'mariadb';
 import type { Account, CallRecord, Dashboard, Enrollment, CallAction } from '../shared/accounts';
@@ -114,6 +115,7 @@ export class AccountsStore {
       }
       await db.query("INSERT INTO push_deliveries (id,call_id,device_id,available_at,expires_at) SELECT UUID(),?,id,?,? FROM devices WHERE user_id=? AND revoked_at IS NULL AND push_token_hash IS NOT NULL",[id,utc(this.now()),utc(this.now()+60_000),targets[0].id]);
       await this.event(db, id, null, 'created', 'ringing');
+      const [sourceRecord]=await db.query('SELECT created_at FROM calls WHERE id=?',[id]);await registerCommunication(db,'call',id,patientId,sourceRecord.created_at);
       return id;
     });
   }

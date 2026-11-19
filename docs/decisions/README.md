@@ -20,3 +20,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0009 Browser sessions](0009-browser-sessions.md): host-only HttpOnly cookies, fixed expiry, guarded restore/logout and open-tab migration.
 
 - [0010 Video messages](0010-video-messages.md): additive mixed-media history, native camera/player ownership, private posters and bounded video processing.
+
+- [0011 Communication workspace](0011-communication-workspace.md): immutable source wrappers, preserved audiences, filtered history/detail and Stage A compatibility.

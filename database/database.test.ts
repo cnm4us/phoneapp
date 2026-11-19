@@ -56,7 +56,7 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       await db.query('INSERT INTO device_credentials(token_hash,device_id,expires_at) VALUES(?,?,?)',[proof,installation,'2099-01-01']);
       assert.deepEqual(await migrate(db,{through:'0005_audio_messages.sql'}), ['0005_audio_messages.sql']);
       const legacy=randomUUID(),asset=randomUUID()+'.m4a';await db.query("INSERT INTO audio_messages(id,patient_id,sender_id,recipient_staff_id,sender_label,sender_role,request_key,state,output_key,duration_ms,created_at,published_at,expires_at) VALUES(?,?,?,?,'Synthetic Provider','practitioner',?,'available',?,1000,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),'2099-01-01')",[legacy,patientId('A'),providerId,providerId,randomUUID(),asset]);
-      assert.deepEqual(await migrate(db), ['0006_video_messages.sql']);const [legacyMessage]=await db.query('SELECT id,media_kind,output_key,duration_ms FROM audio_messages WHERE id=?',[legacy]);assert.equal(legacyMessage.id,legacy);assert.equal(legacyMessage.media_kind,'audio');assert.equal(legacyMessage.output_key,asset);assert.equal(legacyMessage.duration_ms,1000);
+      assert.deepEqual(await migrate(db), ['0006_video_messages.sql','0007_communication_registry.sql']);const [legacyMessage]=await db.query('SELECT id,media_kind,output_key,duration_ms FROM audio_messages WHERE id=?',[legacy]);assert.equal(legacyMessage.id,legacy);assert.equal(legacyMessage.media_kind,'audio');assert.equal(legacyMessage.output_key,asset);assert.equal(legacyMessage.duration_ms,1000);const [wrapper]=await db.query('SELECT id,patient_id FROM communications WHERE media_message_id=?',[legacy]);assert.equal(wrapper.patient_id,patientId('A'));
       const [credential]=await db.query('SELECT token_hash FROM device_credentials WHERE device_id=?',[installation]);assert.equal(credential.token_hash,proof);
       const [preserved]=await db.query('SELECT id FROM transcript_versions WHERE id=?',[transcript]);
       assert.equal(preserved.id,transcript);
@@ -155,14 +155,14 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       const directory = await mkdtemp(join(tmpdir(), 'phoneapp-migration-'));
       try {
         await cp(migrationDirectory, directory, { recursive: true });
-        await writeFile(join(directory, '0007_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
+        await writeFile(join(directory, '0008_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
         await assert.rejects(migrate(db, { directory }), rejected('ER_PARSE_ERROR'));
         assert.equal((await history(db)).at(-1)?.state, 'failed');
         await assert.rejects(migrate(db, { directory }), /Unfinished migration/);
         const [probe] = await db.query("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='recovery_probe'");
         assert.equal(Number(probe.n), 1, 'DDL was committed before failure');
         await resetDisposable(db);
-        assert.equal((await migrate(db)).length, 6);
+        assert.equal((await migrate(db)).length, 7);
         await seed(db);
         const [counts] = await db.query('SELECT (SELECT COUNT(*) FROM calls) AS calls, (SELECT COUNT(*) FROM transcription_jobs) AS jobs, (SELECT COUNT(*) FROM recording_assets) AS assets');
         assert.deepEqual([counts.calls, counts.jobs, counts.assets].map(Number), [0, 0, 0]);

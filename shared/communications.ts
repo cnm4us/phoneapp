@@ -1,0 +1,10 @@
+export const COMMUNICATION_TIMEZONE='America/Los_Angeles';
+export type CommunicationFilters={patientId?:string;kind?:'call'|'message';format?:'audio'|'audio_video'|'unknown';direction?:'incoming'|'outgoing';channel?:'app'|'unknown';senderId?:string;recipientId?:string;fromDate?:string;toDate?:string;cursor?:string};
+export type CommunicationPatient={id:string;displayName:string;identifier:string;enrolled:boolean};
+export type CommunicationEntry={id:string;sourceId:string;kind:'call'|'message';patientId:string;patientName:string;patientIdentifier:string;createdAt:string;format:'audio'|'audio_video'|'unknown';channel:'app'|'unknown';senderId:string;senderLabel:string;senderRole:string;recipient:{id:string;label:string;kind:'patient'|'staff'};direction:'incoming'|'outgoing';state:string;durationMs:number|null;observedSeconds:number|null;hasThumbnail:boolean;workState:'not_recorded';receipt:'not_recorded'};
+export type CommunicationPage={entries:CommunicationEntry[];next:string|null;total:number;timezone:string};
+export type CommunicationDetail={entry:CommunicationEntry;sourceStatus:string;recordingStatus:string;originalStatus:'not_retained'|'not_recorded';playbackAvailable:boolean;expiresAt:string|null;failureCode:string|null;transcript:{state:'off'};staff?:{notes:{state:'not_available'};discussion:{state:'not_available'}};sourceCallKind?:string;endedAt?:string|null};
+export type CommunicationContext={enabled:boolean;patients:CommunicationPatient[];people:{id:string;displayName:string}[];recipients:{id:string;displayName:string}[];timezone:string};
+export function communicationTitle(row:CommunicationEntry){return row.kind==='call'?'App call':row.format==='audio_video'?'Video message':'Audio message';}
+export function communicationIcon(row:CommunicationEntry){return row.kind==='call'?'☎':row.format==='audio_video'?'▣':'♪';}
+export function communicationDate(value:string){return new Intl.DateTimeFormat('en-US',{timeZone:COMMUNICATION_TIMEZONE,dateStyle:'medium',timeStyle:'short'}).format(new Date(value));}

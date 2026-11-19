@@ -308,6 +308,19 @@ Owner iPhone formats: video input may contain one opaque `data`/`mebx` camera me
 
 ## Planned communication workspace and AI tooling (0015)
 
-[Plan 0015](plans/0015-unified-communication-workspace.md) is written; no new workspace/text/workflow/transcription/AI/call-capture tools or provider requests are implemented. Existing calling/media/database/browser checks remain the runnable baseline. Stage A can proceed after implementation is requested without a speech/AI key; provider selection, current API capability/cost evaluation, backend-only credentials, budget limits and live synthetic evaluation happen in later stages. Do not infer a paid-provider subscription approval from EAS build authorization, or present proposed test/model-evaluation commands as available.
+[Plan 0015](plans/0015-unified-communication-workspace.md), Stage A, adds:
 
-The plan requires a generic artifact boundary because existing transcript tables are call-scoped. Current normalization retains playback derivatives and removes successful original uploads; retaining exact future originals needs explicit asset/retention/space controls. Signaling/TURN is not an existing two-sided call recorder. New source adapters, recording service and external-provider setup must be verified and documented when selected; no vendor credentials/accounts were inspected or configured for this planning request.
+```sh
+npm run test:communications
+npm run test:communication-client
+npm run communications:reconcile
+npm run smoke:communications
+```
+
+`test:communications` holds the shared disposable DB suite lock: run sequentially with every other DB suite. It verifies registry/source access, patient consistency, draft isolation, pagination/DST/filtering, additive reconcile, feature-off compatibility and actual Chromium audio/video detail/reply. `test:communication-client` checks account/detail races, anchored paging, access removal and media becoming unavailable.
+
+`communications:reconcile` is an explicit additive development action: inserts missing wrappers for existing source records, changes no source history and needs only registry SELECT/INSERT. It logs aggregate counts only. `smoke:communications` is an explicit public development read-only history/UI/Range check using its own temporary synthetic Provider login, revoked afterward; it sends no calls/messages/pushes. Do not use `smoke:accounts` for this check because that rings a patient device.
+
+Backend `ENABLE_COMMUNICATION_WORKSPACE` defaults false. Enable only after migration 0007 and reviewed runtime grants; disabling it on current schema-compatible code restores legacy UI without dropping registry/source rows. New context/list/detail API responses retain existing source audiences and stable IDs for existing media grants. Pacific display/date filters are explicit, not a selected billing timezone. Private rollout/build logs and backups belong under ignored `artifacts/private/communications/`; exact build and rollout results are in current state/evidence.
+
+Stages B–G and their workflow/text/STT/AI/time/capture/Twilio tools remain unimplemented. Speech/model choice, backend credentials, spending limits and actual provider evaluation are later gates. EAS authorization does not approve a new provider subscription.

@@ -24,14 +24,15 @@ export function accountPanel(call:BrowserCall):AccountClient {
       const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
       if(incoming&&!state.current){const box=node('div');box.className='account-card';box.setAttribute('role','status');box.append(node('h3','Incoming app call'),node('p',incoming.callerName),button('Answer with audio/video',()=>void client.act(incoming,'answer'),state.busy),button('Decline',()=>void client.act(incoming,'decline'),state.busy));root.append(box);}
       if(state.current){const box=node('div');box.className='account-card';box.append(node('h3',state.current.state==='ringing'?'Calling…':'App call'),node('p',`${state.current.patientName} · ${state.current.state}`),button(state.current.state==='ringing'?'Cancel call':'End app call',()=>void client.hangup()));root.append(box);}
-      if(state.dashboard?.patients.length&&!state.current){
+      if(!state.dashboard?.communicationWorkspace&&state.dashboard?.patients.length&&!state.current){
         const directory=node('div');directory.className='account-stack';directory.append(node('h3','Patients'));
         for(const patient of state.dashboard.patients)directory.append(button(patient.displayName,()=>{selected=patient.id;render(client.state);}));
         const patient=state.dashboard.patients.find(row=>row.id===selected);
         if(patient){directory.append(node('h3',`${patient.displayName} · Call options`),button('App Audio/Video',()=>void client.dial(patient.id),state.busy||!patient.enrolled));if(!patient.enrolled)directory.append(node('p','Patient must enroll before calling.'));directory.append(node('p','App Audio · Coming later. Phone #1 / #2 / #3 · Coming later.'));}
         root.append(directory);
       }
-      const history=node('div');history.id='account-history';history.className='account-stack';history.append(node('h3','Call history'));
+      if(state.dashboard?.communicationWorkspace)for(const row of state.dashboard.calls.filter(r=>!terminalCall(r.state)&&!r.ownsMedia&&!r.canAnswer))root.append(node('p',`${row.patientName} · ${row.state} · Active on another signed-in device.`));
+      if(!state.dashboard?.communicationWorkspace){const history=node('div');history.id='account-history';history.className='account-stack';history.append(node('h3','Call history'));
       if(!state.dashboard?.calls.length)history.append(node('p','Your app calls will appear here.'));
       for(const record of state.dashboard?.calls || []){
         const entry=node('article');entry.className='account-card';entry.dataset.callId=record.id;entry.dataset.callState=record.state;
@@ -39,7 +40,7 @@ export function accountPanel(call:BrowserCall):AccountClient {
         if(!terminalCall(record.state)&&!record.ownsMedia&&!record.canAnswer)entry.append(node('p','Active on another signed-in device.'));
         history.append(entry);
       }
-      root.append(history);
+      root.append(history); }
     }
     if(state.error){const error=node('p',state.error);error.setAttribute('role','alert');root.append(error);}
     document.body.classList.toggle('account-session',Boolean(state.account));

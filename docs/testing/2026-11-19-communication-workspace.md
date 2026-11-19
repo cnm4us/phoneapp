@@ -1,0 +1,40 @@
+# Unified communication workspace: Stage A evidence
+
+2026-11-19 UTC. [Plan 0015](../plans/0015-unified-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md). Implementation worktree `/home/ubuntu/phoneapp-stage15`, branch `feat/communication-workspace`. This report covers existing call/media consolidation only; Stages B–G remain planned.
+
+## Delivered behavior
+
+One authorized overview and patient timeline replace duplicate call/communication histories in updated clients. Server-side patient, kind, format, direction, channel, sender, logical recipient and inclusive local-date filters precede counts and 30-entry cursor pages. Pacific timezone is visible; UTC source times remain unchanged. Detail retains source outcomes, source-linked media playback and composition/reply; active incoming/current/other-device calls remain outside archive filters. New registry IDs never replace source call/message IDs used for grants or playback.
+
+Calls retain participant access even for another assigned staff member. Published media retain current patient/team access; unpublished drafts remain sender-only. Historical receipts/work are Not recorded. Actual call media format and saved-message origin channel were not persisted and stay unknown. Call recording/transcripts remain off. Existing exact upload originals were deleted during normalization; detail distinguishes that absence from the retained playback copy. Patient detail omits internal future notes/discussion. No transcription/AI calls, workflow receipts, comments, text messages or billing credit are generated.
+
+`ENABLE_COMMUNICATION_WORKSPACE` defaults false. Existing account/message APIs, signed-in sessions, media grants and older native history paths remain usable. The new UI requires existing message support; optional-module checks preserve older incomplete native binaries. Recovery disables the workspace flag on schema-compatible source, retaining all source and registry history.
+
+## Automated results
+
+All fixtures are synthetic. Shared MariaDB suites run sequentially against only the exact disposable `phoneapp_test` account/schema; none ring an owner device.
+
+| Check | Actual outcome |
+| --- | --- |
+| TypeScript | App/server/web/tests/database pass |
+| `test:communications` | Seven scenarios / 8 Node tests pass: unique source mapping; call audience, draft/patient/revocation isolation; real patient FK rejection; server filters/equal-time pagination/Pacific DST; resumable idempotent reconcile; one browser history and existing audio detail playback; browser video record/preview/send/detail playback and patient audio reply; feature-off legacy contracts |
+| `test:communication-client` | Five pure cases pass: stale logout data, anchored paging/filter binding, revoked patient cleanup, competing detail responses and newly unavailable media cleanup |
+| `test:message-client`, `test:account-client` | 9 and 7 pass |
+| `test:audio-messages`, `test:video-messages` | Eight scenarios each / 9 Node tests each pass, including real Chromium media and old API contracts |
+| `test:accounts`, `test:native-calls`, `test:browser-session` | 7, 8 and 5 Node tests pass respectively |
+| `test:db` | 9 Node tests pass: clean install/upgrade/preservation/constraints/checksum/dirty-DDL recovery; seven immutable migrations |
+| `npm test`, `test:browser` | 58 unit/server cases and 13 real Chromium WebRTC cases pass |
+| Expo Doctor, `bundle:check` | 21/21 checks and iOS/Android JS exports pass |
+| EAS archive | Required client config/media modules/postinstall patch files present; server/database/env/keys/private artifacts excluded |
+
+Initial audio regression detected an extra field on the disabled message context; the endpoint's original disabled response was restored and the suite passes. Account-change cleanup now releases active media; its expected callback count was updated and five client checks pass. These fixes do not change source media or native dependencies.
+
+## Migration and development rollout
+
+Migration 0007 adds the append-only registry with unique source mappings, exactly-one-source check, source/patient composite FKs and chronological indexes. Existing source rows retain all IDs, outcomes, media references and timestamps; new calls/messages register atomically. The additive reconcile command logs aggregate results only. Test installation/upgrade passed. Development migration, scoped backup/grants/public parity and rollout verification are pending at this source checkpoint; record actual results here before handoff.
+
+## Native and owner gates
+
+New bundled preview builds/package inspection are pending. Native source uses the existing pinned camera/video/audio/calling stack; JS compilation and browser synthetic media do not establish physical phone behavior. Owner needs to verify patient/provider history, detail playback, record/reply, retained sign-in, call controls while filters/settings are open, background/locked incoming calls and media handoff on actual iPhone/Android. Earlier physical gates remain in current state. No new owner acceptance is claimed.
+
+Build/signing metadata, private packages, snapshots, source history and any captures stay in ignored private artifacts. No credentials or patient content appear in this report.

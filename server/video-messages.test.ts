@@ -18,7 +18,7 @@ import {withCameraMetadata} from './test-camera-metadata';
 
 test('video messages, compatibility, private posters and asynchronous playback',{timeout:180000},async t=>{
  loadConfiguration();const db=await connect('test');const [target]=await db.query('SELECT DATABASE() AS db,CURRENT_USER() AS account');assert.equal(target.db,'phoneapp_test');assert.equal(target.account,'phoneapp_test@localhost');const [lock]=await db.query("SELECT GET_LOCK('phoneapp:test-suite',0) AS acquired");assert.equal(Number(lock.acquired),1);
- await migrate(db);await seed(db);await db.query('DELETE FROM message_media_grants');await db.query('DELETE FROM audio_messages');
+ await migrate(db);await seed(db);await db.query('DELETE FROM message_media_grants');await db.query('DELETE FROM communications WHERE media_message_id IS NOT NULL');await db.query('DELETE FROM audio_messages');
  const root=await mkdtemp(join(tmpdir(),'phoneapp-video-test-'));let clock=Date.now();const store=new AccountsStore('test',()=>clock),messages=new Messages(store,{...mediaConfig({ENABLE_VIDEO_MESSAGES:'true'}),root,minFree:0});await messages.init();
  let api:AccountsApi;const server=createSignaling({accessKey:'video-synthetic-test-key',webRoot:resolve('web/dist'),apiHandler:(req,res)=>api.handle(req,res)});api=new AccountsApi(store,server,()=>{},undefined,messages);await new Promise<void>(r=>server.http.listen(0,'127.0.0.1',r));const addr=server.http.address();assert(addr&&typeof addr!=='string');const origin=`http://127.0.0.1:${addr.port}`;
  const issue=async(user:string)=>{const code=randomBytes(32).toString('base64url');await db.query('INSERT INTO enrollment_codes(id,user_id,token_hash,expires_at) VALUES(?,?,?,?)',[randomUUID(),user,hash(code),utc(clock+86400000)]);return code;};

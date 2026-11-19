@@ -856,3 +856,7 @@ footer {
 .in-call .account-panel{display:none}
 
 .account-session .call-layout{grid-template-columns:minmax(0,1fr)}
+.communication-filters { display:flex; flex-wrap:wrap; gap:.75rem; align-items:end; }
+.communication-filters label { display:flex; flex-direction:column; gap:.3rem; max-width:100%; }
+.communication-filters select, .communication-filters input { max-width:100%; padding:.6rem; border-radius:.5rem; border:1px solid #354c5b; background:#142532; color:#edf5f7; }
+.communication-filters form { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }

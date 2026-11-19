@@ -12,7 +12,7 @@ MUTABLE = ('users', 'patients', 'patient_accounts', 'patient_assignments',
            'patient_phone_numbers', 'devices', 'calls', 'call_participants',
            'recording_assets', 'transcription_jobs', 'enrollment_codes', 'auth_sessions', 'call_runtime', 'call_presence', 'device_credentials', 'push_deliveries', 'audio_messages', 'message_media_grants')
 APPEND_ONLY = ('call_events', 'consent_events', 'transcript_versions',
-               'transcript_segments', 'activity_observations', 'activity_reviews')
+               'transcript_segments', 'activity_observations', 'activity_reviews', 'communications')
 
 
 def admin(sql):

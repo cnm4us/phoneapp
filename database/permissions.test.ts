@@ -12,7 +12,7 @@ test('development runtime identity has scoped DML and protected history', async 
     assert.equal((await status(db)).pending.length, 0);
     await assert.rejects(db.query('CREATE TABLE permission_probe (id INT)'), denied);
     await assert.rejects(db.query("UPDATE schema_migrations SET state='failed' WHERE 1=0"), denied);
-    for (const table of ['call_events', 'consent_events', 'activity_observations', 'activity_reviews', 'transcript_versions', 'transcript_segments']) {
+    for (const table of ['call_events', 'consent_events', 'activity_observations', 'activity_reviews', 'transcript_versions', 'transcript_segments', 'communications']) {
       await assert.rejects(db.query(`UPDATE ${table} SET id=id WHERE 1=0`), denied);
       await assert.rejects(db.query(`DELETE FROM ${table} WHERE 1=0`), denied);
     }

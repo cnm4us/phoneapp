@@ -1,3 +1,4 @@
+import {Communications} from './communications';
 import {Messages,mediaConfig} from './messages';
 import { createSignaling } from './server';
 import { resolve } from 'node:path';
@@ -35,7 +36,7 @@ if(process.env.ENABLE_ACCOUNT_CALLS === 'true') {
   const store=new AccountsStore('dev');
   const devices=process.env.ENABLE_NATIVE_CALLS==='true'?new DeviceAuth(store,new SecretBox(Buffer.from(process.env.PUSH_TOKEN_ENCRYPTION_KEY??'','hex'))):undefined;
   if(process.env.ENABLE_AUDIO_MESSAGES==='true'){messages=new Messages(store,mediaConfig(process.env));await messages.init();messages.start();}
-  accounts=new AccountsApi(store,server,()=>console.error(JSON.stringify({event:'account-operation-failed'})),devices,messages);
+  accounts=new AccountsApi(store,server,()=>console.error(JSON.stringify({event:'account-operation-failed'})),devices,messages,undefined,process.env.ENABLE_COMMUNICATION_WORKSPACE==='true'?new Communications(store):undefined);
   if(devices){push=new PushWorker(store,devices.box,providerSender(process.env));push.start();}
   await accounts.start();
 }

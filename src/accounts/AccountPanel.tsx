@@ -1,4 +1,4 @@
-import {AudioMessages} from '../messages/AudioMessages';
+import {AudioMessages,supportsCommunicationWorkspace} from '../messages/AudioMessages';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AccountClient, type AccountState } from './client';
@@ -8,6 +8,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
   const [code,setCode]=useState('');
   const [selected,setSelected]=useState('');
   const patient=state.dashboard?.patients.find(row=>row.id===selected);
+  const unified=Boolean(state.dashboard?.communicationWorkspace&&supportsCommunicationWorkspace);
   const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
   return <View style={styles.stack}>
     <Text style={styles.title}>{state.account ? state.account.displayName : 'Connect to your care team'}</Text>
@@ -30,7 +31,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
         <Text style={styles.text}>{state.current.patientName} · {state.current.state}</Text>
         <Button title={state.current.state==='ringing'?'Cancel call':'End app call'} onPress={()=>void client.hangup()} />
       </View>}
-      {!!state.dashboard?.patients.length && !state.current && <View style={styles.card}>
+      {!unified&&!!state.dashboard?.patients.length && !state.current && <View style={styles.card}>
         <Text style={styles.heading}>Patients</Text>
         {state.dashboard.patients.map(row=><Button key={row.id} title={row.displayName} onPress={()=>setSelected(row.id)} />)}
         {patient && <View style={styles.stack}>
@@ -40,8 +41,9 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
           <Text style={styles.note}>App Audio · Coming later{ '\n' }Phone #1 / #2 / #3 · Coming later</Text>
         </View>}
       </View>}
+      {unified&&state.dashboard?.calls.filter(row=>!terminalCall(row.state)&&!row.ownsMedia&&!row.canAnswer).map(row=><Text key={row.id} style={styles.note}>{row.patientName} · {row.state} · Active on another signed-in device.</Text>)}
       <AudioMessages client={client} account={state} selected={selected}/>
-      <View style={styles.card}>
+      {!unified&&<View style={styles.card}>
         <Text style={styles.heading}>Call history</Text>
         {!state.dashboard?.calls.length && <Text style={styles.note}>Your app calls will appear here.</Text>}
         {state.dashboard?.calls.map(row=><View key={row.id} style={styles.history}>
@@ -52,7 +54,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
           <Text selectable style={styles.id}>Call ID: {row.id}</Text>
           {!terminalCall(row.state)&&!row.ownsMedia&&!row.canAnswer&&<Text style={styles.note}>Active on another signed-in device.</Text>}
         </View>)}
-      </View>
+      </View>}
     </>}
     {!!state.error&&<Text style={styles.error} accessibilityRole="alert">{state.error}</Text>}
   </View>;

@@ -8,7 +8,7 @@ export type CallRecord = {
   canAnswer: boolean; ownsMedia: boolean;
 };
 export type Enrollment = { token: string; account: Account; expiresAt: string };
-export type Dashboard = { account: Account; patients: Patient[]; calls: CallRecord[] };
+export type Dashboard = { communicationWorkspace?:boolean;account: Account; patients: Patient[]; calls: CallRecord[] };
 export type CallAction = 'answer' | 'decline' | 'cancel' | 'end';
 export const terminalCall = (state: string): boolean => ['ended', 'declined', 'missed', 'canceled', 'failed'].includes(state);
 export type MediaInvitation = { invitation: Invitation };

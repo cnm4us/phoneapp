@@ -1,8 +1,38 @@
 {
   "compilerOptions": {
-    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
-    "strict": true, "noEmit": true, "esModuleInterop": true,
-    "skipLibCheck": true, "types": ["node"]
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
   },
-  "include": ["./**/*.ts", "../shared/**/*.ts", "../src/accounts/client*.ts", "../scripts/check-push.ts", "../scripts/smoke-messages.ts", "../scripts/smoke-video-messages.ts", "../scripts/benchmark-video.ts", "../scripts/message-status.ts", "../scripts/native-status.ts", "../src/call/core*.ts", "../src/call/quality*.ts", "../src/call/stats.ts", "../src/call/video.ts", "../src/call/media-quality.ts", "../scripts/smoke.ts", "../scripts/enrollment.ts", "../scripts/smoke-accounts.ts", "../scripts/smoke-browser-session.ts", "../scripts/browser-test-server.ts", "../scripts/check-quality-network.ts"]
+  "include": [
+    "./**/*.ts",
+    "../shared/**/*.ts",
+    "../src/accounts/client*.ts",
+    "../scripts/check-push.ts",
+    "../scripts/smoke-messages.ts",
+    "../scripts/smoke-video-messages.ts",
+    "../scripts/benchmark-video.ts",
+    "../scripts/message-status.ts",
+    "../scripts/reconcile-communications.ts",
+    "../scripts/native-status.ts",
+    "../src/call/core*.ts",
+    "../src/call/quality*.ts",
+    "../src/call/stats.ts",
+    "../src/call/video.ts",
+    "../src/call/media-quality.ts",
+    "../scripts/smoke.ts",
+    "../scripts/enrollment.ts",
+    "../scripts/smoke-accounts.ts",
+    "../scripts/smoke-browser-session.ts",
+    "../scripts/browser-test-server.ts",
+    "../scripts/check-quality-network.ts",
+    "../scripts/smoke-communications.ts"
+  ]
 }

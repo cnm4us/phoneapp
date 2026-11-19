@@ -422,3 +422,10 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner questions redundant All patients/Patient A controls and suggests a caregiver supporting two elders. Recommended hiding the patient selector for one authorized patient, retaining identity and All/Calls/Messages; use a one-patient-at-a-time switcher for multiple authorized patient records, while staff retain an overview. Caregivers use their own identity; replies remain tied to the source patient.
 - Verified current schema distinguishes self/caregiver patient bindings and backend enforces active authorized relationships. This does not claim caregiver onboarding or multi-patient UI acceptance. Added the proposal to plan/state; no runtime/build changes. Documentation/whitespace checks pass.
+
+
+## 2026-11-19 Consolidated history usability implementation plan
+
+- Owner adds a year/month/day popup for date filtering and requests a plan covering all UI discussion. Created 0016 as the focused Stage A follow-up before parent 0015 Stage B, consolidating edge-to-edge history/detail, compact patient-first rows/type icons, From/To/Reply, play/pause/scrubbers, removed technical/transcript placeholders, future Media/Transcript/Summary, patient/caregiver switching and quiet change-only refresh with retained list position.
+- Date picker specifies From/To draft selection, direct year/month/day, Cancel/Done/Clear/Apply, leap/month validation and existing inclusive Pacific civil-date semantics. Implementation steps and acceptance cover stale access/races, new-item indicators, overlay focus/scroll/drafts, unsupported calling, actual media seeking/interruption, responsive/accessibility, safe browser rollout and both native previews/device gates. No migration or unverified native dependency selected.
+- Replaced the parent's duplicate proposal checklist with the focused plan link; updated AGENTS/readme/state/resume/PRD/roadmap/tools/testing navigation. Plan is ready; implementation has not started. No source/runtime/schema/service/provider/EAS build changes. Only documentation/link/requirement and whitespace checks are run for planning.

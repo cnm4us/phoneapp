@@ -104,3 +104,8 @@ Native-format regression: actual iPhone uploads supplied an additional opaque me
 `smoke:communications` compares all authorized legacy source IDs against the new public paginated registry list using a temporary synthetic Provider browser session, verifies a single history across reload and existing authenticated Range playback, and revokes only its own login. It sends no calls/messages/pushes. Physical iPhone/Android UI, media/call interruption and earlier gates require owner-operated confirmation.
 
 Stages B–G tests are not implemented/run. Future checks cover staff concurrency/receipts versus resolution, internal comments, app text, retained originals, saved-message STT, source-linked reviewed AI notes, staff time and later call capture/Twilio/SMS. Provider fixtures do not establish actual speech/clinical quality or telephone delivery.
+
+
+## Planned communication history usability (0016)
+
+[Plan 0016](plans/0016-communication-history-usability.md) contains unrun checks for silent unchanged polls, actual changed-item discovery without losing scroll/page/player state, overlay focus/Back/Close, single-patient/caregiver access, Reply capture and call capability, audio/video seeking/play intent/interruption, year/month/day selection and Pacific date boundaries. Extend existing communication/client/media/browser suites during implementation; no new test runner is claimed. Native package checks and owner iPhone/Android acceptance remain separate. Only documentation/link/whitespace checks ran for this plan.

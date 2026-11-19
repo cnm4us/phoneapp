@@ -324,3 +324,8 @@ npm run smoke:communications
 Backend `ENABLE_COMMUNICATION_WORKSPACE` defaults false. Enable only after migration 0007 and reviewed runtime grants; disabling it on current schema-compatible code restores legacy UI without dropping registry/source rows. New context/list/detail API responses retain existing source audiences and stable IDs for existing media grants. Pacific display/date filters are explicit, not a selected billing timezone. Private rollout/build logs and backups belong under ignored `artifacts/private/communications/`; exact build and rollout results are in current state/evidence.
 
 Stages B–G and their workflow/text/STT/AI/time/capture/Twilio tools remain unimplemented. Speech/model choice, backend credentials, spending limits and actual provider evaluation are later gates. EAS authorization does not approve a new provider subscription.
+
+
+## Planned history UI follow-up (0016)
+
+[Plan 0016](plans/0016-communication-history-usability.md) is the next focused implementation checklist before 0015 Stage B. It adds no runnable command, dependency, schema, secret or provider request during planning. Existing date filter/media APIs and verification tools remain the baseline. Prefer installed capabilities for calendar/slider UI; any dependency choice requires current official compatibility verification and pinning during implementation. Native previews need rebuilding when the bundled UI changes; do not infer this plan has updated the installed app.

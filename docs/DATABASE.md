@@ -120,3 +120,7 @@ Message expiry preserves metadata and removes bytes with retries/orphan cleanup;
 ## Browser session persistence (0013; no schema migration)
 
 [0013](plans/0013-persistent-browser-sign-in.md) reuses hashed `auth_sessions` tokens and existing expiry/revocation columns for fixed 30-day browser-cookie sessions. Restoration does not extend the deadline; authenticated same-origin legacy adoption extends the existing browser row once without changing its ID or native-device binding. Generic bearer enrollment remains 12h and native device credentials retain their 0011 lifecycle. Logout revokes only the current browser session. No migration file, table, grant or encryption key change; migration ledger remains 0001–0005. No raw cookie/code is persisted in DB.
+
+## Planned video-message expansion (0014)
+
+[Plan 0014](plans/0014-video-messages.md) proposes the next unused additive migration, expected 0006. Expand `audio_messages` with a default-audio media kind, verified output metadata and nullable video/poster fields; preserve legacy table names, all existing IDs/FKs and audio history. Add a scoped thumbnail grant operation and test old/new API contracts. No migration file, DDL, grants or data changes were made for this planning request; the implemented ledger remains 0001–0005. Recheck the ledger, rehearse 0005 upgrade/data preservation and combined metadata/files restore in the disposable target before development application. Details/limits remain proposed in the plan.

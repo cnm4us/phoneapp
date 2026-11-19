@@ -10,6 +10,7 @@
 ## Product and scope
 
 - Build native iOS and Android apps using Expo/React Native development builds and EAS cloud builds. The owner works on Windows; the repository is on EC2.
+- Next planned slice: [0014 video messages](docs/plans/0014-video-messages.md) extends existing audio messages across iPhone/Android/browser. Planning only is complete; wait for implementation scope before changing runtime, migrations or native builds. Preserve earlier physical acceptance gates.
 - Current implemented slices: plan 0013 adds saved browser sign-in across reloads; plan 0012 audio messages/shared history is deployed with basic two-way iPhone/browser owner acceptance and remaining device gates. Native background/locked calling under plan 0011 is implemented with remaining hardware gates. Preserve existing native/browser calling. Use [current state](docs/PROJECT_STATE.md) for exact build/device gates and [PRD](docs/PRD.md) for later features. Native compilation/provider receipts do not prove physical-phone acceptance.
 - Use fictitious patients and nonclinical test conversations. HIPAA implementation, real-patient use, recording, billing automation, and production operation are outside the first milestone.
 - Distinguish recorded activity, measured duration, staff-approved time, and billing eligibility. Never equate a timer with a payable claim.

@@ -410,3 +410,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner requests a scrubber for both media types. Added draggable seeking plus elapsed/total duration to the pending history/detail/player iteration, preserving play/pause state and existing media/call interruption behavior.
 - Updated plan/current state; documentation/whitespace checks only. No player implementation or native build is claimed in this design follow-up.
+
+
+## 2026-11-19 Future media/transcript/summary selector
+
+- Owner specifies future Media/Transcript/Summary selection near the top of detail. Added to the pending UI scope: remove the bottom Transcript heading/status now; introduce the top selector with actual artifacts, defaulting to Media and preserving source/role access.
+- Plan/state updated and documentation/whitespace checks pass. No UI/runtime/build changes are claimed in this scope discussion.

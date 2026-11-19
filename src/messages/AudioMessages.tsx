@@ -86,7 +86,8 @@ function MessagesReady({client,account,selected}:{client:AccountClient;account:A
  </View>;
 }
 
+let posterSequence=0;
 function VideoPoster({client,id}:{client:AccountClient;id:string}){
- const [uri,setUri]=useState('');useEffect(()=>{let canceled=false;const fs=require('expo-file-system/legacy') as typeof import('expo-file-system/legacy');const target=fs.cacheDirectory+'phoneapp-video-poster-'+id+'.jpg';let task:import('expo-file-system/legacy').DownloadResumable|undefined;
+ const [uri,setUri]=useState('');useEffect(()=>{let canceled=false;const fs=require('expo-file-system/legacy') as typeof import('expo-file-system/legacy');const target=fs.cacheDirectory+'phoneapp-video-poster-'+id+'-'+Date.now()+'-'+(++posterSequence)+'.jpg';let task:import('expo-file-system/legacy').DownloadResumable|undefined;
  void (async()=>{try{const grant=await client.request<import('../../shared/messages').MediaGrant>(`/messages/v2/${id}/thumbnail`,{});if(canceled)return;task=fs.createDownloadResumable((client.native?'https://phoneapp.bawebtech.com':client.origin)+grant.path,target,{headers:{Authorization:'Media '+grant.token},sessionType:fs.FileSystemSessionType.FOREGROUND});const result=await task.downloadAsync();if(!canceled&&result?.status===200)setUri(target);else await fs.deleteAsync(target,{idempotent:true});}catch{await fs.deleteAsync(target,{idempotent:true});}})();return()=>{canceled=true;void task?.cancelAsync();void fs.deleteAsync(target,{idempotent:true});};},[client,id]);return uri?<Image source={{uri}} resizeMode="contain" style={{width:'100%',height:180}}/>:null;
 }

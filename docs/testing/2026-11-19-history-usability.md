@@ -16,7 +16,7 @@ Date overlays offer explicit year/month/day selection, leap/month clamping, Canc
 | --- | --- |
 | TypeScript | Pass across app/server/browser/database tests |
 | `test:communication-client` | 11 cases pass: existing account/detail/access/pagination races, quiet unchanged polls, held new arrivals, offline retention, calendar boundaries and seek intent/interruption |
-| `test:message-client` | 10 cases pass, including unchanged polling/offline playback preservation |
+| `test:message-client` | 11 cases pass, including unchanged polling/offline playback preservation and retained draft through call interruption |
 | `test:account-client` | 8 cases pass, including native access-status propagation |
 | `test:communications` | Nine DB/API/Chromium scenarios / 10 Node tests pass, including actual paused audio/video seeks, calendar clamping/cancel/apply, two idle poll intervals with stable row identity, Close scroll restoration and caregiver switching |
 | Audio/video integration | 9 Node tests each pass under existing guarded disposable DB target |
@@ -31,6 +31,8 @@ During implementation, existing UI tests were updated to select accessible type-
 
 ## Release and hardware gates
 
-Development deployment, public smoke, EAS build IDs/packages and install QR results are pending at this checkpoint. No DB or credential change is planned. Record actual outcomes before final handoff.
+Published browser source ae77c90 between calls, after verifying zero active account calls/WebSockets and retaining the prior browser assets/source reference privately. Public workspace smoke confirms all 34 authorized legacy sources exactly once, reload and authenticated Range access; public cookie/session smoke and all 13 public WebRTC cases pass. No owner call/message/push is sent by the workspace/session smokes. No schema, grant, media, credential or service configuration change.
+
+The first ae77c90 EAS candidates (iPhone 2647b41b, Android 4ad3dbe9) were canceled before installation to include a final native draft-retention fix: keep the workspace mounted but hidden during live calls, and make poster filenames unique per view lifetime. Final source typechecks and both JS exports pass. Replacement EAS previews/package/QR and owner acceptance remain pending.
 
 Owner still needs to verify the full-width iPhone/Android history, Close/Back/scroll preservation, menus/date picker, actual audio/video play/pause/seek/fullscreen, in-overlay replies/draft handling, accessibility and native incoming/background/call interruption. Earlier Stage A/media/calling hardware gates remain open. Compilation, synthetic media and signed package inspection are distinct evidence.

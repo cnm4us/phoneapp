@@ -107,7 +107,7 @@ function CallScreen() {
     <StatusBar style="light" />
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
       <View style={styles.page} accessibilityElementsHidden={settingsOpen} importantForAccessibility={settingsOpen ? 'no-hide-descendants' : 'auto'}>
-        {active ? <CallVideoStage
+        {active && <CallVideoStage
           remoteURL={call.remote?.toURL()}
           localURL={call.cameraEnabled && call.hasCamera ? call.local?.toURL() : undefined}
           muted={call.muted} cameraIntent={call.quality.cameraIntent}
@@ -118,7 +118,7 @@ function CallScreen() {
           audioOutput={call.audioOutput} speaker={() => session.toggleSpeaker()}
           settings={() => { Keyboard.dismiss(); setSettingsOpen(true); }}
           mute={() => {session.mute();const id=accounts.state.current?.id;if(id&&Platform.OS==='ios')void calling?.setMuted?.(id,session.state.muted);}} camera={() => session.toggleCamera()} hangup={() => accountState.current ? void accounts.hangup() : session.end()}
-        /> : <ScrollView onScroll={e=>{historyReading.current=e.nativeEvent.contentOffset.y>30;}} scrollEventThrottle={100} contentContainerStyle={[styles.content,accountState.account&&{paddingHorizontal:0}]} keyboardShouldPersistTaps="handled">
+        />}<ScrollView style={active?{display:'none'}:undefined} onScroll={e=>{historyReading.current=e.nativeEvent.contentOffset.y>30;}} scrollEventThrottle={100} contentContainerStyle={[styles.content,accountState.account&&{paddingHorizontal:0}]} keyboardShouldPersistTaps="handled">
           <View style={[styles.row,accountState.account&&{paddingHorizontal:18}]}>
             <Text style={styles.title}>Phoneapp</Text>
             <Button title="⚙ Settings" accessibilityLabel="Open Phoneapp settings" onPress={() => { Keyboard.dismiss(); setSettingsOpen(true); }} />
@@ -139,7 +139,7 @@ function CallScreen() {
             {formError ? <Text style={styles.error} accessibilityRole="alert">{formError}</Text> : null}
             <Button title="Join call" disabled={!code || creating} onPress={() => { Keyboard.dismiss(); setFormError(''); void session.join(base, code, video, relay); }} color="#5ce1c2" />
           </View></>}
-        </ScrollView>}
+        </ScrollView>
       </View>
       {settingsOpen && <SettingsPanel close={closeSettings}>
         <View style={styles.card}>{calling ? <Text style={styles.muted}>Incoming call sound follows your phone’s call and notification settings.</Text> : <IncomingAlertControls state={alertState} change={preferences=>void incomingAlerts.setPreferences(preferences)} />}</View>

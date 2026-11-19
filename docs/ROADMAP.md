@@ -39,3 +39,6 @@ Next focused increment: [0016 communication history usability](plans/0016-commun
 
 
 After owner confirmation of the core 0016 iPhone controls, the next recommended development slice is parent 0015 Stage B: care-team inbox/status/assignment/receipts/internal comments with separate staff identities and explicit response links. A small Provider/RN/patient message workflow should prove collaboration and staff attribution before text/transcription/summaries/time features. Existing source audiences and remaining Android/media/call/accessibility gates remain in force; recommendation does not start implementation or complete those gates.
+
+
+Stage B refinement: TEAM-04/COM-17 in PRD 1.5 define office-managed PCP/RN/MA teams with separate coverage and patient membership, team-addressed intake with voluntary atomic claims, flags for review, universal deferral and downward-only delegation. PCP deferral is a manager-attention exception; staff coverage changes must preserve unresolved work and attribution. No implementation/organization onboarding is claimed by this discussion.

@@ -1,6 +1,6 @@
 # 0015 Unified communication workspace, transcripts and clinical draft notes
 
-Status: Stage A implemented/deployed to development; native previews/package checks and owner device acceptance in progress. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
+Status: Stage A implemented/deployed to development; both native previews FINISHED/package-checked; owner device acceptance pending. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
 
 ## Outcome and scope
 
@@ -90,7 +90,8 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 - [x] Add format/interaction/channel/direction metadata, patient/recipient display and stable authorized filters/grouping. Unknown/future channels are read-only placeholders, not functioning telephone/SMS buttons.
 - [x] Keep old API/native history paths until updated clients are installed; add version/capability negotiation for the workspace. Compare old/new authorized source counts, IDs and ordering before defaulting to the new UI. No mandatory re-enrollment.
 - [x] Verify browser layout (including 360px detail), empty/error/client stale-response/reload states and existing call/audio/video/receipt-free history regressions; native exports/Doctor/archive and iPhone package pass. Document actual Stage A outcome in evidence.
-- [ ] Complete Android build/package verification and owner iPhone/Android layout/media/call handoff. Keep hardware results separate from automated checks.
+- [x] Complete both native preview builds/package verification and refresh install QR codes.
+- [ ] Owner iPhone/Android layout/media/call acceptance. Keep hardware results separate from automated checks.
 
 ### B. Staff workflow, receipts and internal discussion
 
@@ -179,4 +180,4 @@ Roll out each stage behind its own gate. Hide/disable the new workspace or proce
 
 ## Handoff
 
-Stage A is implemented in `/home/ubuntu/phoneapp-stage15` with ADR 0011, registry migration and passing local workspace/media/call regressions. Development rollout is verified with all 34 authorized sources retained exactly once and all 13 public call cases passing. Finish native preview/package checks and owner device handoff; retain physical gates explicitly. Subsequent stage work follows the evidence gates above; transcription/model choice, source retention beyond the POC, future patient note publication, practice timezone and live-call media design remain explicit decisions rather than reasons to delay the first UI/workspace slice. Preserve [current state](../PROJECT_STATE.md) and existing physical acceptance gates.
+Stage A is implemented in `/home/ubuntu/phoneapp-stage15` with ADR 0011, registry migration and passing local workspace/media/call regressions. Development rollout is verified with all 34 authorized sources retained exactly once and all 13 public call cases passing. Both native previews/package checks pass and install links/QRs are ready. Owner device acceptance remains pending; continue Stage B with the earlier source/call/media/device gates preserved when proceeding. Subsequent stage work follows the evidence gates above; transcription/model choice, source retention beyond the POC, future patient note publication, practice timezone and live-call media design remain explicit decisions rather than reasons to delay the first UI/workspace slice. Preserve [current state](../PROJECT_STATE.md) and existing physical acceptance gates.

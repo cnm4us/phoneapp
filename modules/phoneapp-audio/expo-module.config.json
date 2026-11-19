@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["PhoneappAudioModule"] },
+  "android": { "modules": ["com.bawebtech.phoneapp.audio.PhoneappAudioModule"] }
+}

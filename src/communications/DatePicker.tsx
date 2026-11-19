@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {Button,Pressable,ScrollView,Text,View} from 'react-native';
+import {MONTHS,YEARS,civilDate,dateParts,daysInMonth,today} from './date';
+const text={color:'#edf5f7',fontSize:16};
+export function DatePicker({value,onDone,onCancel}:{value:string;onDone:(s:string)=>void;onCancel:()=>void}){
+ const [date,setDate]=useState(value||today()),[part,setPart]=useState<'year'|'month'|'day'>('day');const p=dateParts(date);
+ const options=part==='year'?YEARS:part==='month'?Array.from({length:12},(_,i)=>i+1):Array.from({length:daysInMonth(p.year,p.month)},(_,i)=>i+1);
+ return <View style={{flex:1,gap:14,padding:18,backgroundColor:'#142532'}} accessibilityViewIsModal><Text accessibilityRole="header" style={{...text,fontSize:23}}>Choose date</Text><Text style={text}>{date}</Text><View style={{flexDirection:'row',justifyContent:'space-between'}}>{(['year','month','day'] as const).map(key=><Button key={key} title={(part===key?'✓ ':'')+key[0].toUpperCase()+key.slice(1)} onPress={()=>setPart(key)}/>)}</View><ScrollView style={{flex:1}} contentContainerStyle={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{options.map(n=><Pressable key={n} accessibilityRole="button" accessibilityLabel={part+' '+(part==='month'?MONTHS[n-1]:n)} accessibilityState={{selected:p[part]===n}} onPress={()=>{setDate(civilDate(part==='year'?n:p.year,part==='month'?n:p.month,part==='day'?n:p.day));if(part==='year')setPart('month');if(part==='month')setPart('day');}} style={{padding:13,minWidth:48,minHeight:48,borderRadius:8,backgroundColor:p[part]===n?'#245b74':'#203846'}}><Text style={text}>{part==='month'?MONTHS[n-1]:n}{p[part]===n?' ✓':''}</Text></Pressable>)}</ScrollView><View style={{gap:8}}><Button title="Done" onPress={()=>onDone(date)}/><Button title="Clear date" onPress={()=>onDone('')}/><Button title="Cancel" onPress={onCancel}/></View></View>;
+}

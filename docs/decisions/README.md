@@ -3,5 +3,24 @@
 Create a numbered record for consequential choices. Include context, decision/status, consequences, and what would trigger revisiting it. Use proposed, accepted, or superseded explicitly; link a replacement when superseded.
 
 - [0001 Project direction](0001-project-direction.md): established workflow and proposed POC approach.
+- [0002 WebRTC implementation](0002-webrtc-implementation.md): selected dependencies, signaling, development hosting, and verification boundaries.
 
 Avoid freezing speculative details. Versions, service setup, and commands belong in the relevant implementation plan and tool inventory.
+
+- [0003 Adaptive call quality](0003-adaptive-quality.md): shared presets, directional ceilings and adaptation.
+- [0004 Native audio output](0004-native-audio-output.md): private earpiece and speaker routing.
+- [0005 Database foundation](0005-database-foundation.md): local MariaDB, isolated identities and explicit SQL migrations; replaces tentative PostgreSQL for development.
+
+- [0006 Foreground accounts](0006-foreground-accounts.md): synthetic one-time enrollment, authorized role screens, private foreground calls and durable history.
+
+- [0007 Native incoming calls](0007-native-incoming-calls.md): device-bound restoration, native call control, transactional delivery and honest background media observations.
+
+- [0008 Audio messages](0008-audio-messages.md): patient-linked media, short-lived transfer grants, private POC storage and foreground audio ownership.
+
+- [0009 Browser sessions](0009-browser-sessions.md): host-only HttpOnly cookies, fixed expiry, guarded restore/logout and open-tab migration.
+
+- [0010 Video messages](0010-video-messages.md): additive mixed-media history, native camera/player ownership, private posters and bounded video processing.
+
+- [0011 Communication workspace](0011-communication-workspace.md): immutable source wrappers, preserved audiences, filtered history/detail and Stage A compatibility.
+
+- [0012 History overlays, quiet refresh and playback controls](0012-history-overlay-and-playback.md).

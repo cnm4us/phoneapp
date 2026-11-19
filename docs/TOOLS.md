@@ -1,6 +1,6 @@
 # Tools and access inventory
 
-Updated: 2026-11-18 UTC. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
+Updated: 2026-11-19 UTC. Record verified capabilities separately from proposals. Connection details belong here; secret values do not. Tool availability and account sessions can change between threads.
 
 ## Verified environment
 
@@ -280,6 +280,26 @@ Existing open browser tabs adopt valid bearer sessions on a same-origin API poll
 
 No DDL/new environment key/native binary/nginx change. Existing `auth_sessions` rows hold fixed expiry/revocation. Production Origin is the existing project HTTPS hostname, not the reverse proxy's internal Host. Private test logs are retained under `artifacts/private/browser-sessions/`. Source rollout occurred between calls; service/cache reload published browser assets. No automatic microphone/camera/call resume is introduced.
 
-## Planned video-message tooling (0014)
+## Video messages (0014)
 
-[Plan 0014](plans/0014-video-messages.md) is written; no video tools/dependencies/tests are implemented or installed. Proposed SDK 57 `expo-camera`/`expo-video`, a next additive migration, per-kind FFmpeg limits, private posters and a separate video feature flag need verification during implementation. The existing audio worker rejects video; current 10 MiB/25-second processing bounds and two-minute leases/grants must not be described as video-ready. No new provider credentials are currently expected. The plan's read-only host snapshot is not a capacity result; benchmark maximum clips without interrupting owner calls. Add exact runnable video commands, confirmed limits and native package checks here only after implementation. Existing audio/native/session commands above remain current.
+[Plan](plans/0014-video-messages.md), [ADR](decisions/0010-video-messages.md), [evidence](testing/2026-11-19-video-messages.md). Native/browser source and development backend/storage/migration are deployed; current native previews/device results are in project state.
+
+```sh
+npm run test:video-messages
+npm run test:message-client
+npm run benchmark:video
+npm run smoke:video-messages
+npm run messages:status
+```
+
+`test:video-messages` runs seven scenarios (8 Node tests) using isolated MariaDB/temporary media and actual Chromium camera+sound recording/playback. It clears only message/grant tables in `phoneapp_test` after exact-target/account/lock checks; run sequentially with other DB suites. Covers compatibility, late enrollment, video/poster authorization, real recording/page-close/later playback/reply, portrait rotation, limits, bounded queue, >10s streamed upload, lease recovery and expiry/orphans/paired assets restore. `test:message-client` now has nine race/identity/video cases. Existing audio regression remains `test:audio-messages`.
+
+`benchmark:video` explicitly generates/reuses a private 120s synthetic VP8/Opus fixture and runs actual bounded normalization, replacing only its named output/poster files under ignored video artifacts. Uses CPU/disk; schedule it deliberately rather than as a routine smoke. `smoke:video-messages` explicitly publishes one synthetic moving-pattern/tone Provider -> Patient C entry through public HTTPS, verifies later history/authenticated Range/private poster, and leaves it under seven-day retention. It sends no calls/notifications. Status is aggregate by media kind/state/role/failure only.
+
+Server flag `ENABLE_VIDEO_MESSAGES` defaults false and is true in the synthetic development `.env.server`, subordinate to `ENABLE_AUDIO_MESSAGES`. Keep existing secret/provider keys. New contracts are `/api/messages/v2` and its history/grant routes; context advertises video capability. Legacy routes filter video before pagination and deny video grants. Media grants still expire after two minutes and authorize only the current session/operation/patient; accepted uploads have a separate bounded deadline and final auth check.
+
+Limits are centralized in `server/message-media.ts` and `server/messages.ts`: 120s, 64 MiB input, 32 MiB H.264/AAC MP4 plus <=256 KiB JPEG, 256 MiB video input/user/day, 100 total messages/day, four queued/active video jobs, one converter/two uploads, shared 1 GiB store and free-space floor, seven-day available/24h incomplete expiry. Existing audio limits remain separate. One video subprocess has 300 CPU/wall seconds, 1 GiB address space and 32 MiB output; video lease is 660s. Video upload is <=600s; project nginx media-only route has 64 MiB/620s allowances, JSON stays 4 KiB. The shared host benchmark is POC evidence, not general capacity.
+
+Camera 57.0.6/Video 57.0.5 are pinned with existing Audio 57.0.5. `npm ci` applies guarded audio/video patches; `.easignore` explicitly includes both scripts, and autolinking forces these modules to source-build. Source archive checks verify server/env/DB/private media/key files are absent (empty excluded directories may remain). Native video playback uses private temporary downloads with caching/background/now-playing/PiP disabled; config preserves the existing call audio background mode. Package helper supports `--audio-messages --video-messages`; compilation/package inspection and handset camera/audio interruption tests are distinct.
+
+Private development snapshot/config/media and public rollout logs: canonical `artifacts/private/video-messages/rollout/`. Build metadata/native bundles/bench/source-archive logs: `/home/ubuntu/phoneapp-stage14/artifacts/private/video-messages/`. Never print full EAS JSON/signed log URLs or share captures. Disable new video create/upload via its flag on schema-compatible source to recover; keep existing published playback, accepted jobs, audio and history intact.

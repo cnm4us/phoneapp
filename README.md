@@ -10,7 +10,7 @@ A native iOS and Android communications app for capturing care-team work and rev
 - [Current project state](docs/PROJECT_STATE.md): what exists and the next action.
 - [Audio messages and shared history](docs/plans/0012-audio-messages-shared-history.md): implemented scope, migrations, private storage/playback and remaining device acceptance.
 - [Saved browser sign-in](docs/plans/0013-persistent-browser-sign-in.md): reload/new-tab persistence and logout.
-- [Video-message implementation plan](docs/plans/0014-video-messages.md): next planned audio/video recording, private processing and cross-platform playback increment; not implemented.
+- [Video-message implementation plan](docs/plans/0014-video-messages.md): recorded video with sound, private processing and cross-platform playback; native installation/device acceptance is tracked in current state.
 - [Roadmap](docs/ROADMAP.md): milestones and dependencies.
 - [First implementation plan](docs/plans/0001-webrtc-poc.md): two-device WebRTC experiment.
 - [Browser companion plan](docs/plans/0002-browser-companion.md): browser UI, synthetic media tests, and deployment evidence.

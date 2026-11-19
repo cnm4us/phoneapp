@@ -33,7 +33,7 @@ def signed_entitlements(binary):
     raise AssertionError('Missing signed entitlement metadata')
 
 
-def check_ios(path, expected_team, audio_messages=False):
+def check_ios(path, expected_team, audio_messages=False, video_messages=False):
     with zipfile.ZipFile(path) as package:
         info_path = next(n for n in package.namelist()
                          if n.startswith('Payload/') and n.count('/') == 2
@@ -66,6 +66,9 @@ def check_ios(path, expected_team, audio_messages=False):
         assert b'PhoneappMediaObserver' in binary
         if audio_messages:
             assert b'phoneappStopMessageAudio' in binary
+        if video_messages:
+            assert b'phoneappStopMessageVideo' in binary
+            assert b'ExpoCamera' in binary and b'ExpoVideo' in binary
         return dict(platform='ios', physical_device_build=True,
                     production_push_entitlement=True, app_identifier_matches=True,
                     expected_team_matches=True if expected_team else None,
@@ -75,7 +78,7 @@ def check_ios(path, expected_team, audio_messages=False):
                     handset_delivery_tested=False)
 
 
-def check_android(path, audio_messages=False):
+def check_android(path, audio_messages=False, video_messages=False):
     with zipfile.ZipFile(path) as package:
         bundles = [n for n in package.namelist() if n.endswith('index.android.bundle')]
         assert bundles and package.getinfo(bundles[0]).file_size > 100_000
@@ -90,6 +93,9 @@ def check_android(path, audio_messages=False):
         if audio_messages:
             assert b'Lexpo/modules/audio/AudioModule;' in dex
             assert b'com.bawebtech.phoneapp.CALL_AUDIO' in dex
+        if video_messages:
+            assert b'Lexpo/modules/camera/CameraViewModule;' in dex
+            assert b'Lexpo/modules/video/VideoModule;' in dex
         return dict(platform='android', bundled_javascript=True,
                     native_call_handlers_present=True, handset_delivery_tested=False)
 
@@ -100,15 +106,16 @@ def main():
     parser.add_argument('--android', type=Path)
     parser.add_argument('--expected-team-id')
     parser.add_argument('--audio-messages', action='store_true', help='Also inspect message audio module/action or iOS selector.')
+    parser.add_argument('--video-messages', action='store_true', help='Also inspect camera/video modules and iOS early camera-stop selector; not runtime proof.')
     args = parser.parse_args()
     if not args.ios and not args.android:
         parser.error('Supply --ios and/or --android with a local package path.')
     try:
         checks = []
         if args.ios:
-            checks.append(check_ios(args.ios, args.expected_team_id, args.audio_messages))
+            checks.append(check_ios(args.ios, args.expected_team_id, args.audio_messages, args.video_messages))
         if args.android:
-            checks.append(check_android(args.android, args.audio_messages))
+            checks.append(check_android(args.android, args.audio_messages, args.video_messages))
         print(json.dumps(dict(result='PASS', checks=checks)))
         return 0
     except Exception:

@@ -13,6 +13,7 @@ A native iOS and Android communications app for capturing care-team work and rev
 - [Video-message implementation plan](docs/plans/0014-video-messages.md): recorded video with sound, private processing and cross-platform playback; native installation/device acceptance is tracked in current state.
 - [Unified communication workspace plan](docs/plans/0015-unified-communication-workspace.md): one call/media log/detail is implemented; team workflow, transcripts and reviewed clinical draft notes are later stages.
 - [Communication history usability plan](docs/plans/0016-communication-history-usability.md): implemented UI iteration with full-width overlays, quiet refresh, scrubbers and calendar date picking; current native builds/device gates are in project state.
+- [Care teams, coverage and shared inbox plan](docs/plans/0017-care-teams-coverage-and-shared-inbox.md): next implementation, including office-manager setup, claims, review/delegation/deferral and internal discussion; planning complete.
 - [Roadmap](docs/ROADMAP.md): milestones and dependencies.
 - [First implementation plan](docs/plans/0001-webrtc-poc.md): two-device WebRTC experiment.
 - [Browser companion plan](docs/plans/0002-browser-companion.md): browser UI, synthetic media tests, and deployment evidence.

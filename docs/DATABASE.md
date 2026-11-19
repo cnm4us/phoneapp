@@ -139,3 +139,10 @@ Stages B–G registry extensions/threads, recipients/work events/comments/text, 
 | Date | Environment alias | Migration | Outcome | Evidence |
 | --- | --- | --- | --- | --- |
 | 2026-11-19 | Test and development | `0007_communication_registry.sql` | Applied; append-only runtime grants and exact source preservation pass | [Workspace report](testing/2026-11-19-communication-workspace.md); private DB/media/config snapshots under communication rollout artifacts. |
+
+
+## Planned care-team and staff-workflow expansion (0017)
+
+[Plan 0017](plans/0017-care-teams-coverage-and-shared-inbox.md) proposes capabilities/teams/role membership/coverage, patient-team association and legacy-grant provenance, explicit destinations, work roots/events/projections, review/delegation/deferral/exception records, receipts/comment revisions and response links. Exact schema/constraints/grants belong in its implementation ADR/migrations. Current `audio_messages.recipient_staff_id` is non-null and `patient_assignments` lacks grant provenance; compatible team destinations and safe patient-team reassignment must address both, rather than fabricate a staff FK or leave unintended direct access. Existing source/patient/call-participant FKs and source IDs/timestamps remain intact.
+
+Read-only development `db:status` during planning confirms 0001–0007 applied with no pending entries; next expected migration is 0008, subject to recheck. No SQL file/schema/grant/cutover/seed/restore operation was made for this plan. Test clean and populated 0007 upgrades, runtime immutable grants, partial-DDL recovery and combined data/media restore before development application; preserve source/auth/media and explicitly account for intended access changes. No test reset of development.

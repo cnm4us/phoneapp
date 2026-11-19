@@ -32,7 +32,7 @@ Outside this implementation: real-patient/production rollout, a complete organiz
 | Channel | App, browser, telephone, SMS. Preserve actual source/direction; do not imply telephone/SMS is connected before implementation. |
 | Stable identity | One communication wrapper for each logical call, published/pending media message or individual text message. Unique source mapping prevents duplicate entries across retries, imports and callbacks. |
 | Related thread | Explicit same-patient relationship among text replies and related communications. Text threads can collapse into one display group, retaining individual message IDs/timestamps/statuses. Grouping never duplicates counts or erases evidence. |
-| Work item | One action owner/status per communication by default; a text thread can share a work item so each short text does not create a separate task. A new incoming reply reopens its work item according to an explicit rule. |
+| Work item | One action owner/status per communication by default, with explicitly linked media reply chains sharing a root under 0017; a text thread can share a work item so each short text does not create a separate task. A new incoming reply reopens its work item according to an explicit rule. |
 
 Provider defaults: **Needs attention**, **Assigned to me**, **All**. Offer All/Calls/Messages, patient, format, recipient/assignee, channel, direction and date filters; advanced filters can include transcript/note processing state. Preserve selections on ordinary refresh and show applied filters/empty states. Filter authorization server-side, paginate stably, and calculate counts over authorized records rather than the visible page. Use deterministic date/ID tie-breakers; a reply moving a collapsed thread must not cause missing/duplicated pages.
 
@@ -71,6 +71,8 @@ Higher-role delegation may address an eligible role queue or a named eligible me
 A deferred item remains unresolved and conspicuous in an accountable team/role queue until a qualified person accepts or an authorized resolution occurs. PCP deferral raises an office-manager routing/coverage exception; it does not make the office manager the clinical responder. Avoid circular deferrals or unavailable assignees disappearing from every inbox; retain operational exception handling without treating it as a new clinical urgency rule. Exact default role routing can be defined/configured in the implementation plan, rather than forcing every MA deferral through one mandatory chain.
 
 Keep original sender/addressee, current owner, requested reviewer/role, receipts and work state distinct. Handoffs are internal events, not patient replies/notifications or automatic resolution. Keep actual staff attribution and future time evidence even when coverage changes. This is a minimal care-team/coverage prerequisite to Stage B, not full multi-organization/self-service onboarding. No new role/table/API or runtime behavior is implemented by this discussion.
+
+The focused implementation and explicit prototype defaults are in [0017](0017-care-teams-coverage-and-shared-inbox.md); this parent records product direction rather than a competing execution checklist.
 
 ### Detail and audience
 
@@ -115,14 +117,9 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 
 Owner iPhone follow-up before Stage B is now consolidated in **[0016 communication history usability](0016-communication-history-usability.md)**, the sole active implementation checklist for this UI slice. It includes full-width compact rows/detail overlay, quiet polling/scroll preservation, patient/caregiver selection, From/To and Reply, media play/pause/scrubbers, future Media/Transcript/Summary placement and year/month/day date-picker overlays. All prior presentation discussion is superseded by that consolidated plan; its browser/source implementation is deployed; native build/device handoff is tracked in 0016 evidence. Existing Stage A source/device evidence remains above and in its report.
 
-### B. Staff workflow, receipts and internal discussion
+### B. Care teams, coverage, staff workflow and internal discussion
 
-- [ ] Define and implement the minimal authorized office-manager care-team roles/membership/coverage prerequisite (TEAM-04), separate from clinical access and per-item ownership; establish role eligibility, absence and pending-work handling before handoff controls. Keep full organization self-service onboarding out of this slice.
-- [ ] Implement/test atomic claim, non-forcing review flags, universal reasoned deferral and PCP→RN/MA, RN→MA, MA→nobody delegation (COM-17), including delegated-recipient deferral, PCP manager-attention and unavailable/circular routing cases.
-- [ ] Implement append-only receipt/assignment/workflow/comment events and current projections. Separate actor-relative receipts, original addressee and mutable work owner; use explicit reply links and conditional updates.
-- [ ] Add Needs attention/Assigned to me/All with actor-aware counts, assignment/reassignment, no-response-needed resolution, reply-completion rules and reopening on new incoming content. Do not make playback/AI processing/idle polling resolve work.
-- [ ] Build staff comments with clear internal labeling and revision history; prevent them entering patient detail/notifications/AI input or being counted as replies. Enforce permission checks at the API/worker layer.
-- [ ] Add isolated synthetic RN/MA/second-provider fixtures to test collisions and staff attribution. Do not expose a shared enrollment/login or imply the minimal roster delivers full multi-organization/self-service onboarding. Verify historical receipts remain unknown and cutover creates no fake notifications.
+Detailed implementation is now consolidated in **[0017 care teams, role coverage and shared inbox](0017-care-teams-coverage-and-shared-inbox.md)**, the sole active checklist for this stage. It delivers manager roster/coverage/patient association first, team addressing/inbox/atomic claims next, then receipts, review requests, accepted downward delegation, universal deferral/manager attention, internal comments and linked replies. Confirmed role rules and proposed prototype routing/activation/cutover defaults are explicit in that plan. Existing source audiences, original recipients and past receipts remain preserved; full organization self-service and later stages remain separate. Planning is complete; Stage B is not implemented.
 
 ### C. In-app text and thread grouping
 

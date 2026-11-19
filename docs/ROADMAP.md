@@ -42,3 +42,6 @@ After owner confirmation of the core 0016 iPhone controls, the next recommended 
 
 
 Stage B refinement: TEAM-04/COM-17 in PRD 1.5 define office-managed PCP/RN/MA teams with separate coverage and patient membership, team-addressed intake with voluntary atomic claims, flags for review, universal deferral and downward-only delegation. PCP deferral is a manager-attention exception; staff coverage changes must preserve unresolved work and attribution. No implementation/organization onboarding is claimed by this discussion.
+
+
+Active next implementation plan: [0017 care teams, coverage and shared inbox](plans/0017-care-teams-coverage-and-shared-inbox.md), the focused checklist for parent 0015 Stage B. Planning complete, implementation not started. Releases: manager role/team/coverage/patient setup; team-addressed intake and atomic claims; review/accepted delegation/universal deferral/manager exceptions/comments/linked response lifecycle. Current seven-migration baseline and existing phone/media/accessibility gates are preserved. No new provider subscription or production organization onboarding is selected by the plan.

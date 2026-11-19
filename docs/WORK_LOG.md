@@ -450,3 +450,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - At 08:23 UTC recorded owner confirmation for installed iPhone 1f6e7abd as Patient A: prompted full-width/no-jump history, detail overlay opening, playing/scrubbing a recording and choosing filter dates all work. This is actual basic native acceptance, rather than an inference from package/browser checks.
 - Updated AGENTS/state/resume/plan/evidence with that scope. Android, separately itemized media/Reply/fullscreen/Close/Back/date/interruption/accessibility cases and prior physical gates remain open; model/OS were not supplied. No runtime/schema/service/build change. Documentation/whitespace checks pass.
+
+
+## 2026-11-19 Next project increment discussion
+
+- Owner says the UI looks good and asks for the next logical project step. Reviewed state, PRD and parent 0015 ordering; recommended Stage B care-team inbox with individual staff identity, eligible assignment, receipts independent of work state, internal comments and source-linked replies. Suggested a small Provider/RN/Patient A message workflow as acceptance, with existing source audiences preserved. This provides staff attribution/work history for future time evidence; it does not create billing credit.
+- In-app text, retained originals/saved-message transcription, reviewed summaries and staff time links follow; remaining Android/media/call/accessibility checks can continue alongside development. Updated recommendation/state/roadmap only; no new implementation plan, runtime/schema/provider/build changes. Documentation/whitespace checks pass.

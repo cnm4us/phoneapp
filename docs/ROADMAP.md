@@ -36,3 +36,6 @@ Parent roadmap: [0015 unified communication workspace](plans/0015-unified-commun
 
 
 Next focused increment: [0016 communication history usability](plans/0016-communication-history-usability.md), before 0015 Stage B. Consolidates the owner-approved UI direction and date-picker request into one implementation checklist: edge-to-edge patient-first history, overlay/scroll restoration, silent change-only refresh, patient/caregiver selection, From/To and Reply, saved-media scrubbers, future artifact selection and year/month/day calendar overlays. Browser/source implementation and automated/public checks pass; native builds/package/device results are tracked separately in current state. Existing calling/media/source access and physical gates remain.
+
+
+After owner confirmation of the core 0016 iPhone controls, the next recommended development slice is parent 0015 Stage B: care-team inbox/status/assignment/receipts/internal comments with separate staff identities and explicit response links. A small Provider/RN/patient message workflow should prove collaboration and staff attribution before text/transcription/summaries/time features. Existing source audiences and remaining Android/media/call/accessibility gates remain in force; recommendation does not start implementation or complete those gates.

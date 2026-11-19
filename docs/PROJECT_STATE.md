@@ -25,7 +25,9 @@ Local expanded UI/media/seek/quiet checks and public authorized-source/reload/Ra
 
 Owner installed iPhone build 1f6e7abd and confirms the prompted Patient A controls work: full-width history without periodic jumps, opening records in an overlay, playback/scrubbing of a recording and filter-date selection. This is basic native UI acceptance; device model/OS, separate audio versus video results, individual Close/Back/scroll-return and date Cancel/Apply cases were not itemized.
 
-Next: verify Android and the remaining explicit device cases: Close/Back/scroll retention, both media types/fullscreen, Reply record/preview/send, drafts across calls, incoming/background/call interruption and accessibility. Preserve earlier physical gates and stable sign-in/history. Parent Stage B remains later work; no transcript/summary/CC/Forward/patient-originated live calling or Audio Call is implemented by this UI release.
+Next recommended development increment (roadmap discussion): parent plan 0015 Stage B, a care-team inbox with separate staff identities, viewer receipts distinct from work state, eligible staff assignment, Needs review/Needs response/Waiting for patient/Resolved, internal comments and explicit response links. Demonstrate Patient A message → RN review/assignment → provider response → resolved item, retaining source audiences and actual staff attribution. This is a recommendation, not a new implementation request; prepare a focused plan when requested. Text, retained-original/transcription, reviewed summaries and staff time links follow the parent roadmap.
+
+Continue device verification alongside roadmap work: verify Android and the remaining explicit device cases: Close/Back/scroll retention, both media types/fullscreen, Reply record/preview/send, drafts across calls, incoming/background/call interruption and accessibility. Preserve earlier physical gates and stable sign-in/history. Parent Stage B remains later work; no transcript/summary/CC/Forward/patient-originated live calling or Audio Call is implemented by this UI release.
 
 ## Prior Stage A release (historical baseline)
 

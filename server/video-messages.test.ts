@@ -14,6 +14,7 @@ import {AccountsStore,hash,utc} from './accounts-store';
 import {Messages,mediaConfig} from './messages';
 import {AccountsApi} from './accounts-api';
 import {createSignaling} from './server';
+import {withCameraMetadata} from './test-camera-metadata';
 
 test('video messages, compatibility, private posters and asynchronous playback',{timeout:180000},async t=>{
  loadConfiguration();const db=await connect('test');const [target]=await db.query('SELECT DATABASE() AS db,CURRENT_USER() AS account');assert.equal(target.db,'phoneapp_test');assert.equal(target.account,'phoneapp_test@localhost');const [lock]=await db.query("SELECT GET_LOCK('phoneapp:test-suite',0) AS acquired");assert.equal(Number(lock.acquired),1);
@@ -50,6 +51,12 @@ test('video messages, compatibility, private posters and asynchronous playback',
   await t.test('portrait rotation stays upright and overlong/high-rate recordings fail before publication',async()=>{
    const rotated=join(root,'rotated.mp4');execFileSync('/usr/bin/ffmpeg',['-v','error','-i',fixture,'-c','copy','-metadata:s:v:0','rotate=90',rotated]);const row=await create(provider.token);await upload(row.id,provider.token,await readFile(rotated));await messages.tick();const [upright]=await db.query('SELECT state,video_width,video_height FROM audio_messages WHERE id=?',[row.id]);assert.equal(upright.state,'available');assert.equal(upright.video_width,240);assert.equal(upright.video_height,320);
    for(const [name,duration,rate] of [['overlong',121,1],['high-rate',1,90]] as const){const path=join(root,name+'.mp4');execFileSync('/usr/bin/ffmpeg',['-v','error','-f','lavfi','-i',`color=size=32x32:rate=${rate}`,'-f','lavfi','-i','sine=frequency=440','-t',String(duration),'-threads','1','-c:v','libx264','-c:a','aac',path]);const bad=await create(provider.token);await upload(bad.id,provider.token,await readFile(path));await messages.tick();const [result]=await db.query('SELECT state FROM audio_messages WHERE id=?',[bad.id]);assert.equal(result.state,'failed');}
+  });
+  await t.test('accept iPhone mebx timed metadata, drop it from output and reject other extra tracks',async()=>{
+   const subtitle=join(root,'synthetic-metadata.srt'),container=join(root,'synthetic-metadata.mp4');await writeFile(subtitle,'1\n00:00:00,000 --> 00:00:01,000\nSynthetic metadata\n');execFileSync('/usr/bin/ffmpeg',['-v','error','-i',fixture,'-i',subtitle,'-map','0:v','-map','0:a','-map','1:0','-c:v','copy','-c:a','copy','-c:s','mov_text',container]);
+   const source=await readFile(container),bytes=withCameraMetadata(source);const confirmed=join(root,'camera-metadata.mp4');await writeFile(confirmed,bytes);const input=JSON.parse(execFileSync('/usr/bin/ffprobe',['-v','error','-show_streams','-of','json',confirmed]).toString());assert.equal(input.streams.length,3);assert(input.streams.some((s:any)=>s.codec_type==='data'&&s.codec_tag_string==='mebx'));
+   const row=await create(provider.token);await upload(row.id,provider.token,bytes);await messages.tick();const [stored]=await db.query('SELECT state,output_key FROM audio_messages WHERE id=?',[row.id]);assert.equal(stored.state,'available');const output=JSON.parse(execFileSync('/usr/bin/ffprobe',['-v','error','-show_streams','-of','json',join(root,stored.output_key)]).toString());assert.equal(output.streams.length,2);assert.deepEqual(output.streams.map((s:any)=>s.codec_type).sort(),['audio','video']);
+   const unsupported=await create(provider.token);await upload(unsupported.id,provider.token,withCameraMetadata(source,'gpmd'));await messages.tick();const [rejected]=await db.query('SELECT state FROM audio_messages WHERE id=?',[unsupported.id]);assert.equal(rejected.state,'failed');
   });
   await t.test('a bounded video upload can cross the old ten-second HTTP deadline',async()=>{
    const row=await create(provider.token),grant=await request(`/messages/v2/${row.id}/upload`,provider.token,{});let stream!:ReturnType<typeof httpRequest>;

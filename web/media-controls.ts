@@ -1,0 +1,11 @@
+import type {AudioAdapter} from '../src/messages/controller';
+import {clock,ScrubSession} from '../src/communications/playback-model';
+export function mediaControls(media:AudioAdapter,fullscreen:()=>void){
+ const root=document.createElement('div');root.className='media-controls';const play=document.createElement('button');play.className='media-play';play.type='button';const elapsed=document.createElement('span'),slider=document.createElement('input');slider.type='range';slider.min='0';slider.step='0.1';slider.value='0';slider.max='0';slider.setAttribute('aria-label','Playback position');const full=document.createElement('button');full.type='button';full.textContent='Full screen';full.onclick=fullscreen;root.append(play,elapsed,full,slider);
+ const scrub=new ScrubSession(media);let dragging=false,disabled=false,onPlay=()=>{},source='';
+ play.onclick=()=>{const p=media.position();if(disabled)return;if(p.playing)media.pause();else if(p.duration){if(p.current>=p.duration-0.1)void (async()=>{scrub.begin(true);await scrub.commit(0);})();else void media.resume();}else onPlay();};
+ const begin=()=>{if(!dragging){dragging=true;scrub.begin();}};slider.onpointerdown=begin;slider.oninput=()=>{begin();elapsed.textContent=clock(+slider.value)+' / '+clock(media.position().duration);};slider.onchange=()=>{if(dragging){dragging=false;void scrub.commit(+slider.value);}};slider.onpointercancel=()=>{dragging=false;scrub.cancel();};
+ const timer=setInterval(()=>{const p=media.position();play.textContent=p.playing?'Ⅱ':'▶';play.setAttribute('aria-label',p.playing?'Pause playback':'Play recording');play.disabled=disabled;slider.disabled=disabled||!Number.isFinite(p.duration)||p.duration<=0;if(!dragging){slider.max=String(Number.isFinite(p.duration)?p.duration:0);slider.value=String(p.current);elapsed.textContent=clock(p.current)+' / '+clock(p.duration);}slider.setAttribute('aria-valuetext',clock(+slider.value)+' of '+clock(p.duration));},250);
+ window.addEventListener('pagehide',()=>{clearInterval(timer);scrub.cancel();},{once:true});
+ return {root,set:(id:string,action:()=>void,busy:boolean,video=false)=>{if(source!==id||busy){scrub.cancel();dragging=false;}source=id;full.hidden=!video;onPlay=action;disabled=busy;play.disabled=busy;},cancel:()=>{scrub.cancel();dragging=false;}};
+}

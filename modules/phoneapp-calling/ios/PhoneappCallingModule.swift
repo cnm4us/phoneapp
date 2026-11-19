@@ -13,7 +13,7 @@ public class PhoneappCallingModule: Module {
   AsyncFunction("enroll"){(code:String,promise:Promise) in DeviceIdentity.shared.queue.async {do {let result=try DeviceIdentity.shared.enroll(code);promise.resolve(result)}catch{promise.reject("ENROLL_FAILED",error.localizedDescription)}}}
   AsyncFunction("restore"){(promise:Promise) in DeviceIdentity.shared.queue.async {do{let result=try DeviceIdentity.shared.restore();DeviceIdentity.shared.registerPush();promise.resolve(result)}catch{promise.reject("RESTORE_FAILED",error.localizedDescription)}}}
   AsyncFunction("request"){(path:String,body:String?,promise:Promise) in
-   DeviceIdentity.shared.queue.async {do {let parsed=body.flatMap{$0.data(using:.utf8)}.flatMap{try? JSONSerialization.jsonObject(with:$0)} as? [String:Any];promise.resolve(try DeviceIdentity.shared.request(path,parsed))}catch{promise.reject((error as NSError).code==401 ? "UNAUTHORIZED":"REQUEST_FAILED",error.localizedDescription)}}
+   DeviceIdentity.shared.queue.async {do {let parsed=body.flatMap{$0.data(using:.utf8)}.flatMap{try? JSONSerialization.jsonObject(with:$0)} as? [String:Any];promise.resolve(try DeviceIdentity.shared.request(path,parsed))}catch{let status=(error as NSError).code;promise.reject(status==401 ? "UNAUTHORIZED":([403,404].contains(status) ? "HTTP_\(status)":"REQUEST_FAILED"),error.localizedDescription)}}
   }
   AsyncFunction("status"){(promise:Promise) in DeviceIdentity.shared.queue.async{promise.resolve(DeviceIdentity.shared.status())}}
   AsyncFunction("syncCall"){(id:String,state:String,direction:String) in CallCoordinator.shared.sync(id,state,direction)}.runOnQueue(.main)

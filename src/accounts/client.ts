@@ -29,7 +29,7 @@ export class AccountClient {
   subscribe(listener:(state:AccountState)=>void):()=>void { this.listeners.add(listener); listener(this.state); return ()=>this.listeners.delete(listener); }
   private update(patch:Partial<AccountState>):void { this.state={...this.state,...patch}; for(const listener of this.listeners)listener(this.state); }
   async request<T>(path:string,body?:unknown):Promise<T> {
-    if(this.native){try{return await this.native.request(path,body) as T;}catch(error){if((error as {code?:string})?.code==='UNAUTHORIZED')this.clear();throw error;}}
+    if(this.native){try{return await this.native.request(path,body) as T;}catch(error){const code=(error as {code?:string})?.code;if(code==='UNAUTHORIZED')this.clear();const status=code?.match(/HTTP_(403|404)$/)?.[1];if(status)Object.assign(error as object,{status:Number(status)});throw error;}}
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8_000);
     const credential=this.token,requestEpoch=this.epoch;
     try {

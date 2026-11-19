@@ -20,7 +20,7 @@ export function accountPanel(call:BrowserCall):AccountClient {
       const signIn=button(state.busy?'Signing in…':'Sign in',()=>{const code=enrollment;enrollment='';void client.signIn(code);},state.busy);signIn.type='submit';
       form.onsubmit=event=>{event.preventDefault();};form.append(label,input,signIn,button('Restore saved sign-in',()=>void client.restore(),state.busy));root.append(form);
     }else{
-      root.append(node('p',`${state.account.role==='patient'?'Patient':'Care team'} account · Sign-in saved in this browser for up to 30 days`),button('Sign out',()=>void client.signOut(),state.busy||Boolean(state.current)));
+      root.append(node('p',`${['patient','caregiver'].includes(state.account.role)?'Patient / caregiver':'Care team'} account · Sign-in saved in this browser for up to 30 days`),button('Sign out',()=>void client.signOut(),state.busy||Boolean(state.current)));
       const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
       if(incoming&&!state.current){const box=node('div');box.className='account-card';box.setAttribute('role','status');box.append(node('h3','Incoming app call'),node('p',incoming.callerName),button('Answer with audio/video',()=>void client.act(incoming,'answer'),state.busy),button('Decline',()=>void client.act(incoming,'decline'),state.busy));root.append(box);}
       if(state.current){const box=node('div');box.className='account-card';box.append(node('h3',state.current.state==='ringing'?'Calling…':'App call'),node('p',`${state.current.patientName} · ${state.current.state}`),button(state.current.state==='ringing'?'Cancel call':'End app call',()=>void client.hangup()));root.append(box);}

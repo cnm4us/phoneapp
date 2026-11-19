@@ -1,6 +1,6 @@
 # 0016 Communication history, detail overlay and media controls
 
-Status: ready for implementation; planning complete, implementation not started. Updated: 2026-11-19 UTC. This document consolidates the owner's UI discussion and new calendar-picker request; writing it does not implement or deploy the changes.
+Status: implemented in isolated worktree; final verification, development rollout and native builds in progress. Updated: 2026-11-19 UTC. Source and verification are tracked in the [evidence report](../testing/2026-11-19-history-usability.md) and [ADR 0012](../decisions/0012-history-overlay-and-playback.md).
 
 ## Outcome and scope
 
@@ -87,13 +87,13 @@ Transient network failures keep the last authorized list with a stable offline/r
 ## Implementation steps
 
 - [x] Inspect current layout, source/access contracts, polling, media adapters and existing verification commands; consolidate owner feedback into this follow-up plan.
-- [ ] Create an isolated feature worktree from current canonical history. Keep canonical on `feat/webrtc-poc`; record actual app source and installed baseline.
-- [ ] Define the shared presentation/date/player/refresh state and overlay lifecycle. Prefer installed capabilities; record consequential host/dependency choices in an ADR if needed. Keep later parent stages separate.
-- [ ] Implement quiet change-only refresh, stale-response/access guards and pending-new-item behavior with focused controller tests.
-- [ ] Implement full-width history, compact keyed records and patient/caregiver selection rules on native/browser, preserving active-call controls.
-- [ ] Implement detail overlay/focus/scroll restoration, simplified header and capability-aware Reply menu with existing record/preview/send behavior.
-- [ ] Implement media-surface play/pause, scrubbers/timing and interruption-safe seek/playback; avoid history redraws from progress updates.
-- [ ] Implement date-picker overlays/draft range/validation and server-compatible Pacific filtering.
+- [x] Create an isolated feature worktree from current canonical history. Keep canonical on `feat/webrtc-poc`; record actual app source and installed baseline.
+- [x] Define the shared presentation/date/player/refresh state and overlay lifecycle. Prefer installed capabilities; record consequential host/dependency choices in an ADR if needed. Keep later parent stages separate.
+- [x] Implement quiet change-only refresh, stale-response/access guards and pending-new-item behavior with focused controller tests.
+- [x] Implement full-width history, compact keyed records and patient/caregiver selection rules on native/browser, preserving active-call controls.
+- [x] Implement detail overlay/focus/scroll restoration, simplified header and capability-aware Reply menu with existing record/preview/send behavior.
+- [x] Implement media-surface play/pause, scrubbers/timing and interruption-safe seek/playback; avoid history redraws from progress updates.
+- [x] Implement date-picker overlays/draft range/validation and server-compatible Pacific filtering.
 - [ ] Extend automated acceptance, capture actual results, then publish browser changes between calls and submit/check both authorized bundled previews. Update install links/QR and owner device procedures.
 - [ ] Update state/work log/evidence/tools as applicable. Record phone outcomes separately; proceed to parent Stage B only with this slice's actual outcome and remaining gates explicit.
 
@@ -136,4 +136,4 @@ No data rollback is expected. Restore the prior schema-compatible browser assets
 
 ## Handoff
 
-Plan written; all discussed UI changes, including the new date picker, are consolidated here. No application/schema/service/dependency/build changes were made for planning. Next on an implementation request: create the isolated worktree and start the quiet-refresh/shared state work, then deliver the overlay/layout/player/date-picker slice with native previews and explicit device gates. [0015](0015-unified-communication-workspace.md) remains the parent for staff workflow and later processing; this document is the sole active implementation checklist for its UI follow-up.
+Source is implemented in `/home/ubuntu/phoneapp-stage16` / `feat/history-usability`, with ADR 0012 and shared calendar/seek/quiet-refresh checks. Finish final browser/media/control verification, canonical browser rollout and both EAS previews/package checks; record actual owner hardware outcomes separately. [0015](0015-unified-communication-workspace.md) remains the parent for staff workflow and later processing; this document is the sole active implementation checklist for its UI follow-up.

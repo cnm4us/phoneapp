@@ -12,6 +12,7 @@ import { SettingsPanel } from './src/call/SettingsPanel';
 import { AudioOutputControls } from './src/call/AudioOutputControls';
 import { nativeAccounts,watchNativeMedia,calling } from './src/accounts/native';
 import { AccountClient } from './src/accounts/client';
+import {HistoryOverlayProvider} from './src/communications/Overlay';
 import { AccountPanel } from './src/accounts/AccountPanel';
 import { IncomingAlerts } from './src/call/incoming-alert';
 import { nativeIncomingAlertDriver } from './src/call/native-incoming-alert';
@@ -25,6 +26,7 @@ export default function App() {
 }
 
 function CallScreen() {
+  const historyReading=useRef(false);
   const session = useRef(new CallSession()).current;
   const [call, setCall] = useState(session.state);
   const [base, setBase] = useState(process.env.EXPO_PUBLIC_SIGNALING_URL || 'https://phoneapp.bawebtech.com');
@@ -101,7 +103,7 @@ function CallScreen() {
   };
   const duration = `${Math.floor(call.seconds / 60)}:${String(call.seconds % 60).padStart(2, '0')}`;
   const closeSettings = () => { Keyboard.dismiss(); setSettingsOpen(false); };
-  return <SafeAreaView style={styles.page}>
+  return <HistoryOverlayProvider suppressed={settingsOpen||active||Boolean(incomingCall)} reading={historyReading}><SafeAreaView style={styles.page}>
     <StatusBar style="light" />
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
       <View style={styles.page} accessibilityElementsHidden={settingsOpen} importantForAccessibility={settingsOpen ? 'no-hide-descendants' : 'auto'}>
@@ -116,8 +118,8 @@ function CallScreen() {
           audioOutput={call.audioOutput} speaker={() => session.toggleSpeaker()}
           settings={() => { Keyboard.dismiss(); setSettingsOpen(true); }}
           mute={() => {session.mute();const id=accounts.state.current?.id;if(id&&Platform.OS==='ios')void calling?.setMuted?.(id,session.state.muted);}} camera={() => session.toggleCamera()} hangup={() => accountState.current ? void accounts.hangup() : session.end()}
-        /> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.row}>
+        /> : <ScrollView onScroll={e=>{historyReading.current=e.nativeEvent.contentOffset.y>30;}} scrollEventThrottle={100} contentContainerStyle={[styles.content,accountState.account&&{paddingHorizontal:0}]} keyboardShouldPersistTaps="handled">
+          <View style={[styles.row,accountState.account&&{paddingHorizontal:18}]}>
             <Text style={styles.title}>Phoneapp</Text>
             <Button title="⚙ Settings" accessibilityLabel="Open Phoneapp settings" onPress={() => { Keyboard.dismiss(); setSettingsOpen(true); }} />
           </View>
@@ -176,7 +178,7 @@ function CallScreen() {
       </SettingsPanel>}
       <IncomingCallPrompt call={incomingCall} busy={accountState.busy} answer={()=>incomingAction('answer')} decline={()=>incomingAction('decline')} />
     </KeyboardAvoidingView>
-  </SafeAreaView>;
+  </SafeAreaView></HistoryOverlayProvider>;
 }
 
 const styles = StyleSheet.create({

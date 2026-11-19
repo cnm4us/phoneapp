@@ -22,3 +22,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0010 Video messages](0010-video-messages.md): additive mixed-media history, native camera/player ownership, private posters and bounded video processing.
 
 - [0011 Communication workspace](0011-communication-workspace.md): immutable source wrappers, preserved audiences, filtered history/detail and Stage A compatibility.
+
+- [0012 History overlays, quiet refresh and playback controls](0012-history-overlay-and-playback.md).

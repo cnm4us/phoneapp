@@ -29,7 +29,7 @@ class PhoneappCallingModule:Module(){
  private fun context()=appContext.reactContext?:error("Native call context unavailable")
  private fun identity()=DeviceIdentity.get(context())
  private fun json(v:Any?):Any?=when(v){is JSONObject->v.keys().asSequence().associateWith{json(v.get(it))};is JSONArray->(0 until v.length()).map{json(v.get(it))};JSONObject.NULL->null;else->v}
- private fun operation(promise:Promise,block:()->JSONObject){identity().queue.execute{try{promise.resolve(json(block()))}catch(e:Exception){promise.reject(if(e is CallHttpError&&e.status==401)"UNAUTHORIZED" else "CALL_REQUEST_FAILED",if(e is CallHttpError)e.message?:"Call request failed" else "Could not complete the call request. Check connection or enrollment.",null)}}}
+ private fun operation(promise:Promise,block:()->JSONObject){identity().queue.execute{try{promise.resolve(json(block()))}catch(e:Exception){promise.reject(if(e is CallHttpError&&e.status==401)"UNAUTHORIZED" else if(e is CallHttpError&&e.status in listOf(403,404))"HTTP_${e.status}" else "CALL_REQUEST_FAILED",if(e is CallHttpError)e.message?:"Call request failed" else "Could not complete the call request. Check connection or enrollment.",null)}}}
  override fun definition()=ModuleDefinition{
   Name("PhoneappCalling")
   Constant("version"){1}

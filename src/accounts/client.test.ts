@@ -32,3 +32,5 @@ test('a stale browser 401 cannot clear a more recently restored account',async()
  globalThis.fetch=async input=>String(input).endsWith('/pending')?new Promise(r=>complete=r):new Response(JSON.stringify(String(input).endsWith('/browser/session')?{...enrolled,token:'browser-session'}:String(input).endsWith('/dashboard')?{account:enrolled.account,patients:[],calls:[]}:{ok:true}),{status:200});
  try{await client.restore();const pending=client.request('/pending');await client.signOut();await client.restore();complete(new Response(JSON.stringify({error:'Old session revoked'}),{status:401}));await assert.rejects(pending);assert.equal(client.state.account?.id,enrolled.account.id);}finally{client.dispose();globalThis.fetch=original;}
 });
+
+test('native HTTP access failures retain their status for safe quiet-refresh handling',async()=>{const f=fixture();try{assert(f.client.native);f.client.native.request=async()=>{throw Object.assign(new Error('Communication unavailable'),{code:'HTTP_404'});};await assert.rejects(f.client.request('/communications/private'),(e:any)=>e.status===404);assert.equal(f.client.state.account,undefined);}finally{f.client.dispose();}});

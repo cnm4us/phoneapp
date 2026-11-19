@@ -1,5 +1,5 @@
-import {useEffect,useState} from 'react';
-import {AppState,Platform} from 'react-native';
+import {useEffect,useRef,useState} from 'react';
+import {AppState,Button,Platform,View} from 'react-native';
 import {CameraView,Camera} from 'expo-camera';
 import {createVideoPlayer,VideoView,type VideoPlayer} from 'expo-video';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -29,7 +29,7 @@ export function nativeMessageMedia(){
  return Object.assign(adapter,{prepareVideo,cameraOpen:()=>visual.cameraOpen,switchCamera:()=>{if(!recording){visual.facing=visual.facing==='front'?'back':'front';ready=false;notify();}},getVisual:()=>visual,subscribeVisual:(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};},attachCamera:(ref:CameraView|null)=>{camera=ref;},cameraReady:()=>{ready=true;},closeCamera:release});
 }
 export type NativeMessageMedia=ReturnType<typeof nativeMessageMedia>;
-export function NativeVideoSurface({media}:{media:NativeMessageMedia}){
- const [state,setState]=useState(media.getVisual());useEffect(()=>media.subscribeVisual(()=>setState(media.getVisual())),[media]);
- return <>{state.cameraOpen&&<CameraView key={state.facing} ref={ref=>media.attachCamera(ref)} onCameraReady={media.cameraReady} style={{width:'100%',height:300}} mode="video" facing={state.facing} videoQuality="720p" videoBitrate={2000000} mute={false} mirror={false}/>} {state.player&&<VideoView style={{width:'100%',height:340}} player={state.player} contentFit="contain" nativeControls fullscreenOptions={{enable:true}} allowsPictureInPicture={false}/>}</>;
+export function NativeVideoSurface({media,controls=true}:{media:NativeMessageMedia;controls?:boolean}){
+ const videoRef=useRef<VideoView>(null);const [state,setState]=useState(media.getVisual());useEffect(()=>media.subscribeVisual(()=>setState(media.getVisual())),[media]);
+ return <>{state.cameraOpen&&<CameraView key={state.facing} ref={ref=>media.attachCamera(ref)} onCameraReady={media.cameraReady} style={{width:'100%',height:300}} mode="video" facing={state.facing} videoQuality="720p" videoBitrate={2000000} mute={false} mirror={false}/>} {state.player&&<View><VideoView ref={videoRef} style={{width:'100%',height:340}} player={state.player} contentFit="contain" nativeControls={controls} fullscreenOptions={{enable:true}} allowsPictureInPicture={false}/>{!controls&&<View style={{position:'absolute',right:8,top:8}}><Button title="Full screen" onPress={()=>void videoRef.current?.enterFullscreen()}/></View>}</View>}</>;
 }

@@ -11,7 +11,7 @@ export function AccountPanel({ client, state, showIncoming = true }: {client:Acc
   const unified=Boolean(state.dashboard?.communicationWorkspace&&supportsCommunicationWorkspace);
   const incoming=state.dashboard?.calls.find(row=>row.canAnswer);
   return <View style={styles.stack}>
-    <Text style={styles.title}>{state.account ? state.account.displayName : 'Connect to your care team'}</Text>
+    <Text style={[styles.title,unified&&{paddingHorizontal:18}]}>{state.account ? state.account.displayName : 'Connect to your care team'}</Text>
     <Text style={styles.note}>Synthetic test accounts · {client.native?'Native calling test':'Keep this screen open'} · Recording off</Text>
     {!state.account ? <View style={styles.card}>
       <Text style={styles.text}>Paste the one-time enrollment code issued for this device’s test account.</Text>

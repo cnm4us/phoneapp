@@ -47,7 +47,7 @@
     "test:video-messages": "npm run build:web && tsx --test server/video-messages.test.ts",
     "smoke:video-messages": "tsx scripts/smoke-video-messages.ts",
     "test:communications": "npm run build:web && tsx --test server/communications.test.ts",
-    "test:communication-client": "tsx --test src/communications/controller.test.ts",
+    "test:communication-client": "tsx --test src/communications/*.test.ts",
     "communications:reconcile": "tsx scripts/reconcile-communications.ts",
     "smoke:communications": "tsx scripts/smoke-communications.ts"
   },

@@ -860,3 +860,22 @@ footer {
 .communication-filters label { display:flex; flex-direction:column; gap:.3rem; max-width:100%; }
 .communication-filters select, .communication-filters input { max-width:100%; padding:.6rem; border-radius:.5rem; border:1px solid #354c5b; background:#142532; color:#edf5f7; }
 .communication-filters form { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+
+.communication-toolbar{min-height:48px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.communication-record{display:grid;text-align:left;gap:5px;width:100%;padding:16px;border:0;border-top:1px solid #354c5b;background:#142532;color:#dbe7ed;font:inherit;overflow-wrap:anywhere;cursor:pointer}
+.communication-record-title{display:flex;justify-content:space-between;gap:16px;font-size:19px}
+.communication-dialog{padding:0;border:1px solid #354c5b;color:#dbe7ed;background:#142532;width:min(100%,900px);max-width:100%;max-height:100dvh;height:90dvh;overflow:hidden;border-radius:12px}
+.communication-dialog[open]{display:flex;flex-direction:column}.communication-dialog::backdrop,.communication-date::backdrop{background:#000a}
+.communication-header{display:flex;justify-content:space-between;gap:12px;padding:18px;border-bottom:1px solid #354c5b;flex-shrink:0}.communication-header h2{margin:0}.communication-header p{margin-bottom:0}
+.communication-actions{display:grid;gap:8px;align-content:start}.communication-actions button{min-width:48px;min-height:44px}.communication-reply{padding:12px;display:flex;flex-wrap:wrap;gap:8px}.communication-reply[hidden]{display:none}
+.communication-body{overflow:auto;padding:18px;overflow-wrap:anywhere;flex:1}.communication-body>p{margin-top:0}
+.communication-date{background:#142532;color:#edf5f7;padding:22px;border:1px solid #354c5b;border-radius:12px;max-width:100%;max-height:90dvh;overflow:auto}.communication-date label{display:grid;gap:8px;margin-bottom:12px}.communication-date select{padding:12px;font:inherit}.communication-date button{margin:4px}
+.media-controls{padding:10px;background:#07121be6;color:#edf5f7;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.media-controls input{width:100%;min-height:32px;accent-color:#5ce1c2}.media-play{min-width:48px;min-height:44px;border:0;background:transparent;color:#fff;font-size:24px;cursor:pointer}
+@media(max-width:600px){.communication-dialog{width:100%;height:100dvh;max-width:100%;max-height:100dvh;margin:0;border-radius:0;border-width:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}#audio-messages{border-radius:0}}
+.communication-video-frame{position:relative;background:#000;min-height:220px}.communication-video-frame .media-controls{position:absolute;bottom:0;left:0;right:0}.communication-video-frame video{min-height:300px}
+
+@media(max-width:600px){.account-session .workspace{padding-left:0;padding-right:0;width:100%}.account-session #accounts{margin-left:18px;margin-right:18px}.account-session #audio-messages{padding:18px;width:100%;box-sizing:border-box;background:#142532}}
+
+.communication-video-frame video{max-height:45dvh!important;min-height:220px}
+
+.communication-actions button{min-width:72px;white-space:nowrap}

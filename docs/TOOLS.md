@@ -306,7 +306,7 @@ Private development snapshot/config/media and public rollout logs: canonical `ar
 
 Owner iPhone formats: video input may contain one opaque `data`/`mebx` camera metadata track in addition to H.264/AAC. The backend explicitly permits only that known extra track, drops it during normalization and verifies two output streams; unknown extra tracks remain denied. The video integration suite generates a synthetic three-track regression without committing owner captures. Two existing failed owner uploads were privately checksum-verified/requeued and confirmed in actual Provider history after fix 3f3879e. Targeted recovery metadata/results are under private rollout artifacts; no general arbitrary-message requeue CLI was added.
 
-## Planned communication workspace and AI tooling (0015)
+## Communication workspace and future AI tooling (0015)
 
 [Plan 0015](plans/0015-unified-communication-workspace.md), Stage A, adds:
 

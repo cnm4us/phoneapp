@@ -1,6 +1,6 @@
 # 0015 Unified communication workspace, transcripts and clinical draft notes
 
-Status: Stage A implemented in the isolated `feat/communication-workspace` worktree; development rollout and native previews in progress. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
+Status: Stage A implemented/deployed to development; native previews/package checks and owner device acceptance in progress. Updated: 2026-11-19 UTC. The owner requested implementation after planning. Stages B–G remain planned. [Stage A evidence](../testing/2026-11-19-communication-workspace.md), [ADR 0011](../decisions/0011-communication-workspace.md).
 
 ## Outcome and scope
 
@@ -89,7 +89,8 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 - [x] Implement one provider overview and patient-specific timeline/detail, replacing duplicate history sections only after existing information/controls have a home. Preserve active incoming Answer/Decline/End/multi-device state outside archive filters and retain calls whose recording/transcript is Off.
 - [x] Add format/interaction/channel/direction metadata, patient/recipient display and stable authorized filters/grouping. Unknown/future channels are read-only placeholders, not functioning telephone/SMS buttons.
 - [x] Keep old API/native history paths until updated clients are installed; add version/capability negotiation for the workspace. Compare old/new authorized source counts, IDs and ordering before defaulting to the new UI. No mandatory re-enrollment.
-- [ ] Verify native/browser layouts, empty/error/offline/reload states and existing call/audio/video/receipt-free history regressions. Document exact Stage A outcome before proceeding.
+- [x] Verify browser layout (including 360px detail), empty/error/client stale-response/reload states and existing call/audio/video/receipt-free history regressions; native exports/Doctor/archive and iPhone package pass. Document actual Stage A outcome in evidence.
+- [ ] Complete Android build/package verification and owner iPhone/Android layout/media/call handoff. Keep hardware results separate from automated checks.
 
 ### B. Staff workflow, receipts and internal discussion
 
@@ -135,7 +136,7 @@ Each stage is independently testable. Create a focused follow-up plan when a sta
 
 ## Data and configuration
 
-Stage A adds **0007_communication_registry.sql**, the append-only registry, `/api/communications` contracts and `ENABLE_COMMUNICATION_WORKSPACE` (default false). It is applied to the disposable test target; development is still 0006 until recorded rollout. Other additions below remain proposed. Use incremental additive migrations per stage, exact `phoneapp_test` rehearsal and preservation/backfill recovery before `phoneapp` application. No applied migration or source ID is rewritten. Plan final table/index/FK details in the implementation ADR.
+Stage A adds **0007_communication_registry.sql**, the append-only registry, `/api/communications` contracts and `ENABLE_COMMUNICATION_WORKSPACE` (default false). It is applied to test and development after snapshot/preservation/grant verification. Other additions below remain proposed. Use incremental additive migrations per stage, exact `phoneapp_test` rehearsal and preservation/backfill recovery before `phoneapp` application. No applied migration or source ID is rewritten. Plan final table/index/FK details in the implementation ADR.
 
 | Proposed addition | Persistence contract |
 | --- | --- |
@@ -155,7 +156,7 @@ Stage A source and automated checks are implemented; see the [evidence](../testi
 
 | Scenario | Required evidence / exit criterion | Current result |
 | --- | --- | --- |
-| Existing-source consolidation | Calls/media appear exactly once with preserved IDs, outcomes, media and source-specific audience; old clients still work; active call controls survive filters | Local DB/API/browser pass; public rollout pending |
+| Existing-source consolidation | Calls/media appear exactly once with preserved IDs, outcomes, media and source-specific audience; old clients still work; active call controls survive filters | Local DB/API/browser and public 34-source parity/reload/Range checks pass |
 | Overview/patient grouping and filters | Authorized all-patient overview plus patient timeline, accessible type icons, stable pagination/counts/date boundaries, explicit text-thread expansion | Existing call/media filters and Pacific DST pass; text threads remain Stage C |
 | Work and viewer semantics | Two staff accounts can listen/assign/reply/resolve independently; stale writes rejected, failed reply does not resolve, new incoming reopens, historical receipt is unknown | Not run |
 | Internal versus shared audience | Patient/caregiver cannot obtain internal comments/notes/work records via list/detail/media/export or hidden routes; reassignment/revocation and derived source access remain enforced | Not run |
@@ -165,7 +166,7 @@ Stage A source and automated checks are implemented; see the [evidence](../testi
 | AI clinical draft notes | Pin text/transcript versions, trace claims to source, validate same-patient grouping, human review/correction/staleness and prompt-injection resistance; live output evaluated against synthetic source | Not run; service/model unselected |
 | Staff time evidence | Source-linked manual/measured/reviewed entries preserve original seconds, actor and overlap history; no time credit from playback receipt, clip duration or job wall time | Not run |
 | Live-call/telephone/SMS integration | Consented two-sided capture or real provider callback/media evidence, role/offset/partial/off handling, routing/matching/idempotency and physical calling regression | Not run; later integration dependencies |
-| Existing regressions / deployment | TypeScript, relevant current call/audio/video/client/account/native/browser-session/DB suites sequentially where shared; native exports/Doctor/package and physical checks when needed; project-only rollout between calls | Not rerun for planning |
+| Existing regressions / deployment | TypeScript, relevant current call/audio/video/client/account/native/browser-session/DB suites sequentially where shared; native exports/Doctor/package and physical checks when needed; project-only rollout between calls | Local suites, exports/Doctor and public rollout pass; native package/device gates tracked in evidence |
 | Plan integrity | `python3 scripts/check_project.py`, `git diff --check` | Pass; documentation/whitespace only |
 
 Use current scripts from [testing](../TESTING.md) for each affected area. Multi-staff fixtures remain in the disposable target. Tests must cover failed/reordered/retried jobs, duplicate source import, partial backfill, access revocation during processing, media expiry while queued, source corrections during note generation, staff race/conflict and source/derived cross-patient linking. Real provider evaluation and phone controls remain separate from mocks/compilation. Explicit public smoke actions use synthetic data and must not send unsolicited calls/messages to owner devices.
@@ -178,4 +179,4 @@ Roll out each stage behind its own gate. Hide/disable the new workspace or proce
 
 ## Handoff
 
-Stage A is implemented in `/home/ubuntu/phoneapp-stage15` with ADR 0011, registry migration and passing local workspace/media/call regressions. Finish the recorded development rollout, native preview/package checks and owner device handoff before marking Stage A released. Subsequent stage work follows the evidence gates above; transcription/model choice, source retention beyond the POC, future patient note publication, practice timezone and live-call media design remain explicit decisions rather than reasons to delay the first UI/workspace slice. Preserve [current state](../PROJECT_STATE.md) and existing physical acceptance gates.
+Stage A is implemented in `/home/ubuntu/phoneapp-stage15` with ADR 0011, registry migration and passing local workspace/media/call regressions. Development rollout is verified with all 34 authorized sources retained exactly once and all 13 public call cases passing. Finish native preview/package checks and owner device handoff; retain physical gates explicitly. Subsequent stage work follows the evidence gates above; transcription/model choice, source retention beyond the POC, future patient note publication, practice timezone and live-call media design remain explicit decisions rather than reasons to delay the first UI/workspace slice. Preserve [current state](../PROJECT_STATE.md) and existing physical acceptance gates.

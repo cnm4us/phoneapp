@@ -416,3 +416,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner specifies future Media/Transcript/Summary selection near the top of detail. Added to the pending UI scope: remove the bottom Transcript heading/status now; introduce the top selector with actual artifacts, defaulting to Media and preserving source/role access.
 - Plan/state updated and documentation/whitespace checks pass. No UI/runtime/build changes are claimed in this scope discussion.
+
+
+## 2026-11-19 Patient versus caregiver patient-selection discussion
+
+- Owner questions redundant All patients/Patient A controls and suggests a caregiver supporting two elders. Recommended hiding the patient selector for one authorized patient, retaining identity and All/Calls/Messages; use a one-patient-at-a-time switcher for multiple authorized patient records, while staff retain an overview. Caregivers use their own identity; replies remain tied to the source patient.
+- Verified current schema distinguishes self/caregiver patient bindings and backend enforces active authorized relationships. This does not claim caregiver onboarding or multi-patient UI acceptance. Added the proposal to plan/state; no runtime/build changes. Documentation/whitespace checks pass.

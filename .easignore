@@ -19,6 +19,7 @@ docs/
 server/
 scripts/*
 !scripts/patch-expo-audio.mjs
+!scripts/patch-expo-video.mjs
 web/
 playwright.config.ts
 test-results/

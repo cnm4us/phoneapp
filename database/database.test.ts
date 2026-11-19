@@ -40,7 +40,7 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
   loadConfiguration();
   const db = await connect('test', 'migration');
   const [locked] = await db.query("SELECT GET_LOCK('phoneapp:test-suite',0) AS acquired");
-  assert.equal(Number(locked.acquired), 1, 'Another DB test is active');
+  if(Number(locked.acquired)!==1){await db.end();assert.fail('Another DB test is active');}
   try {
     await t.test('clean install and v1/v2/v3 upgrades preserve directory, calls and transcripts', async () => {
       await resetDisposable(db);
@@ -54,7 +54,9 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       const installation=randomUUID(),proof='a'.repeat(64);
       await db.query("INSERT INTO devices(id,user_id,installation_id,platform,app_identifier) VALUES(?,?,?,'ios','synthetic-upgrade')",[installation,providerId,randomUUID()]);
       await db.query('INSERT INTO device_credentials(token_hash,device_id,expires_at) VALUES(?,?,?)',[proof,installation,'2099-01-01']);
-      assert.deepEqual(await migrate(db), ['0005_audio_messages.sql']);
+      assert.deepEqual(await migrate(db,{through:'0005_audio_messages.sql'}), ['0005_audio_messages.sql']);
+      const legacy=randomUUID(),asset=randomUUID()+'.m4a';await db.query("INSERT INTO audio_messages(id,patient_id,sender_id,recipient_staff_id,sender_label,sender_role,request_key,state,output_key,duration_ms,created_at,published_at,expires_at) VALUES(?,?,?,?,'Synthetic Provider','practitioner',?,'available',?,1000,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),'2099-01-01')",[legacy,patientId('A'),providerId,providerId,randomUUID(),asset]);
+      assert.deepEqual(await migrate(db), ['0006_video_messages.sql']);const [legacyMessage]=await db.query('SELECT id,media_kind,output_key,duration_ms FROM audio_messages WHERE id=?',[legacy]);assert.equal(legacyMessage.id,legacy);assert.equal(legacyMessage.media_kind,'audio');assert.equal(legacyMessage.output_key,asset);assert.equal(legacyMessage.duration_ms,1000);
       const [credential]=await db.query('SELECT token_hash FROM device_credentials WHERE device_id=?',[installation]);assert.equal(credential.token_hash,proof);
       const [preserved]=await db.query('SELECT id FROM transcript_versions WHERE id=?',[transcript]);
       assert.equal(preserved.id,transcript);
@@ -153,14 +155,14 @@ test('isolated MariaDB schema, migrations, and domain integrity', async t => {
       const directory = await mkdtemp(join(tmpdir(), 'phoneapp-migration-'));
       try {
         await cp(migrationDirectory, directory, { recursive: true });
-        await writeFile(join(directory, '0006_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
+        await writeFile(join(directory, '0007_failure.sql'), 'CREATE TABLE recovery_probe (id INT PRIMARY KEY);\n-- migrate:split\nTHIS IS INTENTIONALLY INVALID SQL;');
         await assert.rejects(migrate(db, { directory }), rejected('ER_PARSE_ERROR'));
         assert.equal((await history(db)).at(-1)?.state, 'failed');
         await assert.rejects(migrate(db, { directory }), /Unfinished migration/);
         const [probe] = await db.query("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='recovery_probe'");
         assert.equal(Number(probe.n), 1, 'DDL was committed before failure');
         await resetDisposable(db);
-        assert.equal((await migrate(db)).length, 5);
+        assert.equal((await migrate(db)).length, 6);
         await seed(db);
         const [counts] = await db.query('SELECT (SELECT COUNT(*) FROM calls) AS calls, (SELECT COUNT(*) FROM transcription_jobs) AS jobs, (SELECT COUNT(*) FROM recording_assets) AS assets');
         assert.deepEqual([counts.calls, counts.jobs, counts.assets].map(Number), [0, 0, 0]);

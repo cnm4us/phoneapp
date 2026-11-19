@@ -1,33 +1,42 @@
 import type {AccountClient,AccountState} from '../src/accounts/client';
 import {MessageController} from '../src/messages/controller';
-import {browserMessageAudio} from './message-audio';
+import {browserMessageMedia} from './message-media';
 import {ownMessageAudio} from '../src/messages/focus';
 export function messagePanel(client:AccountClient,root:HTMLElement){
- const controller=new MessageController(location.origin,(path,body)=>client.request(path,body),browserMessageAudio());let recipient='',selected='';
+ const media=browserMessageMedia(),controller=new MessageController(location.origin,(path,body)=>client.request(path,body),media,true);
+ const content=document.createElement('div'),mediaSlot=document.createElement('div');mediaSlot.append(media.surface);root.replaceChildren(mediaSlot,content);let recipient='',selected='',identity='';
+ const posters=new Map<string,string>(),pending=new Set<string>();let posterEpoch=0;const clearPosters=()=>{posterEpoch++;for(const url of posters.values())URL.revokeObjectURL(url);posters.clear();pending.clear();};
  const node=(tag:string,text:string)=>{const n=document.createElement(tag);n.textContent=text;return n;};
  const button=(text:string,action:()=>void,disabled=false)=>{const b=document.createElement('button');b.className='button secondary';b.textContent=text;b.disabled=disabled;b.onclick=action;return b;};
  const blocked=()=>Boolean(client.state.current||client.state.dashboard?.calls.some(c=>c.canAnswer));
+ const cameraAction=async(action:()=>Promise<void>|void)=>{try{await action();render();}catch(e){const p=node('p',e instanceof Error?e.message:'Camera unavailable.');p.setAttribute('role','alert');content.append(p);}};
+ const thumbnail=async(id:string)=>{if(pending.has(id)||posters.has(id))return;pending.add(id);const captured=posterEpoch;try{const grant=await client.request<{token:string;path:string}>(`/messages/v2/${id}/thumbnail`,{});const r=await fetch(location.origin+grant.path,{headers:{Authorization:'Media '+grant.token}});if(!r.ok)throw new Error('Poster unavailable');const blob=await r.blob();if(blob.size>262144)throw new Error('Poster too large');if(captured===posterEpoch){posters.set(id,URL.createObjectURL(blob));render();}}catch{}finally{pending.delete(id);}};
  const render=()=>{
-  const s=controller.state;root.hidden=!client.state.account||!s.enabled;root.replaceChildren();if(root.hidden)return;
-  root.className='account-stack';root.append(node('h2','Communication history'),node('p','Audio messages · Available for 7 days · Call recording remains off.'));
-  for(const p of s.patients)root.append(button((s.selected===p.id?'✓ ':'')+p.displayName,()=>void controller.select(p.id),s.busy||s.recording));
-  const isPatient=['patient','caregiver'].includes(client.state.account!.role);const recipients=s.timeline?.recipients||[];if(selected!==s.selected){selected=s.selected;recipient='';}const target=recipient||recipients[0]?.id;
-  if(isPatient&&recipients.length>1)for(const r of recipients)root.append(button((target===r.id?'✓ ':'')+r.displayName,()=>{recipient=r.id;render();}));
-  const busy=s.busy||blocked();if(blocked())root.append(node('p','Finish the call before recording or playing a message.'));
-  if(s.recording)root.append(button('Stop recording',()=>void controller.stop(),s.busy));else root.append(button(s.draft?'Re-record audio message':'Record audio message',()=>void controller.start(),busy||!s.selected||isPatient&&!target));
-  if(s.draft&&!s.recording)root.append(button('Preview recording',()=>void controller.preview(),busy),button('Send audio message',()=>void controller.send(target),busy),button('Discard recording',()=>void controller.discard(),s.busy));
-  if(s.busy)root.append(node('p','Working…'));if(s.notice)root.append(node('p',s.notice));if(s.error){const e=node('p',s.error);e.setAttribute('role','alert');root.append(e);}
-  const pos=controller.audio.position();if(pos.duration>0)root.append(button('Pause playback',()=>controller.audio.pause()),button('Resume playback',()=>void controller.audio.resume()),button('Back 15 seconds',()=>void controller.audio.seek(controller.audio.position().current-15)),button('Forward 15 seconds',()=>void controller.audio.seek(controller.audio.position().current+15)));
-  if(!s.timeline?.entries.length)root.append(node('p','Your calls and audio messages will appear here.'));
-  for(const row of s.timeline?.entries||[]){const article=node('article','');article.className='account-card';article.dataset.communicationId=row.id;article.dataset.communicationState=row.state;article.append(node('h3',(row.kind==='call'?'Call':'Audio message')+' · '+row.senderLabel),node('p',new Date(row.createdAt).toLocaleString()+' · '+row.state));
-   if(row.kind==='message'){article.append(node('p',(row.durationMs===null?'Processing duration':Math.ceil(row.durationMs/1000)+' seconds')+' · Expires '+new Date(row.expiresAt).toLocaleDateString()));if(row.state==='available'){article.append(button('Play audio message',()=>void controller.play(row.id),busy));if(isPatient)article.append(button('Record reply',()=>{recipient=row.recipientStaffId;void controller.start();},busy));}if(row.state==='failed')article.append(node('p','Recording unavailable. '+(row.failureCode||'')));}
-   else article.append(node('p',`Observed connection ${row.observedSeconds}s · Recording/transcript off`));root.append(article);
+  const s=controller.state;root.hidden=!client.state.account||!s.enabled;content.replaceChildren();if(root.hidden)return;
+  root.className='account-stack';content.className='account-stack';content.append(node('h2','Communication history'),node('p',(s.videoEnabled?'Audio and video messages':'Audio messages')+' · Available for 7 days · Call recording remains off.'));
+  for(const p of s.patients)content.append(button((s.selected===p.id?'✓ ':'')+p.displayName,()=>{clearPosters();void controller.select(p.id);},s.busy||s.recording||s.draft));
+  const isPatient=['patient','caregiver'].includes(client.state.account!.role),recipients=s.timeline?.recipients||[];if(selected!==s.selected){selected=s.selected;recipient='';}const target=recipient||recipients[0]?.id;
+  if(isPatient&&recipients.length>1)for(const r of recipients)content.append(button((target===r.id?'✓ ':'')+r.displayName,()=>{recipient=r.id;render();},s.busy||s.recording||s.draft));
+  const busy=s.busy||blocked(),cannotRecord=busy||!s.selected||isPatient&&!target;if(blocked())content.append(node('p','Finish the call before recording or playing a message.'));
+  if(s.recording){const elapsed=node('p','');elapsed.dataset.recordingTime='true';content.append(elapsed,button('Stop recording',()=>void controller.stop(),s.busy));}
+  else{
+   content.append(button(s.draft?'Re-record audio message':'Record audio message',()=>void controller.start(),cannotRecord));
+   if(s.videoEnabled){if(media.cameraOpen())content.append(button('Switch camera',()=>void cameraAction(media.switchCamera),busy),button('Record video message',()=>void controller.start('video'),cannotRecord),button('Close camera',()=>void cameraAction(media.closeCamera),busy));else content.append(button(s.draft?'Re-record video message':'Open video camera',()=>void controller.prepare('video',media.prepareVideo),cannotRecord));}
   }
-  if(s.timeline?.next)root.append(button('Load earlier communications',()=>void controller.more(),s.busy));
+  if(s.draft&&!s.recording)content.append(button('Preview recording',()=>void controller.preview(),busy),button('Send '+s.mediaKind+' message',()=>void controller.send(target),busy),button('Discard recording',()=>void controller.discard(),s.busy));
+  if(s.busy)content.append(node('p',s.progress===null?'Working…':`Transferring ${Math.min(100,Math.round(s.progress*100))}%`),button('Cancel transfer',()=>void controller.interrupt()));if(s.notice)content.append(node('p',s.notice));if(s.error){const e=node('p',s.error);e.setAttribute('role','alert');content.append(e);}
+  const pos=media.position();if(pos.duration>0)content.append(button('Pause playback',()=>media.pause(),busy),button('Resume playback',()=>void media.resume(),busy),button('Back 15 seconds',()=>void media.seek(media.position().current-15),busy),button('Forward 15 seconds',()=>void media.seek(media.position().current+15),busy));
+  if(!s.timeline?.entries.length)content.append(node('p','Your calls and audio/video messages will appear here.'));
+  let previews=0;
+  for(const row of s.timeline?.entries||[]){const article=node('article','');article.className='account-card';article.dataset.communicationId=row.id;article.dataset.communicationState=row.state;const kind=row.kind==='message'&&row.mediaKind==='video'?'video':'audio';article.append(node('h3',(row.kind==='call'?'Call':kind==='video'?'Video message':'Audio message')+' · '+row.senderLabel),node('p',new Date(row.createdAt).toLocaleString()+' · '+row.state));
+   if(row.kind==='message'){article.append(node('p',(row.durationMs===null?'Processing duration':Math.ceil(row.durationMs/1000)+' seconds')+' · Expires '+new Date(row.expiresAt).toLocaleDateString()));if(row.state==='available'){if(kind==='video'&&row.hasThumbnail&&previews++<6){const cached=posters.get(row.id);if(cached){const image=document.createElement('img');image.alt='Video message preview';image.src=cached;image.style.cssText='width:100%;max-width:320px;max-height:240px;object-fit:contain';article.append(image);}else void thumbnail(row.id);}article.append(button('Play '+kind+' message',()=>void controller.play(row.id),busy));if(isPatient)article.append(button('Record reply',()=>{recipient=row.recipientStaffId;void controller.start();},busy||s.draft||s.recording));}else{const cached=posters.get(row.id);if(cached){URL.revokeObjectURL(cached);posters.delete(row.id);}}if(row.state==='failed')article.append(node('p','Recording unavailable. '+(row.failureCode||'')));}
+   else article.append(node('p',`Observed connection ${row.observedSeconds}s · Recording/transcript off`));content.append(article);
+  }
+  if(s.timeline?.next)content.append(button('Load earlier communications',()=>void controller.more(),s.busy));
  };
  controller.subscribe(render);ownMessageAudio(()=>controller.interrupt());
- client.subscribe((s:AccountState)=>{void controller.adopt(s.account?.id||'',blocked());});
- const timer=setInterval(()=>{if(controller.state.recording&&controller.audio.hasDraft())void controller.stop();if(document.visibilityState==='visible')void controller.refresh();},4000);
- document.addEventListener('visibilitychange',()=>{if(document.hidden)void controller.interrupt();else void controller.refresh();});window.addEventListener('pagehide',()=>{clearInterval(timer);controller.dispose();});
+ client.subscribe((s:AccountState)=>{if(identity!==(s.account?.id||'')){identity=s.account?.id||'';clearPosters();}void controller.adopt(s.account?.id||'',blocked());});
+ let count=0;const timer=setInterval(()=>{void controller.observeCapture();const label=content.querySelector('[data-recording-time]');if(label){const elapsed=Math.floor((Date.now()-controller.state.recordedAt)/1000),limit=controller.state.mediaKind==='video'?120:180;label.textContent=`Recording ${elapsed}s / ${limit}s · Stop to preview`;}if(++count%8===0&&document.visibilityState==='visible')void controller.refresh();},500);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)void controller.interrupt();else void controller.refresh();});window.addEventListener('pagehide',()=>{clearInterval(timer);clearPosters();controller.dispose();});
  return controller;
 }

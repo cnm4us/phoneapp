@@ -1,6 +1,6 @@
 # 0014 Video messages in patient communication history
 
-Status: planned; implementation not started. Updated: 2026-11-19 UTC (2026-11-18 America/Los_Angeles). This request authorizes the plan; it does not start builds, migrations or deployment.
+Status: implementation in progress. Updated: 2026-11-19 UTC (2026-11-18 America/Los_Angeles). Owner requested implementation after reviewing the plan. Work is isolated in `/home/ubuntu/phoneapp-stage14` on `feat/video-messages`.
 
 ## Outcome and scope
 
@@ -13,6 +13,8 @@ Included: native iPhone/Android and browser compose/playback; front/rear camera 
 Deferred: video attachments from the photo library, editing/trimming, camera switching mid-recording, background recording/uploads, durable offline drafts, ordinary message push notifications, automatic no-answer voicemail, patient-initiated live calls, Twilio/PSTN/SMS, transcripts/summaries, organizations/staff administration and time billing. Regular telephone voicemail remains audio-only. No live call is recorded by this feature and clip/playback length never becomes approved staff time. Synthetic conversations only.
 
 ## Current evidence
+
+Implementation decision: [ADR 0010](../decisions/0010-video-messages.md). Initial 120s synthetic 720p/30 conversion: 34.69s, 31,295,825-byte MP4, 5,543-byte JPEG, about 1ms maximum timer delay. Migration 0006 has been rehearsed in disposable test only; clean/upgrade/recovery tests and existing audio integration pass. New video/native/device tests remain in progress.
 
 - Canonical source is `feat/webrtc-poc`, baseline `073e1dc`. Audio record/send/play/reply works in the owner-confirmed iPhone ↔ desktop browser flow. Android and remaining native interruption/seek gates are still open. [0012 evidence](../testing/2026-11-18-audio-messages.md).
 - `shared/messages.ts`, `src/messages/`, `web/messages.ts`, `web/message-audio.ts` and `server/messages.ts` implement audio-specific contracts/adapters. Migration 0005 has `audio_messages` and session-bound `message_media_grants`; stable patients/assignments and history already exist. The worker deliberately rejects video and publishes mono AAC/M4A. No camera recorder or video player package is installed.
@@ -48,13 +50,13 @@ The 64 MiB input allowance covers browser/native encoder variation; it is not a 
 
 ### 1. Prove capture, playback and server budget
 
-- [ ] Inspect current code/dependency constraints, DB ledger and calling/audio ownership. Create an isolated feature worktree so dependency installation/prebuild cannot alter the live service checkout.
+- [x] Inspect current code/dependency constraints, DB ledger and calling/audio ownership. Create an isolated feature worktree so dependency installation/prebuild cannot alter the live service checkout.
 - [ ] Prototype SDK 57 `expo-camera` capture and `expo-video` playback; verify SDK-compatible exact versions and lockfile, permissions and configuration. Existing `react-native-webrtc` live video does not itself provide the saved-message recorder. Pin packages without upgrading Expo/WebRTC incidentally.
 - [ ] Prototype browser `getUserMedia` plus `MediaRecorder.isTypeSupported` and actual recorder start/stop/error handling. Test supported WebM/VP8 or VP9/Opus and MP4/H.264/AAC inputs, accepting only the formats actually verified. Do not assume all browsers record the same format. Unsupported capture shows guidance and preserves existing audio features.
 - [ ] Produce synthetic portrait/landscape samples from iPhone, Android and supported desktop browsers, including maximum-length capture. Record format, verified dimensions/FPS/duration/bytes, sound and orientation; keep samples private. Verify native source behavior for interruption and automatic resume.
 - [ ] Benchmark full-length conversion/thumbnail generation privately on EC2 with one low-priority worker. Set per-kind CPU/wall/memory/output limits, a lease longer than the bounded job (or safe lease renewal), maximum input dimensions/FPS/stream count, upload timeout and queue limit. Starting video proposals: 300-second wall/CPU bounds and 1 GiB address-space ceiling, subject to measured fit; retain audio's current tighter bounds. Reject costly unsupported inputs before decoding where possible and cap decoding as well as output.
 - [ ] Verify calling/signaling remains responsive during conversion and concurrent upload. Run isolated media/call tests without ringing owner devices; do not impair the host network. If the bounded worker cannot handle maximum clips without call regression, reduce video defaults or isolate processing before enabling video; record the decision and evidence.
-- [ ] Record an ADR for the confirmed media contract, compatibility, storage/processing budget and camera/audio ownership. Confirm the selected defaults in this plan before implementing the full feature.
+- [x] Record an ADR for the confirmed media contract, compatibility, storage/processing budget and camera/audio ownership. Confirm the selected defaults in this plan before implementing the full feature.
 
 ### 2. Extend schema and API without losing audio history
 

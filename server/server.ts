@@ -140,6 +140,10 @@ export function createSignaling(options: Options) {
     } catch { failedResolves++; if (!res.headersSent && !res.destroyed) json(res, 400, { error: 'Invalid room-code request' }); }
   };
   const http = createServer((req, res) => {
+    // Node's header/body deadline is fixed at acceptance. Media has its own bounded streaming timer.
+    const mediaUpload=/^\/api\/message-media\/[a-f0-9-]{36}\/upload$/.test(req.url||'');
+    const bodyDeadline=mediaUpload?undefined:setTimeout(()=>req.destroy(),10000);
+    const clearDeadline=()=>clearTimeout(bodyDeadline);req.once('end',clearDeadline);req.once('close',clearDeadline);
     expire();
     if (req.url?.startsWith('/api/')) {
       if (options.apiHandler) void options.apiHandler(req,res).catch(() => { if (!res.headersSent) json(res,503,{error:'Account service unavailable'}); });
@@ -168,7 +172,7 @@ export function createSignaling(options: Options) {
     return json(res, 201, { roomId, token: room.token, expiresAt: room.expiresAt, code });
   });
   http.headersTimeout = 10_000;
-  http.requestTimeout = 10_000;
+  http.requestTimeout = 0; // Per-request JSON/media timers above and in Messages; headers stay bounded.
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024, perMessageDeflate: false });
   http.on('upgrade', (req, socket, head) => {
     if (req.url !== '/signal' || peers.size >= 100) { socket.destroy(); return; }

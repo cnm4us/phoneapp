@@ -37,12 +37,15 @@
     "test:accounts": "npm run build:web && tsx --test server/accounts.test.ts",
     "smoke:accounts": "tsx scripts/smoke-accounts.ts",
     "test:audio-messages": "npm run build:web && tsx --test server/messages.test.ts",
-    "postinstall": "node scripts/patch-expo-audio.mjs",
+    "postinstall": "node scripts/patch-expo-audio.mjs && node scripts/patch-expo-video.mjs",
     "test:message-client": "tsx --test src/messages/controller.test.ts",
     "smoke:audio-messages": "tsx scripts/smoke-messages.ts",
     "messages:status": "tsx --env-file=.env.server scripts/message-status.ts",
     "test:browser-session": "npm run build:web && tsx --test server/browser-session.test.ts",
-    "smoke:browser-session": "tsx scripts/smoke-browser-session.ts"
+    "smoke:browser-session": "tsx scripts/smoke-browser-session.ts",
+    "benchmark:video": "tsx scripts/benchmark-video.ts",
+    "test:video-messages": "npm run build:web && tsx --test server/video-messages.test.ts",
+    "smoke:video-messages": "tsx scripts/smoke-video-messages.ts"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -53,9 +56,11 @@
     "expo-asset": "57.0.21",
     "expo-audio": "57.0.5",
     "expo-build-properties": "57.0.23",
+    "expo-camera": "57.0.6",
     "expo-dev-client": "57.0.21",
     "expo-file-system": "57.0.7",
     "expo-status-bar": "57.0.1",
+    "expo-video": "57.0.5",
     "mariadb": "3.5.5",
     "react": "19.2.3",
     "react-native": "0.86.3",
@@ -73,5 +78,14 @@
     "expo-doctor": "1.21.8",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
+  },
+  "expo": {
+    "autolinking": {
+      "buildFromSource": [
+        "expo-audio",
+        "expo-camera",
+        "expo-video"
+      ]
+    }
   }
 }

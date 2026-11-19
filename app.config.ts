@@ -17,11 +17,13 @@ const config: ExpoConfig = {
   plugins: [
     './plugins/with-phoneapp-calling',
     'expo-dev-client',
+    ['expo-camera',{cameraPermission:'Allow Phoneapp to record video messages and make video calls.',microphonePermission:'Allow Phoneapp to record sound for messages and calls.',recordAudioAndroid:true,barcodeScannerEnabled:false}],
+    ['expo-video',{}],
     ['expo-audio',{microphonePermission:'Allow Phoneapp to record your audio messages.',enableBackgroundRecording:false,enableBackgroundPlayback:false}],
     ['expo-build-properties', { ios: { enableSceneSupport: true } }],
     ['@config-plugins/react-native-webrtc', {
-      cameraPermission: 'Allow Phoneapp POC to use your camera for test video calls.',
-      microphonePermission: 'Allow Phoneapp POC to use your microphone for test calls.',
+      cameraPermission: 'Allow Phoneapp POC to use your camera for video messages and calls.',
+      microphonePermission: 'Allow Phoneapp POC to use your microphone for messages and calls.',
     }],
   ],
   ...(process.env.EXPO_OWNER ? { owner: process.env.EXPO_OWNER } : {}),

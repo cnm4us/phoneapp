@@ -82,7 +82,7 @@ export class AccountsApi {
         if(browserEnroll){const session=await this.store.browserSession(result.token,true);this.browser.set(res,result.token,session.expiresAt);this.json(res,200,session);}else this.json(res,200,result);return;
       }
       if(req.method==='POST'&&req.url==='/api/device/refresh'){const b=await this.body(req,['deviceId','refreshToken','requestKey']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!uuid(b.deviceId)||!token(b.refreshToken)||!uuid(b.requestKey))throw new ApiError(400,'Invalid device refresh.');this.json(res,200,await this.devices.refresh(b.deviceId,b.refreshToken,b.requestKey));return;}
-      const mediaRoute=req.url?.match(/^\/api\/message-media\/([a-f0-9-]{36})\/(upload|play)$/);
+      const mediaRoute=req.url?.match(/^\/api\/message-media\/([a-f0-9-]{36})\/(upload|play|thumbnail)$/);
       if(mediaRoute){if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');await this.messages.media(req,res,mediaRoute[1],mediaRoute[2]);return;}
       const cookieMode=this.browser.mode(req);
       if(cookieMode)this.browser.guard(req);
@@ -94,10 +94,11 @@ export class AccountsApi {
       if(!cookieMode&&!actor.deviceId)await this.browser.legacy(req,res,bearer);
       if(req.url==='/api/messages/context'&&req.method==='GET'){this.json(res,200,this.messages?await this.messages.context(actor):{enabled:false,patients:[]});return;}
       if(req.url?.startsWith('/api/messages')){
+        const mixed=req.url.startsWith('/api/messages/v2');const route=mixed?req.url.replace('/api/messages/v2','/api/messages'):req.url;
         if(!this.messages)throw new ApiError(503,'Audio messages are not enabled.');
-        if(req.url==='/api/messages/history'&&req.method==='POST'){const b=await this.body(req,['patientId','cursor']);if(!validId(b.patientId)||b.cursor!==undefined&&(typeof b.cursor!=='string'||b.cursor.length>500))throw new ApiError(400,'Invalid history request.');this.json(res,200,await this.messages.timeline(actor,b.patientId,b.cursor as string|undefined));return;}
-        if(req.url==='/api/messages'&&req.method==='POST'){const b=await this.body(req,['patientId','requestKey','recipientStaffId']);if(!validId(b.patientId)||!validId(b.requestKey)||b.recipientStaffId!==undefined&&!validId(b.recipientStaffId))throw new ApiError(400,'Invalid message request.');this.json(res,200,await this.messages.create(actor,b.patientId,b.requestKey,b.recipientStaffId as string|undefined));return;}
-        const grant=req.url.match(/^\/api\/messages\/([a-f0-9-]{36})\/(upload|play)$/);if(grant&&req.method==='POST'){await this.body(req,[]);this.json(res,200,await this.messages.grant(actor,grant[1],grant[2] as 'upload'|'play'));return;}
+        if(route==='/api/messages/history'&&req.method==='POST'){const b=await this.body(req,['patientId','cursor']);if(!validId(b.patientId)||b.cursor!==undefined&&(typeof b.cursor!=='string'||b.cursor.length>500))throw new ApiError(400,'Invalid history request.');this.json(res,200,await this.messages.timeline(actor,b.patientId,b.cursor as string|undefined,mixed));return;}
+        if(route==='/api/messages'&&req.method==='POST'){const b=await this.body(req,mixed?['patientId','requestKey','recipientStaffId','mediaKind']:['patientId','requestKey','recipientStaffId']);if(!validId(b.patientId)||!validId(b.requestKey)||b.recipientStaffId!==undefined&&!validId(b.recipientStaffId))throw new ApiError(400,'Invalid message request.');if(b.mediaKind!==undefined&&!['audio','video'].includes(String(b.mediaKind)))throw new ApiError(400,'Invalid media kind.');this.json(res,200,await this.messages.create(actor,b.patientId,b.requestKey,b.recipientStaffId as string|undefined,b.mediaKind==='video'?'video':'audio'));return;}
+        const grant=route.match(/^\/api\/messages\/([a-f0-9-]{36})\/(upload|play|thumbnail)$/);if(grant&&req.method==='POST'){await this.body(req,[]);this.json(res,200,await this.messages.grant(actor,grant[1],grant[2] as 'upload'|'play'|'thumbnail',mixed));return;}
         throw new ApiError(404,'Not found.');
       }
       if(req.method==='POST'&&req.url==='/api/device/push'){const b=await this.body(req,['provider','token','environment']);if(!this.devices)throw new ApiError(503,'Native calling unavailable.');if(!['apns_voip','fcm'].includes(String(b.provider))||typeof b.token!=='string'||b.token.length<16||b.token.length>4096||!/^[A-Za-z0-9_:.-]+$/.test(b.token)||!['production','sandbox'].includes(String(b.environment)))throw new ApiError(400,'Invalid push registration.');await this.devices.register(actor,String(b.provider),b.token,String(b.environment));this.json(res,200,{ok:true});return;}

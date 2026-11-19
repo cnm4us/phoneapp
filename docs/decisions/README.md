@@ -18,3 +18,5 @@ Avoid freezing speculative details. Versions, service setup, and commands belong
 - [0008 Audio messages](0008-audio-messages.md): patient-linked media, short-lived transfer grants, private POC storage and foreground audio ownership.
 
 - [0009 Browser sessions](0009-browser-sessions.md): host-only HttpOnly cookies, fixed expiry, guarded restore/logout and open-tab migration.
+
+- [0010 Video messages](0010-video-messages.md): additive mixed-media history, native camera/player ownership, private posters and bounded video processing.

@@ -366,3 +366,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 
 - Owner confirms the reported missing desktop video-message issue now works after the metadata processing fix/recovery. Basic phone patient -> desktop provider video messaging is owner-confirmed, following the earlier phone record/preview/send result.
 - Updated current state/resume, plan and evidence. No additional build/OS/browser or per-control results inferred. Provider -> patient/native receiver, Android and interruption/control matrices remain open. Documentation/whitespace checks pass; no runtime/schema/build/service changes for this confirmation.
+
+## 2026-11-19 Owner confirms video reply and discusses history navigation
+
+- Owner confirms provider desktop -> phone video reply works, following confirmed phone -> provider desktop exchange. Basic two-way phone/browser recorded video messaging is accepted; individual controls, exact device/build versions, Android and interruption matrices remain open. Updated state/resume, plan and evidence.
+- Inspected the history UI for the owner's discussion question: account Call history predates messages and lists the signed-in user's recent calls across patients; Communication history combines calls/messages for a selected patient. A single patient timeline with Calls/Messages filters is a proposed simplification for discussion, not an approved implementation/UI change.
+- Documentation/whitespace checks pass. No runtime/schema/build/service change.

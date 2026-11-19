@@ -404,3 +404,9 @@ Append concise dated entries for durable outcomes. The latest actionable handoff
 - Discussed removing history/detail outer gutters while retaining inner padding/safe areas, patient-first list rows with upper-right type icons, and a full-width overlay with fixed upper-right Close/Reply. Detail uses From/To/Date and video-surface play/pause, removing duplicated source/technical headings and bottom reply/close buttons. Prior quiet-polling correction remains part of the proposed usability work.
 - Inspected current App padding, workspace/message containers and native video controls. Existing recorded audio/video capture can support message reply choices; live-call menu availability needs role/capability handling because patient-originated calls and a distinct app-audio action are not implemented. CC/Forward remains future directed communication with explicit audience and original attribution.
 - Recorded the proposal in parent plan/current state. User requested thoughts; no UI/source/schema/service/build changes were made. Documentation/whitespace checks pass; phone acceptance/playback results remain as previously recorded.
+
+
+## 2026-11-19 Audio/video scrubber added to proposed UI iteration
+
+- Owner requests a scrubber for both media types. Added draggable seeking plus elapsed/total duration to the pending history/detail/player iteration, preserving play/pause state and existing media/call interruption behavior.
+- Updated plan/current state; documentation/whitespace checks only. No player implementation or native build is claimed in this design follow-up.
